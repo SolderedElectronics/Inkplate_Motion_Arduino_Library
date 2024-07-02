@@ -23,7 +23,7 @@ There are many examples in the library that you demonstrate how to use any of th
 
 ## Battery power
 
-Inkplate boards has two options for powering it. First one is obvious - USB port at side of the board. Just plug any micro USB cable and you are good to go. Second option is battery. Supported batteries are standard Li-Ion/Li-Poly batteries with 3.7V nominal voltage. Connector for the battery is standard 2.00mm pitch JST connector (except on Inkplate 2, it uses SMD solder pads for battery terminals). The onboard charger will charge the battery with 500mA when USB is plugged at the same time. You can use battery of any size or capacity if you don't have a enclosure. If you are using our enclosure, battery size shouldn't exceed 90mm x 40mm (3.5 x 1.57 inch) and 5mm (0.19 inch) in height (excluding Inkplate 2, it uses [this battery](https://soldered.com/product/li-ion-baterija-600mah-3-7v/). [This battery](https://soldered.com/product/li-ion-battery-1200mah-3-7v/) is good fit for the Inkplate. Also, Inkplate's hardware is specially optimized for low power consumption in deep sleep mode, making it extremely suitable for battery applications.
+Inkplate boards has two options for powering it. First one is obvious - USB port at side of the board. Just plug any micro USB cable and you are good to go. Second option is battery. Supported batteries are standard Li-Ion/Li-Poly batteries with 3.7V nominal voltage. Connector for the battery is standard 2.00mm pitch JST connector. The onboard charger will charge the battery with 500mA when USB is plugged at the same time. You can use battery of any size or capacity if you don't have a enclosure (but mind the current capability of the baterry since Inkplate Motion can draw quite bit of current while refreshing the screen). If you are using our enclosure, battery size shouldn't exceed 90mm x 40mm (3.5 x 1.57 inch) and 5mm (0.19 inch) in height. [This battery](https://soldered.com/product/li-ion-battery-1200mah-3-7v/) is good fit for the Inkplate. Also, Inkplate's hardware is specially optimized for low power consumption in deep sleep mode, making it extremely suitable for battery applications.
 
 ### ⚠️ WARNING
 Please check the polarity on the battery JST connector! Some batteries that can be purchased from the web have reversed polarity that can damage Inkplate board! You are safe if you are using the pouch battery from [soldered.com](https://soldered.com/categories/power-sources-batteries/batteries/lithium-batteries/) or Inkplate with the built-in battery . 
@@ -33,6 +33,9 @@ CR2032 battery is only for RTC backup. Inkplate cannot be powered with it.
 
 ## License
 This repo uses the source code from another repositories. All their license files are located in "licences" folder.
+
+## ESP32 WiFi Co-processor
+To be able to connect to the WiFi, Inkplate Motion uses ESP32-C3 MCu with SPI AT Commands Firmare on it. ESP32 firmware will be already flashed for you. But, if for some reason ESP32 if corrupted, or you overwritten the AT SPI firmware, you can find it in extras folder. Firmware can be flashed using [CONNECT Programmer](https://soldered.com/product/connect-programmer/) and esptool.
 
 ## Where to get the Inkplate Motion?
 You can get it by supporting by backing this project on the [Crowdsupply](https://www.crowdsupply.com/soldered/inkplate-6-motion).
