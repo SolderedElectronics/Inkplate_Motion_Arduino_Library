@@ -34,7 +34,7 @@ CR2032 battery is only for RTC backup. Inkplate cannot be powered with it.
 ## License
 This repo uses the source code from another repositories. All their license files are located in "licences" folder.
 
-## ESP32 WiFi Co-processor
+## ESP32 WiFi Coprocessor
 To be able to connect to the WiFi, Inkplate Motion uses ESP32-C3 MCu with SPI AT Commands Firmare on it. ESP32 firmware will be already flashed for you. But, if for some reason ESP32 if corrupted, or you overwritten the AT SPI firmware, you can find it in extras folder. Firmware can be flashed using [CONNECT Programmer](https://soldered.com/product/connect-programmer/) and esptool.
 
 ## Where to get the Inkplate Motion?
