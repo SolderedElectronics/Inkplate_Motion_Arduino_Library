@@ -403,7 +403,7 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
 
                 // Heh, it this is so simple. Sometimes, modem can respond with the command but also with the OK or ERROR after that command.
                 // It's ok if there is no reponse, but it there is response and it's not ok, something is wrong!
-                if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 10ULL, &_respLen))
+                if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 200ULL, &_respLen))
                 {
                     // Check of OK. If not found, return error.
                     if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL) _retValue = false;
@@ -436,7 +436,7 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
                 if (strstr(_dataBuffer, _expectedResponseData) == NULL) return false;
 
                 // Ok, is something is found, check for additional OK/ERROR.
-                if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 10ULL, &_respLen))
+                if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 200ULL, &_respLen))
                 {
                     // Check of OK. If not found, return error.
                     if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL) _retValue = false;
