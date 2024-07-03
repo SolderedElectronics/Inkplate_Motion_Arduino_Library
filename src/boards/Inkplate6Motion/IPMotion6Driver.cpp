@@ -144,11 +144,28 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
     if (getDisplayMode() != INKPLATE_1BW)
         return;
 
+
     // Check if there is already one full update. If notm skip partial update and force full update.
     if (_blockPartial == 1)
     {
         display1b(_leaveOn);
         return;
+    }
+
+    // Check if automatic full update is enabled. If so, check if the full update needs to be executed.
+    if (_partialUpdateLimiter != 0)
+    {
+        if (_partialUpdateCounter >= _partialUpdateLimiter)
+        {
+            // Force full update.
+            display1b(_leaveOn);
+
+            // Reset the counter!
+            _partialUpdateCounter = 0;
+
+            // Go back!
+            return;
+        }
     }
 
     // Power up EPD PMIC. Abort update if failed.
@@ -245,6 +262,13 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
     // Disable EPD PSU if needed.
     if (!_leaveOn)
         epdPSU(0);
+
+    // Check if automatic full update is enabled.
+    if (_partialUpdateLimiter != 0)
+    {
+        // Increment the counter.
+        _partialUpdateCounter++;
+    }
 }
 
 void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
@@ -936,6 +960,15 @@ void EPDDriver::peripheral(uint8_t _selectedPeripheral, bool _en)
             internalIO.digitalWriteIO(PERIPHERAL_WSLED_ENABLE_PIN, _en, true);
             break;
     }
+}
+
+void EPDDriver::setFullUpdateTreshold(uint16_t _numberOfPartialUpdates)
+{
+    // Copy the value into the local variable.
+    _partialUpdateLimiter = _numberOfPartialUpdates;
+
+    // If the limiter is enabled, force full update.
+    if (_numberOfPartialUpdates != 0) _blockPartial = true;
 }
 
 #endif

@@ -189,10 +189,6 @@ bool WiFiMQTT::subscribe(const char *_topic)
         // False means that we expected "+MQTTSUBRECV" but got OK or "ALREADY SUBSCRIBE". If non of there were received, return false!
         if ((strstr(_atCommandBuffer, "ALREADY SUBSCRIBE") != NULL) || (strstr(_atCommandBuffer, "\r\nOK\r\n") != NULL)) _retValue = true;
     }
-
-    Serial.println("-------sub done-------");
-    Serial.println(_atCommandBuffer);
-    Serial.println("------sub end-------");
     
     // Try to parse the data sent by the MQTT while subscribe.
     parseMQTTData("+MQTTSUBRECV:");

@@ -113,7 +113,7 @@ class EPDDriver : public Helpers
         int initDriver();
         void cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases);
         void clearDisplay();
-        void partialUpdate(uint8_t _leaveOn);
+        void partialUpdate(uint8_t _leaveOn = 0);
         void partialUpdate4Bit(uint8_t _leaveOn);
         void display(uint8_t _leaveOn = 0);
         void display1b(uint8_t _leaveOn);
@@ -123,6 +123,10 @@ class EPDDriver : public Helpers
         double readBattery();
         void selectDisplayMode(uint8_t _mode);
         uint8_t getDisplayMode();
+
+        // Set the automatic partial update.
+        void setFullUpdateTreshold(uint16_t _numberOfPartialUpdates);
+
         void peripheral(uint8_t _selectedPeripheral, bool _en);
 
         // Should be moved into Inkplate.h or Graphics.h.
@@ -142,6 +146,9 @@ class EPDDriver : public Helpers
 
         // Object for NeoPixel LED.
         Adafruit_NeoPixel led = Adafruit_NeoPixel(2, PERIPHERAL_WSLED_DATA_PIN, NEO_GRB + NEO_KHZ800);
+
+        // Object for SHTC3 temperature and humidity sensor.
+        SHTC3 shtc3;
     
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.
@@ -186,6 +193,12 @@ class EPDDriver : public Helpers
 
         // Internal typedef for the 4 bit waveform - partial update.
         InkplateWaveform _waveform4BitPartialInternal;
+
+        // Variable keeps track on how many partial updates have been executed for automatic full update.
+        uint16_t _partialUpdateCounter = 0;
+
+        // Variable that set the user-defined treshold for the full update. If zero, automatic full update is disabled.
+        uint16_t _partialUpdateLimiter = 0;
 
         // Fast LUT table for conversion from 2 * 4 bit grayscale pixel to EPD Wavefrom.
         uint8_t _fastGLUT[65536];
