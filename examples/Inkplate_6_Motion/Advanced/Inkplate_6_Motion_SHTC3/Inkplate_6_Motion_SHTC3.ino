@@ -28,7 +28,7 @@ void setup()
     inkplate.setTextColor(BLACK, WHITE);
 
     // Set automatic full update after 30 partial updates.
-    inkplate.setFullUpdateTreshold(0);
+    inkplate.setFullUpdateTreshold(30);
 }
 
 void loop()
@@ -53,6 +53,6 @@ void loop()
         inkplate.partialUpdate(true);
     }
 
-    // Update every 2 seconds.
-    delay(2000);
+    // Update every one second.
+    delay(1000);
 }
