@@ -6,11 +6,13 @@
 #define LIBRARY_FEATURE_WS_LED_ENABLED
 #define LIBRARY_FEATURE_SHTC3_ENABLED
 #define LIBRARY_FEATURE_APDS9960_ENABLED
+#define LIBRARY_FEATURE_LSM6DS3_ENABLED
 
 #include "RotaryEnc/AS5600.h"
 #include "Adafruit_NeoPixel/Adafruit_NeoPixel.h"
 #include "SparkFun_SHTC3/SparkFun_SHTC3.h"
 #include "SparkFun_APDS9960/SparkFun_APDS9960.h"
+#include "SparkFun_LSM6DS3/SparkFunLSM6DS3.h"
 #endif
 
 #endif

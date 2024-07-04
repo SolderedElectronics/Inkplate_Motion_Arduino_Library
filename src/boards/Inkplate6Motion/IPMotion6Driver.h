@@ -152,6 +152,9 @@ class EPDDriver : public Helpers
 
         // Object for the ADPS9960 Sensor.
         SparkFun_APDS9960 apds9960;
+
+        // Object for LSM6DS3 accelerometer & gyroscope.
+        LSM6DS3 lsm6ds3 = LSM6DS3(I2C_MODE, 0x6A);
     
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.
