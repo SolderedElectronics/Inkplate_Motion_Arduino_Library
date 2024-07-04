@@ -6,6 +6,9 @@ An Arduino library for the Sensirion SHTC3 humidity and temerature sensor
 
 #include "SparkFun_SHTC3.h"
 
+//  Feature enable guard.
+#ifdef LIBRARY_FEATURE_SHTC3_ENABLED
+
 SHTC3_Status_TypeDef SHTC3::sendCommand(SHTC3_Commands_TypeDef cmd)
 {
 	uint8_t res = 0;
@@ -440,3 +443,5 @@ float SHTC3_raw2Percent(uint16_t RH)
 }
 
 void SHTC3_exitOp_Callback(SHTC3_Status_TypeDef status, bool inProcess, const char *file, uint16_t line) {} // Empty implementation. You can make your own implementation
+
+#endif

@@ -149,6 +149,9 @@ class EPDDriver : public Helpers
 
         // Object for SHTC3 temperature and humidity sensor.
         SHTC3 shtc3;
+
+        // Object for the ADPS9960 Sensor.
+        SparkFun_APDS9960 apds9960;
     
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.

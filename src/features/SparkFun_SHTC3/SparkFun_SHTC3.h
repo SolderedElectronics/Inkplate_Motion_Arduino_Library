@@ -7,6 +7,9 @@ An Arduino library for the Sensirion SHTC3 humidity and temerature sensor
 #ifndef SF_SHTC3
 #define SF_SHTC3
 
+//  Feature enable guard.
+#ifdef LIBRARY_FEATURE_SHTC3_ENABLED
+
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -102,5 +105,7 @@ float SHTC3_raw2DegF(uint16_t T);	  // Converts SHTC3 T data to deg F
 float SHTC3_raw2Percent(uint16_t RH); // Converts SHTC3 RH data to % RH
 
 void SHTC3_exitOp_Callback(SHTC3_Status_TypeDef status, bool inProcess, const char *file, uint16_t line) __attribute__((weak)); // Called whenever exitOp is called, which is on most return statements
+
+#endif
 
 #endif /* SF_SHTC3 */
