@@ -30,11 +30,11 @@
 #include "fonts/ConsolaMono_Book8pt7b.h"
 
 // Add WiFi data here
-#define WIFI_SSID "Soldered"
-#define WIFI_PASS "dasduino"
+#define WIFI_SSID ""
+#define WIFI_PASS ""
 
 // Set your location data for the weather here
-// By default, is set for Osijek, Croatia
+// By default, it's set for Osijek, Croatia
 #define WEATHER_LAT 45.5511
 #define WEATHER_LON 18.6939
 

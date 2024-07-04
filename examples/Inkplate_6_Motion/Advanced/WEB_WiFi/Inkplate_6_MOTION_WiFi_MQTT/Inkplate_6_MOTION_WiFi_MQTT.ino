@@ -5,9 +5,11 @@
  * @brief       This example will show you how to scan available WiFi networks and print them
  *
  *              To successfully run the sketch:
+ *              -Enter WiFi and MQTT topic data below
  *              -Connect Inkplate 6 MOTION via USB-C cable
  *              -Press the programming button to put the device in the programming state
  *              -Upload the code
+ *              -Open https://testclient-cloud.mqtt.cool to try reading and publishing via MQTT!
  *
  * @see         solde.red/333321
  *
@@ -19,12 +21,19 @@
 #include <InkplateMotion.h>
 
 // Add WiFi data here
-#define WIFI_SSID "Soldered"
-#define WIFI_PASS "dasduino"
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+
+// Define MQTT server and port
+// This is the test MQTT server by mosquitto
+#define MQTT_SERVER "test.mosquitto.org"
+#define MQTT_PORT   1883
 
 // Define the MQTT topic names
-const char mqttTopicTx[] = "solderedTest/solderedInkplate";
-const char mqttTopicRx[] = "solderedTest/solderedInkplate";
+// Topic where Inkplate will get data from
+const char mqttTopicTx[] = "solderedTest/inkplate_Tx";
+// Topic where Inkplate will send data to
+const char mqttTopicRx[] = "solderedTest/inkplate_Rx";
 
 // Variables for storing button state to be able to detect state change.
 bool publishBtnOldState = true;
@@ -44,22 +53,20 @@ unsigned long timer1 = 0;
 // Setup code, runs only once
 void setup()
 {
-    Serial.begin(115200);
-
     // Initialize the Inkplate Motion Library in 1bit mode
     inkplate.begin(INKPLATE_1BW);
 
     // Clear the screen
     inkplate.display();
 
-    // Use WAKE/USER1 pin for publishing MQTT data to the INPUT_PULLUP.
+    // Use WAKE pin for publishing MQTT data
     pinMode(PC13, INPUT_PULLUP);
-    // Use USER2 pin for the MQTT disconnect to the INPUT_PULLUP.
+    // Use USER1 pin for the MQTT disconnect
     pinMode(PG6, INPUT_PULLUP);
-    // Use USER3 pin for the MQTT unsubscribe from the topic to the INPUT_PULLUP.
+    // Use USER2 pin for the MQTT unsubscribe
     pinMode(PA0, INPUT_PULLUP);
 
-    // Set text printing option
+    // Set text printing options
     inkplate.setCursor(0, 0);
     inkplate.setTextSize(3);
     inkplate.setTextColor(BLACK, WHITE);
@@ -118,11 +125,12 @@ void setup()
     delay(1000); // Wait a bit
 
     // Initialize MQTT library and use internal dynalically buffer of
-    // 48 bytes for MQTT RX messages. Do the init. after WiFi connection.
+    // 48 bytes for MQTT RX messages
+    // Make sure to do this AFTER WiFi is connected
     mqtt.begin(48);
 
-    // Set the MQTT server data.
-    mqtt.setServer("test.mosquitto.org", 1883);
+    // Set the MQTT server data
+    mqtt.setServer(MQTT_SERVER, MQTT_PORT);
 
     // Try to connect to the MQTT broker. There is no ClientID, Username and Password.
     inkplate.print("Connecting to the MQTT broker...");
@@ -138,12 +146,15 @@ void setup()
     }
     inkplate.println("Connected!");
     inkplate.partialUpdate(true);
+    delay(1000); // Wait a bit
 
     // Try to subscribe to topic.
-    inkplate.print("Subcribing to ");
+    inkplate.print("Subscribing to ");
     inkplate.print(mqttTopicRx);
     inkplate.print("topic...");
     inkplate.partialUpdate(true);
+    delay(1000); // Wait a bit
+
     if (!mqtt.subscribe((char *)mqttTopicRx))
     {
         inkplate.print("failed!");
@@ -155,25 +166,28 @@ void setup()
     }
     inkplate.println("subscribed!\r\n");
     inkplate.partialUpdate(true);
-
     // Delay a little bit.
     delay(1000);
 
     // Make the screen ready for MQTT traffic.
     inkplate.clearDisplay();
     inkplate.setCursor(0, 0);
-    inkplate.println("Buttons: USER1 - Publish data, USER2 - Disconnect, USER3 - Unsubscribe\nMQTT traffic:");
-    inkplate.display();
+    inkplate.print("Buttons:\nWAKE - Publish data to ");
+    inkplate.println(mqttTopicTx);
+    inkplate.print("USER1 - Disconnect\nUSER2 - Unsubscribe\n");
+    inkplate.print("Send data to ");
+    inkplate.print(mqttTopicRx);
+    inkplate.print(" to see it on Inkplate:\n");
+    inkplate.partialUpdate(false);
 }
 
-
+// Loop code, runs repeteadly
 void loop()
 {
-    // Must be in the loop to periodically check recived data.
-    // Also if HTTP or any other ESP32 functionallity, data loss can occur.
+    // This function must be in the loop to periodically check recived data
     mqtt.loop();
 
-    // Check if there is any new data available on the topic.
+    // Check if there is any new data available on the topic
     int mqttData = mqtt.available();
     if (mqttData)
     {
@@ -189,15 +203,13 @@ void loop()
         inkplate.partialUpdate(false);
     }
 
-    // Check the state of the pin. If the pin is pressed, send new MQTT message.
+    // If the WAKE button is pressed, send MQTT message:
     if (checkButton(PC13, &publishBtnOldState, LOW))
     {
-        Serial.println("sending data via mqtt");
-
-        // Buffer for the MQTT message of 40 bytes.
+        // Buffer for the MQTT message of 40 bytes
         char message[40];
 
-        // Make a MQTT message/payload.
+        // Make a MQTT message/payload
         sprintf(message, "inkplate_%lu", millis());
 
         // Send the message/payload and display the success/fail.
@@ -206,69 +218,62 @@ void loop()
         inkplate.print("\" ");
         if (mqtt.publish((char *)mqttTopicTx, message, 0, true))
         {
-            inkplate.println("ok");
+            inkplate.println("OK");
         }
         else
         {
-            inkplate.println("failed");
+            inkplate.println("Failed");
         }
         inkplate.partialUpdate(false);
-        delay(5000);
     }
 
-    // If the USER2 button is pressed, disconnect from the MQTT broker.
+    // If the USER1 button is pressed, disconnect from the MQTT broker
     if (checkButton(PG6, &disconnectBtnOldState, LOW))
     {
         inkplate.print("Disconnect ");
         if (mqtt.disconnect())
         {
-            inkplate.println("ok");
+            inkplate.println("OK");
         }
         else
         {
-            inkplate.println("fail");
+            inkplate.println("Failed");
         }
         inkplate.partialUpdate(false);
     }
 
-    // If the USER2 button is pressed, unsubscribe from the topic.
-    if (checkButton(PA0, &disconnectBtnOldState, LOW))
+    // If the USER2 button is pressed, unsubscribe from the topic
+    if (checkButton(PA0, &unsubBtnOldState, LOW))
     {
         inkplate.print("Unsubscribe from topic...");
         if (mqtt.unsubscribe((char *)mqttTopicRx))
         {
-            inkplate.println("ok");
+            inkplate.println("OK");
         }
         else
         {
-            inkplate.println("fail");
+            inkplate.println("Failed");
         }
         inkplate.partialUpdate(false);
-    }
-
-    // Print connection status on serial every few seconds.
-    if ((unsigned long)(millis() - timer1) > 10000ULL)
-    {
-        timer1 = millis();
     }
 }
 
 // Helper function for detecting button press (pin change).
 bool checkButton(uint8_t _pin, bool *_oldState, bool _triggerState)
 {
-    // Return variable.
+    // Return variable
     bool _retValue = false;
 
-    // Get the new button state.
+    // Get the new button state
     bool _newState = digitalRead(_pin);
 
-    // Check the state.
+    // Check the state
     if ((_newState == _triggerState) && ((*_oldState) == !_triggerState))
         _retValue = true;
 
-    // Update the state of the variable for the prev. state.
+    // Update the state of the variable for the prev. state
     (*_oldState) = _newState;
 
-    // Return the state of the button press.
+    // Return the state of the button press
     return _retValue;
 }
