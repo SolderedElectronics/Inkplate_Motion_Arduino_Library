@@ -64,6 +64,9 @@ int EPDDriver::initDriver()
     // Turn off EPD PMIC.
     internalIO.digitalWriteIO(TPS_WAKE_PIN, LOW, true);
 
+    // Initialize microSD driver. Actually it's just kinda wrapper for microSD class.
+    microSD.begin(&_systemSpi, INKPLATE_MICROSD_SPI_CS, 20);
+
     INKPLATE_DEBUG_MGS("EPD Driver init done");
 
     // Everything went ok? Return 1 for success.

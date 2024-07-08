@@ -21,8 +21,8 @@ NOTE: This library is still heavily in progress, so there is still some bugs. Us
 #include "SPI.h"
 #include "Wire.h"
 
-// Include SDFat library
-#include "SdFat.h"
+// // Include SDFat library
+// #include "features/SdFat/SdFat.h"
 
 // Include library defines
 #include "system/defines.h"
@@ -38,10 +38,6 @@ NOTE: This library is still heavily in progress, so there is still some bugs. Us
 
 // Include file for the each board feature selection.
 #include "features/featureSelect.h"
-
-// Clases for SPI driver for microSD.
-extern SPIClass spi2;
-extern SdFat sd;
 
 class Inkplate : public Adafruit_GFX, public InkplateBoardClass
 {
@@ -62,26 +58,23 @@ class Inkplate : public Adafruit_GFX, public InkplateBoardClass
     void begin(uint8_t _mode = INKPLATE_1BW);
     void drawPixel(int16_t x, int16_t y, uint16_t color);
     void setRotation(uint8_t);
-    int drawBitmapFromSD(SdFile *p, int x, int y);
-    int drawBitmapFromSD(char *fileName, int x, int y);
-    void drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h);
-    int sdCardInit();
-    SdFat getSdFat();
-    SPIClass getSPI();
+    //int drawBitmapFromSD(SdFile *p, int x, int y);
+    //int drawBitmapFromSD(char *fileName, int x, int y);
+    //void drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h);
 
   protected:
 
 
   private:
     uint8_t _rotation = 0;
-    int sdCardOk = 0;
+    //int sdCardOk = 0;
     uint8_t _beginDone = 0;
 
-    uint32_t read32(uint8_t *c);
-    uint16_t read16(uint8_t *c);
-    void readBmpHeader(SdFile *_f, struct bitmapHeader *_h);
-    int drawMonochromeBitmap(SdFile *f, struct bitmapHeader bmpHeader, int x, int y);
-    int drawGrayscaleBitmap24(SdFile *f, struct bitmapHeader bmpHeader, int x, int y);
+    //uint32_t read32(uint8_t *c);
+    //uint16_t read16(uint8_t *c);
+    //void readBmpHeader(SdFile *_f, struct bitmapHeader *_h);
+    //int drawMonochromeBitmap(SdFile *f, struct bitmapHeader bmpHeader, int x, int y);
+    //int drawGrayscaleBitmap24(SdFile *f, struct bitmapHeader bmpHeader, int x, int y);
 };
 
 #endif

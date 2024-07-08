@@ -4,10 +4,10 @@
 // Create a Inkplate Motion object.
 Inkplate inkplate;
 
-
 // Variables which are used for drawing the 3D Cube
 // Cube vertices
 float cube[8][3] = {{-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1}, {-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}};
+
 // Cube edges
 int edges[12][2] = {
     {0, 1}, {1, 2}, {2, 3}, {3, 0}, // Bottom face
@@ -23,6 +23,7 @@ int edges[12][2] = {
 float angleX = 0;
 float angleY = 0;
 float angleZ = 0;
+
 // Also, remember the previous angles
 // This is just to calculate the average between the two in order to smooth out the movement
 float previousAngleX = 0;

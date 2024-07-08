@@ -4,6 +4,9 @@
 // Header guard for the Arduino include
 #ifdef BOARD_INKPLATE6_MOTION
 
+// Include SPI Arduino Library, needed for SdFat Library.
+#include <SPI.h>
+
 // I2C address for Internal GPIO expander.
 #define IO_EXPANDER_INTERNAL_I2C_ADDR 0x20
 
@@ -77,11 +80,11 @@
 #define PERIPHERAL_WSLED_ENABLE_PIN IO_PIN_B2
 
 // Pins for controlling the onboard WSLEDs
-#define PERIPHERAL_SD_CS_PIN PB3
-#define PERIPHERAL_SD_MOSI_PIN PF9
-#define PERIPHERAL_SD_MISO_PIN PF8
-#define PERIPHERAL_SD_SCK_PIN PF7
-#define PERIPHERAL_SD_ENABLE_PIN IO_PIN_B1
+#define INKPLATE_MICROSD_SPI_MISO   PF8
+#define INKPLATE_MICROSD_SPI_MOSI   PF9
+#define INKPLATE_MICROSD_SPI_SCK    PF7
+#define INKPLATE_MICROSD_SPI_CS     PB3
+#define PERIPHERAL_SD_ENABLE_PIN    IO_PIN_B1
 
 #endif
 

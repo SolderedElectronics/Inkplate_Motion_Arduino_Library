@@ -7,4 +7,5 @@
 #include "SparkFun_SHTC3/SparkFun_SHTC3.cpp"
 #include "SparkFun_APDS9960/SparkFun_APDS9960.cpp"
 #include "SparkFun_LSM6DS3/SparkFunLSM6DS3.cpp"
+#include "microSD/microSD.cpp"
 #endif

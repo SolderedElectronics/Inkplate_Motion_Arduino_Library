@@ -47,6 +47,9 @@
 // FMC address for sending data to the EPD.
 #define EPD_FMC_ADDR    0x68000000
 
+// STM32 SPI for Inkplate System Stuff (WiFi & microSD).
+static SPIClass _systemSpi(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO, INKPLATE_MICROSD_SPI_SCK);
+
 // --- Functions declared static inline here for less calling overhead. ---
 // TODO: Try to store this function into the the internal RAM for faster execution.
 
@@ -155,7 +158,10 @@ class EPDDriver : public Helpers
 
         // Object for LSM6DS3 accelerometer & gyroscope.
         LSM6DS3 lsm6ds3 = LSM6DS3(I2C_MODE, 0x6A);
-    
+
+        // MicroSD card object.
+        MicroSD microSD;
+
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.
         void gpioInit();

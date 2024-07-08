@@ -7,12 +7,26 @@
 #define LIBRARY_FEATURE_SHTC3_ENABLED
 #define LIBRARY_FEATURE_APDS9960_ENABLED
 #define LIBRARY_FEATURE_LSM6DS3_ENABLED
+#define LIBRARY_FEATUTE_MICROSD_ENABLED
 
+// LIBRARY_FEATURE_ROTARY_ENCODER_ENABLED feature.
 #include "RotaryEnc/AS5600.h"
+
+// LIBRARY_FEATURE_WS_LED_ENABLED feature.
 #include "Adafruit_NeoPixel/Adafruit_NeoPixel.h"
+
+// LIBRARY_FEATURE_SHTC3_ENABLED feature.
 #include "SparkFun_SHTC3/SparkFun_SHTC3.h"
+
+// LIBRARY_FEATURE_APDS9960_ENABLED feature.
 #include "SparkFun_APDS9960/SparkFun_APDS9960.h"
+
+// LIBRARY_FEATURE_LSM6DS3_ENABLED feature.
 #include "SparkFun_LSM6DS3/SparkFunLSM6DS3.h"
+
+// LIBRARY_FEATUTE_MICROSD_ENABLED feature.
+#include "SdFat/SdFat.h"
+#include "microSD/microSD.h"
 #endif
 
 #endif
