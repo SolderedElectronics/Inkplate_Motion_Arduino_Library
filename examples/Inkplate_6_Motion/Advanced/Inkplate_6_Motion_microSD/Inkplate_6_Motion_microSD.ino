@@ -15,54 +15,48 @@ void setup()
     // Initialize Inkplate Motion library.
     inkplate.begin();
 
-    // Power up the card!
-    inkplate.internalIO.pinModeIO(PERIPHERAL_SD_ENABLE_PIN, OUTPUT, true);
-    delay(500);
+    // Set text scale to 3.
+    inkplate.setTextSize(3);
 
     // Try to init the card!
-    if (!inkplate.microSD.sdCardInit())
+    if (!inkplate.microSDCardInit())
     {
-        Serial.println("microSD card init failed, code halt!");
+        inkplate.println("microSD card init failed, code halt!");
+        inkplate.partialUpdate();
 
         while(1);
     }
     else
     {
-        Serial.println("microSD init ok!");
+        inkplate.println("microSD init ok!");
+        inkplate.partialUpdate();
     }
 
-    inkplate.microSD.sd.ls();
-
-    File file = inkplate.microSD.sd.open("i2c_recv.c", O_RDONLY);
+    File file = inkplate.sdFat.open("i2c_recv.c", O_RDONLY);
 
     if (!file)
     {
-        Serial.println("Open failed!");
+        inkplate.println("Open failed!");
+        inkplate.partialUpdate();
     }
     else
     {
+        inkplate.setTextSize(1);
         uint32_t n = file.available();
         while (n)
         {
             uint8_t buffer[4096];
-
             uint32_t _size = n > 4096?4096:n;
-
-unsigned long timestamp1 = micros();
-
             file.read(buffer, _size);
-unsigned long timestamp2 = micros();
-Serial.println(timestamp2 - timestamp1, DEC);
-Serial.println(_size, DEC);
-
             n-=_size;
             
             for (int i = 0; i < _size; i++)
             {
-                Serial.write(buffer[i]);
+                inkplate.write(buffer[i]);
             }
         }
         file.close();
+        inkplate.partialUpdate();
     }
     
 }

@@ -263,6 +263,17 @@ bool STM32H7RTC::isTimeSet()
     return (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_INDEX) == RTC_BKP_VALUE) ? true : false;
 }
 
+
+void STM32H7RTC::writeToBackupReg(uint16_t _addr, void* _ptr, int _n)
+{
+
+}
+
+void STM32H7RTC::readFromBackupReg(uint16_t _addr, void* _ptr, int _n)
+{
+
+}
+
 extern "C" void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
     UNUSED(hrtc);

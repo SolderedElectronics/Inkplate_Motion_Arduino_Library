@@ -54,6 +54,9 @@ void setup()
     inkplate.setTextColor(BLACK, WHITE);
     inkplate.setTextWrap(true);
 
+    // First enable the WiFi peripheral.
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_WIFI, true);
+
     // Initialize At Over SPI library.
     if (!WiFi.init())
     {

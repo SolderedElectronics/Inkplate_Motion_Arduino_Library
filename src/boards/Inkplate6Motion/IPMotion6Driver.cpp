@@ -1,5 +1,7 @@
 #include "IPMotion6Driver.h"
 
+#include "../../system/wifi/esp32SpiAt.h"
+
 // Header guard for the Arduino include
 #ifdef BOARD_INKPLATE6_MOTION
 
@@ -23,6 +25,10 @@ extern SDRAM_HandleTypeDef hsdram1; // SDRAM
 extern MDMA_HandleTypeDef hmdma_mdma_channel40_sw_0;
 extern MDMA_HandleTypeDef hmdma_mdma_channel41_sw_0;
 
+// STM32 SPI class for internal Inkplate SPI (used by microSD card and WiFi).
+// Must be declared this way, for some reason, it hangs when used new operator on microSD card init.
+SPIClass _inkplateSystemSPI(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO, INKPLATE_MICROSD_SPI_SCK);
+
 EPDDriver::EPDDriver()
 {
     // Empty constructor.
@@ -37,6 +43,14 @@ int EPDDriver::initDriver()
     {
         INKPLATE_DEBUG_MGS("GPIO expander init fail");
     }
+
+    // Initialize every Inkplate 6 Motion peripheral.
+    shtc3.begin();
+    lsm6ds3.begin();
+    apds9960.init();
+
+    // Put every peripheral into low power mode.
+    peripheralState(INKPLATE_PERIPHERAL_ALL_PERI, false);
 
     // Configure GPIO pins.
     gpioInit();
@@ -64,8 +78,8 @@ int EPDDriver::initDriver()
     // Turn off EPD PMIC.
     internalIO.digitalWriteIO(TPS_WAKE_PIN, LOW, true);
 
-    // Initialize microSD driver. Actually it's just kinda wrapper for microSD class.
-    microSD.begin(&_systemSpi, INKPLATE_MICROSD_SPI_CS, 20);
+    // Setup SPI config for the SdFat library for the STM32.
+    _microSDCardSPIConf = new SdSpiConfig(INKPLATE_MICROSD_SPI_CS, SHARED_SPI, SD_SCK_MHZ(20), &_inkplateSystemSPI);
 
     INKPLATE_DEBUG_MGS("EPD Driver init done");
 
@@ -723,9 +737,11 @@ int EPDDriver::epdPSU(uint8_t _state)
             return 0;
         }
 
+        // Set all GPIO pins to the EPD to Hi-Z.
         epdGpioState(EPD_DRIVER_PINS_H_ZI);
 
-        internalIO.digitalWriteIO(TPS_VCOM_CTRL_PIN, LOW, true);
+        // Disable TPS..
+        internalIO.digitalWriteIO(TPS_WAKE_PIN, LOW, true);
 
         // Set new PMIC state.
         _epdPSUState = 0;
@@ -751,15 +767,15 @@ void EPDDriver::gpioInit()
     pinMode(EPD_BUFF_PIN, OUTPUT);
 
     // Enable the external RAM (inverse logic due P-MOS) and enable it by default.
-    pinMode(RAM_EN_GPIO, OUTPUT);
-    digitalWrite(RAM_EN_GPIO, LOW);
+    pinMode(INKPLATE_SDRAM_EN, OUTPUT);
+    digitalWrite(INKPLATE_SDRAM_EN, LOW);
 
     // Disable battery measurement pin
-    pinMode(BATTERY_MEASUREMENT_EN, OUTPUT);
-    digitalWrite(BATTERY_MEASUREMENT_EN, LOW);
+    pinMode(INKPLATE_BATT_MEASURE_EN, OUTPUT);
+    digitalWrite(INKPLATE_BATT_MEASURE_EN, LOW);
 
     // Set battery measurement pin as analog input.
-    pinMode(ANALOG_BATTERY_MEASUREMENT, INPUT_ANALOG);
+    pinMode(INKPLATE_BATT_MEASURE, INPUT_ANALOG);
 
     // Set TPS control pins to outputs.
     internalIO.pinModeIO(TPS_PWRUP_PIN, OUTPUT, true);
@@ -767,8 +783,8 @@ void EPDDriver::gpioInit()
     internalIO.pinModeIO(TPS_VCOM_CTRL_PIN, OUTPUT, true);
 
     // Set pin for the AS5600 power MOSFET and disable it.
-    internalIO.pinModeIO(PERIPHERAL_POSITIONENC_ENABLE_PIN, OUTPUT, true);
-    internalIO.digitalWriteIO(PERIPHERAL_POSITIONENC_ENABLE_PIN, LOW, true);
+    internalIO.pinModeIO(INKPLATE_POSITION_ENC_EN, OUTPUT, true);
+    internalIO.digitalWriteIO(INKPLATE_POSITION_ENC_EN, LOW, true);
 
     // Set the type of the EPD control pins.
     pinMode(EPD_CKV_GPIO, OUTPUT);
@@ -777,21 +793,24 @@ void EPDDriver::gpioInit()
     pinMode(EPD_OE_GPIO, OUTPUT);
     pinMode(EPD_GMODE_GPIO, OUTPUT);
     pinMode(EPD_LE_GPIO, OUTPUT);
+
+    // Set the SPI pin for the WiFi.
+    WiFi.hwSetup(&_inkplateSystemSPI);
 }
 
 double EPDDriver::readBattery()
 {
     // Enable MOSFET for viltage divider.
-    digitalWrite(BATTERY_MEASUREMENT_EN, HIGH);
+    digitalWrite(INKPLATE_BATT_MEASURE_EN, HIGH);
 
     // Wait a little bit.
     delay(1);
 
     // Get an voltage measurement from ADC.
-    uint16_t _adcRaw = analogRead(ANALOG_BATTERY_MEASUREMENT);
+    uint16_t _adcRaw = analogRead(INKPLATE_BATT_MEASURE);
 
     // Disable MOSFET for voltage divider (to save power).
-    digitalWrite(BATTERY_MEASUREMENT_EN, LOW);
+    digitalWrite(INKPLATE_BATT_MEASURE_EN, LOW);
 
     // Calculate the voltage from ADC measurement. Divide by 2^16) - 1 to get
     // measurement voltage in the form of the percentage of the ADC voltage,
@@ -895,6 +914,7 @@ void EPDDriver::drawBitmapFast(const uint8_t *_p)
     // To-Do: Add x, y, w and h.
     // To-Do2: Check for input parameters.
     // To-Do3: Check for screen rotation!
+    // To-Do4: Use HW accelerator for all that if possible?
 
     // Copy line by line.
     for (int i = 0; i < SCREEN_HEIGHT * SCREEN_WIDTH / 8; i += sizeof(_oneLine1))
@@ -906,6 +926,198 @@ void EPDDriver::drawBitmapFast(const uint8_t *_p)
         HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_oneLine1, (uint32_t)(_pendingScreenFB) + i, sizeof(_oneLine1), 1);
         while (stm32FMCSRAMCompleteFlag() == 0);
         stm32FMCClearSRAMCompleteFlag();
+    }
+}
+
+bool EPDDriver::microSDCardInit()
+{
+    // Power up the card!
+    internalIO.pinModeIO(INKPLATE_MICROSD_PWR_EN, OUTPUT, true);
+
+    // Set pin to low (PMOS is used as a switch).
+    internalIO.digitalWriteIO(INKPLATE_MICROSD_PWR_EN, LOW, true);
+
+    // Wait a little bit.
+    delay(10);
+
+    // Try to init microSD card!
+    _microSdInit = sdFat.begin(*_microSDCardSPIConf);
+
+    // Return the result of microSD card initializaton.
+    return _microSdInit;
+}
+
+// Enable selected peripherals.
+void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
+{
+    // You can disable or enable multiple peripher. at once.
+    // Check if SDRAM needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_SDRAM)
+    {
+        if (!_en)
+        {
+            // If SDRAM must be disabled, first de-init the SDRAM.
+            stM32FmcDeInit();
+
+            // Disable power to the SDRAM.
+            digitalWrite(INKPLATE_SDRAM_EN, HIGH);
+        }
+        else
+        {
+            // First enable power to the SDRAM.
+            digitalWrite(INKPLATE_SDRAM_EN, HIGH);
+
+            // Re-init SDRAM.
+            stm32FmcInit();
+        }
+    }
+    
+    // Check if magnetic rotary encoder needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_ROTARY_ENCODER)
+    {
+        if (_en)
+        {
+            // If PWR MOSDET needs to be enabled, set controll pin from the IO Expander to output first.
+            internalIO.pinModeIO(INKPLATE_POSITION_ENC_EN, OUTPUT, true);
+            // Set the same pin to high, enabling power to the magnetic rotary encoder.
+            internalIO.digitalWriteIO(INKPLATE_POSITION_ENC_EN, HIGH, true);
+        }
+        else
+        {
+            // If PWR MOSDET needs to be disabled, firsdt set the pin to LOW.
+            internalIO.digitalWriteIO(INKPLATE_POSITION_ENC_EN, LOW, true);
+
+            // Set it to input (external pull-down resistor on the gate will keep it low).
+            internalIO.pinModeIO(INKPLATE_POSITION_ENC_EN, INPUT, true);
+        }
+    }
+
+    // Check if both addressable RGB LED needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_WS_LED)
+    {
+        if (_en)
+        {
+            // Set pin connected to the PWR MOSFET gate to the output.
+            internalIO.pinModeIO(INKPLATE_WSLED_EN, OUTPUT, true);
+
+            // Set it to high, thus enabling the power to the LED.
+            internalIO.digitalWriteIO(INKPLATE_WSLED_EN, HIGH, true);
+        }
+        else
+        {
+            // If needs to disabled, shut down power to the LED by pulling MOSFET gate to the GND.
+            internalIO.digitalWriteIO(INKPLATE_WSLED_EN, LOW, true);
+
+            // Set same GPIO to input, to be pulled externally by pull-down resistor.
+            internalIO.pinModeIO(INKPLATE_WSLED_EN, INPUT, true);
+        }
+    }
+
+    // Check if SHTC3 needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_SHTC3)
+    {
+        if (!_en)
+        {
+            // Send command for sleep.
+            shtc3.sleep();
+        }
+        else
+        {
+            // Send commands for setting current mode: Polling, RH first, Normal power mode.
+            shtc3.setMode(SHTC3_CMD_CSD_RHF_NPM);
+        }
+    }
+
+    // Check if APDS9960 needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_APDS9960)
+    {
+       if (!_en)
+        {
+            // Send command for disable power to the APDS9960.
+            apds9960.disablePower();
+        }
+        else
+        {
+            // Re-enable APDS9960.
+            apds9960.enablePower();
+        }
+    }
+
+    if (_peripheral & INKPLATE_PERIPHERAL_LSM6DS3)
+    {
+        if (!_en)
+        {
+            // Disable everything!
+            lsm6ds3.settings.gyroEnabled = 0;
+            lsm6ds3.settings.accelEnabled = 0;
+            lsm6ds3.settings.tempEnabled = 0;
+
+            // Update settings.
+            lsm6ds3.begin(&lsm6ds3.settings);
+        }
+        else
+        {
+            // Enable all!
+            lsm6ds3.settings.gyroEnabled = 1;
+            lsm6ds3.settings.accelEnabled = 1;
+            lsm6ds3.settings.tempEnabled = 1;
+
+            // Update settings.
+            lsm6ds3.begin(&lsm6ds3.settings);
+        }
+    }
+
+
+    // Check if microSD needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_MICROSD)
+    {
+        if (_en)
+        {
+            // First, set control pin for the microSD power MOSFET to output.
+            internalIO.pinModeIO(INKPLATE_MICROSD_PWR_EN, OUTPUT, true);
+
+            // Send power to the microSD.
+            internalIO.digitalWriteIO(INKPLATE_MICROSD_PWR_EN, LOW, true);
+        }
+        else
+        {
+            // First disable power to the microSD.
+            internalIO.digitalWriteIO(INKPLATE_MICROSD_PWR_EN, HIGH, true);
+
+
+            // Kepp the PWR MOSFET disabled with external pull-up resistor.
+            internalIO.pinModeIO(INKPLATE_MICROSD_PWR_EN, INPUT, true);
+
+            // Set variable for microSD card initializaton status to false (used for enabling/disabling WiFi).
+            _microSdInit = false;
+        }
+    }
+
+    // Check if ESP32 needs to be enabled/disabled.
+    if (_peripheral & INKPLATE_PERIPHERAL_WIFI)
+    {
+        // This is only for the microSD card issue. MicroSD card and ESP32 share SPI bus.
+        // If the card is inserted but it's not enabled, STM32 can't communicated with the
+        // ESP32 since SPI bus is loaded with the microSD card. So, in the case of the usage of
+        // the WiFi, microSD card needs to also be enabled.
+        if (_en)
+        {
+            // First, set control pin for the microSD power MOSFET to output.
+            internalIO.pinModeIO(INKPLATE_MICROSD_PWR_EN, OUTPUT, true);
+
+            // Send power to the microSD.
+            internalIO.digitalWriteIO(INKPLATE_MICROSD_PWR_EN, LOW, true);
+        }
+        else if (!_microSdInit && !_en)
+        {
+            // Only if the card is not currently in use, remove microSD card supply while disabling WiFi.
+            // First disable power to the microSD.
+            internalIO.digitalWriteIO(INKPLATE_MICROSD_PWR_EN, HIGH, true);
+
+            // Kepp the PWR MOSFET disabled with external pull-up resistor.
+            internalIO.pinModeIO(INKPLATE_MICROSD_PWR_EN, INPUT, true);
+        }
+
     }
 }
 
@@ -948,21 +1160,6 @@ void EPDDriver::selectDisplayMode(uint8_t _mode)
 uint8_t EPDDriver::getDisplayMode()
 {
     return _displayMode;
-}
-
-void EPDDriver::peripheral(uint8_t _selectedPeripheral, bool _en)
-{
-    // Check what peripheral needs to be disabled or enabled.
-    switch (_selectedPeripheral)
-    {
-        case INKPLATE_ROTARY_ENCODER_PERIPH:
-            internalIO.digitalWriteIO(PERIPHERAL_POSITIONENC_ENABLE_PIN, _en, true);
-            Serial.println("Enc on!");
-            break;
-        case INKPLATE_WS_LED_PERIPH:
-            internalIO.digitalWriteIO(PERIPHERAL_WSLED_ENABLE_PIN, _en, true);
-            break;
-    }
 }
 
 void EPDDriver::setFullUpdateTreshold(uint16_t _numberOfPartialUpdates)

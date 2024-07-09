@@ -40,6 +40,8 @@ class STM32H7RTC
     RTC_AlarmTypeDef getAlarm();
     void setAlarmOutput(bool _outEn, uint32_t _alarm);
     bool isTimeSet();
+    void writeToBackupReg(uint16_t _addr, void* _ptr, int _n);
+    void readFromBackupReg(uint16_t _addr, void* _ptr, int _n);
 };
 
 #endif

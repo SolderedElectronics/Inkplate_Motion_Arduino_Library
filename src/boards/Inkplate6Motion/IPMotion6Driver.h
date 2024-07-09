@@ -130,10 +130,14 @@ class EPDDriver : public Helpers
         // Set the automatic partial update.
         void setFullUpdateTreshold(uint16_t _numberOfPartialUpdates);
 
-        void peripheral(uint8_t _selectedPeripheral, bool _en);
-
         // Should be moved into Inkplate.h or Graphics.h.
         void drawBitmapFast(const uint8_t *_p);
+
+        // Initializer for microSD card.
+        bool microSDCardInit();
+
+        // Enable selected peripherals.
+        void peripheralState(uint8_t _peripheral, bool _en);
 
         // Object for ePaper power managment IC.
         EpdPmic pmic;
@@ -148,7 +152,7 @@ class EPDDriver : public Helpers
         AS5600 rotaryEncoder;
 
         // Object for NeoPixel LED.
-        Adafruit_NeoPixel led = Adafruit_NeoPixel(2, PERIPHERAL_WSLED_DATA_PIN, NEO_GRB + NEO_KHZ800);
+        Adafruit_NeoPixel led = Adafruit_NeoPixel(2, INKPLATE_WSLED_DIN, NEO_GRB + NEO_KHZ800);
 
         // Object for SHTC3 temperature and humidity sensor.
         SHTC3 shtc3;
@@ -159,8 +163,8 @@ class EPDDriver : public Helpers
         // Object for LSM6DS3 accelerometer & gyroscope.
         LSM6DS3 lsm6ds3 = LSM6DS3(I2C_MODE, 0x6A);
 
-        // MicroSD card object.
-        MicroSD microSD;
+        // Object for the Inkplate on-board micro SD card.
+        SdFat sdFat;
 
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.
@@ -188,6 +192,9 @@ class EPDDriver : public Helpers
         // Also returns the number of pixel that will be changed.
         uint32_t differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
 
+        // Object for the SdFat SPI STM32 library.
+        SdSpiConfig* _microSDCardSPIConf = nullptr;
+
         // Default EPD PSU state is off.
         uint8_t _epdPSUState = 0;
 
@@ -211,6 +218,9 @@ class EPDDriver : public Helpers
 
         // Variable that set the user-defined treshold for the full update. If zero, automatic full update is disabled.
         uint16_t _partialUpdateLimiter = 0;
+
+        // Variable keeps current status of the microSD card initializaton.
+        bool _microSdInit = false;
 
         // Fast LUT table for conversion from 2 * 4 bit grayscale pixel to EPD Wavefrom.
         uint8_t _fastGLUT[65536];

@@ -42,6 +42,9 @@ void setup()
     inkplate.setTextColor(BLACK, WHITE);
     inkplate.setTextWrap(true);
 
+    // First enable the WiFi peripheral.
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_WIFI, true);
+
     // Initialize ESP32 AT Commands Over SPI library.
     if (!WiFi.init())
     {

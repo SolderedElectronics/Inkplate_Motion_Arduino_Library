@@ -50,6 +50,7 @@ class WiFiClass
     WiFiClass();
 
     // Public ESP32-C3 system functions.
+    void hwSetup(SPIClass *_spiClass);
     bool init(bool _resetSettings = true);
     bool power(bool _en, bool _resetSettings = true);
     bool sendAtCommand(char *_atCommand, uint16_t _len = 0);
@@ -109,6 +110,9 @@ class WiFiClass
 
     // Data buffer for the ESP32 SPI commands.
     char _dataBuffer[INKPLATE_ESP32_AT_CMD_BUFFER_SIZE];
+
+    // SPI Class pointer.
+    SPIClass *_spi;
 
     // Variables for WiFi Scan.
     int16_t _startApindex[INKPLATE_ESP32_MAX_SCAN_AP];

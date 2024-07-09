@@ -399,6 +399,15 @@ void stm32FmcInit()
     INKPLATE_DEBUG_MGS("STM32 FMC Driver Init done");
 }
 
+void stM32FmcDeInit()
+{
+    // De-Init FMC.
+    HAL_FMC_MspDeInit();
+
+    // Disable clock to FMC.
+    __HAL_RCC_FMC_CLK_ENABLE();
+}
+
 void stm32MDMAInit()
 {
     /* MDMA controller clock enable */

@@ -25,6 +25,8 @@ void Inkplate::begin(uint8_t _mode)
     if (_beginDone == 1)
         return;
     // Init I2C (Arduino Wire Library).
+    Wire.setSCL(INKPLATE_TPS_SDA);
+    Wire.setSCL(INKPLATE_TPS_SCL);
     Wire.begin();
 
 // Force init. of the Serial if debug is used.

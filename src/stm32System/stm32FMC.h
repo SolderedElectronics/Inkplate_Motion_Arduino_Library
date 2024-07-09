@@ -26,6 +26,7 @@ extern "C" void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram);
 extern "C" void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef* hsdram);
 
 void stm32FmcInit();
+void stM32FmcDeInit();
 void stm32MpuInit();
 void stm32MDMAInit();
 void stm32FMCSRAMTransferCompleteCallback(MDMA_HandleTypeDef *_mdma);

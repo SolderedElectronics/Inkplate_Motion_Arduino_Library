@@ -7,6 +7,8 @@ static volatile bool _esp32HandshakePinFlag = false;
 // SPI Settings for ESP32.
 static SPISettings _esp32AtSpiSettings(20000000ULL, MSBFIRST, SPI_MODE0);
 
+extern SPIClass _inkplateSystemSPI;
+
 // ISR for the ESP32 handshake pin. This will be called automatically from the interrupt.
 static void esp32HandshakeISR()
 {
@@ -20,6 +22,13 @@ static void esp32HandshakeISR()
 WiFiClass::WiFiClass()
 {
     // Empty...for now.
+}
+
+void WiFiClass::hwSetup(SPIClass *_spiClass)
+{
+    // Copy the references.
+    _spi = _spiClass;
+    //epd = _epdClass;
 }
 
 /**
@@ -37,14 +46,8 @@ WiFiClass::WiFiClass()
 bool WiFiClass::init(bool _resetSettings)
 {
     // Set the hardware level stuff first.
-
-    // Set the SPI pins.
-    SPI.setMISO(INKPLATE_ESP32_MISO_PIN);
-    SPI.setMOSI(INKPLATE_ESP32_MOSI_PIN);
-    SPI.setSCLK(INKPLATE_ESP32_SCK_PIN);
-
     // Initialize Arduino SPI Library.
-    SPI.begin();
+    _spi->begin();
 
     // Set handshake pin.
     pinMode(INKPLATE_ESP32_HANDSHAKE_PIN, INPUT_PULLUP);
@@ -1287,21 +1290,21 @@ uint8_t WiFiClass::requestSlaveStatus(uint16_t *_len)
 void WiFiClass::transferSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiDataLen)
 {
     // Get the SPI STM32 HAL Typedef Handle.
-    SPI_HandleTypeDef *_spiHandle = SPI.getHandle();
+    SPI_HandleTypeDef *_spiHandle = _spi->getHandle();
 
     // Activate ESP32 SPI lines by pulling CS pin to low.
     HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 
     // Send everything, but the data.
-    SPI.beginTransaction(_esp32AtSpiSettings);
-    SPI.transfer(_spiPacket->cmd);
-    SPI.transfer(_spiPacket->addr);
-    SPI.transfer(_spiPacket->dummy);
+    _spi->beginTransaction(_esp32AtSpiSettings);
+    _spi->transfer(_spiPacket->cmd);
+    _spi->transfer(_spiPacket->addr);
+    _spi->transfer(_spiPacket->dummy);
 
-    // SPI.transfer(_spiPacket->data, _spiDataLen);
+    // _spi->transfer(_spiPacket->data, _spiDataLen);
     HAL_SPI_TransmitReceive(_spiHandle, (uint8_t *)_spiPacket->data, (uint8_t *)_spiPacket->data, _spiDataLen,
                             HAL_MAX_DELAY);
-    SPI.endTransaction();
+    _spi->endTransaction();
 
     // Disable ESP32 SPI lines by pulling CS pin to high.
     HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
@@ -1318,7 +1321,7 @@ void WiFiClass::transferSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spi
 void WiFiClass::sendSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiDataLen)
 {
     // Get the SPI STM32 HAL Typedef Handle.
-    SPI_HandleTypeDef *_spiHandle = SPI.getHandle();
+    SPI_HandleTypeDef *_spiHandle = _spi->getHandle();
 
     // Pack ESP32 SPI Packer Header data.
     uint8_t _esp32SpiHeader[] = {_spiPacket->cmd, _spiPacket->addr, _spiPacket->dummy};
@@ -1327,12 +1330,12 @@ void WiFiClass::sendSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiData
     HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 
     // Send everything, but the data.
-    SPI.beginTransaction(_esp32AtSpiSettings);
+    _spi->beginTransaction(_esp32AtSpiSettings);
     HAL_SPI_Transmit(_spiHandle, _esp32SpiHeader, sizeof(_esp32SpiHeader) / sizeof(uint8_t), HAL_MAX_DELAY);
 
     // Send data.
     HAL_SPI_Transmit(_spiHandle, _spiPacket->data, _spiDataLen, HAL_MAX_DELAY);
-    SPI.endTransaction();
+    _spi->endTransaction();
 
     // Disable ESP32 SPI lines by pulling CS pin to high.
     HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
