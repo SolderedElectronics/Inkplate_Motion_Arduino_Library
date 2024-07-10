@@ -1,6 +1,9 @@
 // Include Inkplate Motion Library.
 #include <InkplateMotion.h>
 
+// Include Soldered font.
+#include "solderedFont30pt7b.h"
+
 // Create Inkplate object.
 Inkplate inkplate;
 
@@ -36,14 +39,14 @@ void setup()
         inkplate.rtc.writeToBackupRAM(0, &value, sizeof(value));
     }
 
-    // Set text scaling to 4.
-    inkplate.setTextSize(4); 
+    // Set Soldered font.
+    inkplate.setFont(&solderedFont30pt7b); 
 
     // Set text color to black with white background. 
     inkplate.setTextColor(BLACK, WHITE);
 
-    // Start printing text at X = 0, Y = 150.
-    inkplate.setCursor(0, 150);
+    // Start printing text at X = 0, Y = 50.
+    inkplate.setCursor(0, 50);
 
     // Print the reset cause.
     printResetCause();
@@ -94,53 +97,53 @@ void printResetCause(void)
     
     if (reset_cause & RCC_RSR_CPURSTF)
     {
-        inkplate.printf("CPU Reset\n");
+        inkplate.printf("-CPU Reset\n");
     }
     
     if (reset_cause & RCC_RSR_D1RSTF)
     {
-        inkplate.printf("Deep sleep reset (D1)\n");
+        inkplate.printf("-Deep sleep reset (D1)\n");
     }
     
     if (reset_cause & RCC_RSR_D2RSTF)
     {
-        inkplate.printf("Deep sleep reset (D2)\n");
+        inkplate.printf("-Deep sleep reset (D2)\n");
     }
 
     if (reset_cause & RCC_RSR_BORRSTF)
     {
-        inkplate.printf("Brownout reset\n");
+        inkplate.printf("-Brownout reset\n");
     }
     
     if (reset_cause & RCC_RSR_PINRSTF)
     {
-        inkplate.printf("Pin reset\n");
+        inkplate.printf("-Pin reset\n");
     }
 
     if (reset_cause & RCC_RSR_PORRSTF)
     {
-        inkplate.printf("Power-on reset\n");
+        inkplate.printf("-Power-on reset\n");
     }
 
     if (reset_cause & RCC_RSR_SFTRSTF)
     {
-        inkplate.printf("Software reset\n");
+        inkplate.printf("-Software reset\n");
     }
 
     if (reset_cause & RCC_RSR_IWDG1RSTF)
     {
-        inkplate.printf("Independent watchdog reset\n");
+        inkplate.printf("-Independent watchdog reset\n");
     }
 
     if (reset_cause & RCC_RSR_WWDG1RSTF)
     {
-        inkplate.printf("Window watchdog reset\n");
+        inkplate.printf("-Window watchdog reset\n");
     }
 
 
     if (reset_cause & RCC_RSR_LPWRRSTF)
     {
-        inkplate.printf("Low-power reset\n");
+        inkplate.printf("-Low-power reset\n");
     }
 
     // Clear the reset flags
