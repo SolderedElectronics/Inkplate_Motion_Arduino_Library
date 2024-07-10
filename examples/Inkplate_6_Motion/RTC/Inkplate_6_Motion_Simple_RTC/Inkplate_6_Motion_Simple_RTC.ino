@@ -57,7 +57,7 @@ void setup()
     // inkplate.rtc.begin(RTC_HOURFORMAT_24, true);
 
     // Check if the time is already set. If is not, set it!
-    if (!inkplate.rtc.isTimeSet())
+    if (!inkplate.rtc.isRTCSet())
     {
         inkplate.rtc.setTime(hours, minutes, seconds, subSeconds);
         inkplate.rtc.setDate(day, month, year, weekday);

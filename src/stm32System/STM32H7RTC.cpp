@@ -9,6 +9,9 @@ RTC_HandleTypeDef STM32H7RTC::begin(uint8_t _format, bool _resetRtc)
 {
     // Enable backup domain (needed for RTC).
     HAL_PWR_EnableBkUpAccess();
+    
+    // Enable backup regulator.
+    HAL_PWR_EnableBkUpReg();
 
     // Set highest drive for xtal (consumes little bit more power, but RTC should be more stable).
     __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_HIGH);
@@ -52,7 +55,7 @@ RTC_HandleTypeDef STM32H7RTC::begin(uint8_t _format, bool _resetRtc)
         Error_Handler();
     }
 
-    if (!_resetRtc && isTimeSet())
+    if (!_resetRtc && isRTCSet())
         return hrtc;
 
     enableBackupDomain();
@@ -89,7 +92,9 @@ void STM32H7RTC::setTime(uint8_t _h, uint8_t _m, uint8_t _s, uint32_t _ss, uint8
     myTime.DayLightSaving = _dayLightSaving;
     myTime.StoreOperation = RTC_STOREOPERATION_RESET;
     HAL_RTC_SetTime(&hrtc, &myTime, RTC_FORMAT);
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_INDEX, RTC_BKP_VALUE);
+
+    // Set the flag for properly set RTC.
+    rtcSetFlag();
 }
 
 RTC_TimeTypeDef STM32H7RTC::getTime(uint8_t *_h, uint8_t *_m, uint8_t *_s, uint32_t *_ss, uint8_t *_pmAm,
@@ -126,7 +131,8 @@ void STM32H7RTC::setDate(uint8_t _d, uint8_t _m, uint16_t _y, uint8_t _weekday)
     myDate.Date = _d;
     myDate.Year = (uint8_t)(_y % 100);
     HAL_RTC_SetDate(&hrtc, &myDate, RTC_FORMAT);
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_INDEX, RTC_BKP_VALUE);
+
+    rtcSetFlag();
 }
 
 RTC_DateTypeDef STM32H7RTC::getDate(uint8_t *_d, uint8_t *_m, uint8_t *_y, uint8_t *_weekday)
@@ -258,20 +264,59 @@ void STM32H7RTC::setAlarmOutput(bool _outEn, uint32_t _alarm)
     }
 }
 
-bool STM32H7RTC::isTimeSet()
+void STM32H7RTC::rtcSetFlag()
+{
+    // Write a magic number to know that RTC is already set.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_INDEX, RTC_BKP_VALUE);
+}
+
+bool STM32H7RTC::isRTCSet()
 {
     return (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_INDEX) == RTC_BKP_VALUE) ? true : false;
 }
 
 
-void STM32H7RTC::writeToBackupReg(uint16_t _addr, void* _ptr, int _n)
+void STM32H7RTC::writeToBackupRAM(uint16_t _addr, void *_data, int _n)
 {
+    // Convert backup RAM address (from 0 - 4095) to the physical address of the register.
+    uint8_t *_reg = (uint8_t*)(0x38800000 + (_addr & 0x00000FFF));
 
+    // Convert data into bytes.
+    uint8_t *_byteData = (uint8_t*)_data;
+
+    // Flush the cache! Min. size for the cache flush is 32 bytes.
+    SCB_CleanDCache_by_Addr((uint32_t *)_byteData, _n>32?_n:32);
+
+    // Store bytes.
+    for (int i = 0; i < _n; i++)
+    {
+        _reg[i] = _byteData[i];
+    }
+
+    // Flush the cache! Min. size for the cache flush is 32 bytes.
+    SCB_CleanDCache_by_Addr((uint32_t *)_reg, _n>32?_n:32);
 }
 
-void STM32H7RTC::readFromBackupReg(uint16_t _addr, void* _ptr, int _n)
-{
 
+void STM32H7RTC::readFromBackupRAM(uint16_t _addr, void *_data, int _n)
+{
+    // Convert backup RAM address (from 0 - 4095) to the physical address of the register.
+    uint8_t *_reg = (uint8_t*)(0x38800000 + (_addr & 0x00000FFF));
+
+    // Convert data into bytes.
+    uint8_t *_byteData = (uint8_t*)_data;
+
+    // Flush the cache! Min. size for the cache flush is 32 bytes.
+    SCB_CleanDCache_by_Addr((uint32_t *)_reg, _n>32?_n:32);
+
+    // Store bytes.
+    for (int i = 0; i < _n; i++)
+    {
+        _byteData[i] = _reg[i];
+    }
+
+    // Flush the cache! Min. size for the cache flush is 32 bytes.
+    SCB_CleanDCache_by_Addr((uint32_t *)_byteData, _n>32?_n:32);
 }
 
 extern "C" void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)

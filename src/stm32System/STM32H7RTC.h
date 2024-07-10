@@ -39,9 +39,10 @@ class STM32H7RTC
                               uint8_t *_pmAm, uint32_t *_dayLightSaving);
     RTC_AlarmTypeDef getAlarm();
     void setAlarmOutput(bool _outEn, uint32_t _alarm);
-    bool isTimeSet();
-    void writeToBackupReg(uint16_t _addr, void* _ptr, int _n);
-    void readFromBackupReg(uint16_t _addr, void* _ptr, int _n);
+    bool isRTCSet();
+    void rtcSetFlag();
+    void writeToBackupRAM(uint16_t _addr, void *_data, int _n);
+    void readFromBackupRAM(uint16_t _addr, void *_data, int _n);
 };
 
 #endif
