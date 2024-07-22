@@ -6,7 +6,7 @@
 
 All in one and ready to use Inkplate Motion Arduino Library. Use e-paper with one of the quickest refresh updates with user-frendly Arduino IDE. Draw text, shapes or image with just few lines on code!
 
-# ⚠️This library is still in the development!⚠️
+# ⚠️This library is still in development!⚠️
 
 ## Getting started
 1. Install Inkplate Motion Board Definition though [Dasduino Board Definition](https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE). Select Inklplate Motion board.
