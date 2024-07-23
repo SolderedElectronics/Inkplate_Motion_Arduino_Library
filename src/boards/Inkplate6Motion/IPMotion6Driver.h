@@ -119,8 +119,6 @@ class EPDDriver : public Helpers
         void partialUpdate(uint8_t _leaveOn = 0);
         void partialUpdate4Bit(uint8_t _leaveOn);
         void display(uint8_t _leaveOn = 0);
-        void display1b(uint8_t _leaveOn);
-        void display4b(uint8_t _leaveOn);
         int epdPSU(uint8_t _state);
         bool loadWaveform(InkplateWaveform _customWaveform);
         double readBattery();
@@ -191,6 +189,12 @@ class EPDDriver : public Helpers
         // Function calculates the difference between tfo framebuffers (usually between current image on the screen and pending in the MCU memory).
         // Also returns the number of pixel that will be changed.
         uint32_t differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
+
+        void differenceMask4Bit(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
+
+        void display1b(uint8_t _leaveOn);
+        
+        void display4b(uint8_t _leaveOn);
 
         // Object for the SdFat SPI STM32 library.
         SdSpiConfig* _microSDCardSPIConf = nullptr;

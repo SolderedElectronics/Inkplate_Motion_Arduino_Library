@@ -60,7 +60,7 @@ class Inkplate : public Adafruit_GFX, public InkplateBoardClass
     void setRotation(uint8_t);
     //int drawBitmapFromSD(SdFile *p, int x, int y);
     //int drawBitmapFromSD(char *fileName, int x, int y);
-    //void drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h);
+    void drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h);
 
   protected:
 

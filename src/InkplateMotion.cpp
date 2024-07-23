@@ -115,26 +115,26 @@ void Inkplate::setRotation(uint8_t r)
     }
 }
 
-// void Inkplate::drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h)
-// {
-//     if (getDisplayMode() != INKPLATE_GL16)
-//         return;
-//     uint8_t _rem = _w % 2;
-//     int i, j;
-//     int xSize = _w / 2 + _rem;
+void Inkplate::drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h)
+{
+    if (getDisplayMode() != INKPLATE_GL16)
+        return;
+    uint8_t _rem = _w % 2;
+    int i, j;
+    int xSize = _w / 2 + _rem;
 
-//     for (i = 0; i < _h; i++)
-//     {
-//         for (j = 0; j < xSize - 1; j++)
-//         {
-//             drawPixel((j * 2) + _x, i + _y, (*(_p + xSize * (i) + j) >> 4));
-//             drawPixel((j * 2) + 1 + _x, i + _y, (*(_p + xSize * (i) + j) & 0xff));
-//         }
-//         drawPixel((j * 2) + _x, i + _y, (*(_p + xSize * (i) + j) >> 4));
-//         if (_rem == 0)
-//             drawPixel((j * 2) + 1 + _x, i + _y, (*(_p + xSize * (i) + j) & 0xff));
-//     }
-// }
+    for (i = 0; i < _h; i++)
+    {
+        for (j = 0; j < xSize - 1; j++)
+        {
+            drawPixel((j * 2) + _x, i + _y, (*(_p + xSize * (i) + j) >> 4));
+            drawPixel((j * 2) + 1 + _x, i + _y, (*(_p + xSize * (i) + j) & 0xff));
+        }
+        drawPixel((j * 2) + _x, i + _y, (*(_p + xSize * (i) + j) >> 4));
+        if (_rem == 0)
+            drawPixel((j * 2) + 1 + _x, i + _y, (*(_p + xSize * (i) + j) & 0xff));
+    }
+}
 
 // int Inkplate::drawBitmapFromSD(SdFile *p, int x, int y)
 // {
