@@ -300,23 +300,46 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
     // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
     uint16_t *_fbPtr;
 
-    static uint8_t myLut[10][16] = 
+    static uint8_t myLut[11][16] = 
     { // >>> Color >>> Black to white                    Phase
       // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
-        {2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0},
-        {2, 2, 2, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-        {2, 2, 2, 2, 2, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-        {2, 2, 2, 2, 2, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0},
-        {2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 1, 1, 0, 1, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
+        {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0},
     };
-    default4BitWavefrom.lut = myLut;
 
-    for (int k = 0; k < 10; k++)
+    static uint8_t myLut2[16][16] = 
+    { // >>> Color >>> Black to white                    Phase
+      // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
+        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
+        {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
+        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    };
+
+    default4BitWavefrom.lut = myLut2;
+
+    for (int k = 0; k < 16; k++)
     {
         volatile uint8_t *ptr = _currentScreenFB;
 
@@ -400,7 +423,7 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
         }
     }
 
-    default4BitWavefrom.lut = (uint8_t*)&(waveform4BitLUT[0]);
+    default4BitWavefrom.lut = (uint8_t*)&(waveform4BitPartialLUT[0]);
     for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
     {
         volatile uint8_t *ptr = _pendingScreenFB;
@@ -644,6 +667,9 @@ void EPDDriver::display4b(uint8_t _leaveOn)
     // Do a clear sequence!
     cleanFast(_waveform4BitInternal.clearLUT, _waveform4BitInternal.clearPhases);
 
+    // Set waveform.
+    default4BitWavefrom.lut = (uint8_t*)&(waveform4BitPartialLUT[0]);
+
     for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
     {
         volatile uint8_t *ptr = _pendingScreenFB;
@@ -788,7 +814,7 @@ int EPDDriver::epdPSU(uint8_t _state)
             delay(1);
         } while ((pmic.getPwrgoodFlag() != TPS651851_PWR_GOOD_OK) && (millis() - timer) < 1000ULL);
 
-        // Not ready even after 250ms? Something is wrong, shut down TPS!
+        // Not ready even after 1000ms? Something is wrong, shut down TPS!
         if (pmic.getPwrgoodFlag() != TPS651851_PWR_GOOD_OK)
         {
             internalIO.digitalWriteIO(TPS_VCOM_CTRL_PIN, LOW, true);
