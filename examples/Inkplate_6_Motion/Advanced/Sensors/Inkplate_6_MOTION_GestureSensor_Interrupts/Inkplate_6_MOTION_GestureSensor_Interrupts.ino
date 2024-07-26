@@ -1,8 +1,8 @@
 /**
  **************************************************
  *
- * @file        Inkplate_6_MOTION_GestureSensor_Gesture.ino
- * @brief       This example will show you how to read simply read a detected gesture from the gesture sensor
+ * @file        Inkplate_6_MOTION_GestureSensor_Interrupts.ino
+ * @brief       This example will show you how to read interrupts fired by the gesture sensor when a gesture is detected
  *
  *              To successfully run the sketch:
  *              -Connect Inkplate 6 MOTION via USB-C cable
@@ -15,14 +15,11 @@
  * @date        July 2024
  ***************************************************/
 
-// Include Inkplate Motion libary.
+// Include Inkplate Motion libary
 #include "InkplateMotion.h"
 
-// Include Adafruit GFX Fonts.
+// Include Adafruit GFX Fonts
 #include "FreeSansBold24pt7b.h"
-
-// Include the file containing bitmap of each gesture icon.
-#include "icons.h"
 
 // Include the background image
 #include "image.h"
@@ -30,16 +27,35 @@
 // Initialize Inkplate
 Inkplate inkplate;
 
+// ISR flag - Automatically set to true in case of Interrupt event from the IO Expander.
+volatile bool isrFlag = false;
+
+// ISR handler function - Called when IO expander fires INT.
+void ioExpanderISR()
+{
+    isrFlag = true;
+}
+
 void setup()
 {
     // Initialize Inkplate
     inkplate.begin();
 
-    // Turn on the gesture sensor peripheral
-    inkplate.peripheralState(INKPLATE_PERIPHERAL_APDS9960, true);
-
     // Do a full update each 15 partial ones
     inkplate.setFullUpdateTreshold(15);
+
+    // Let's enable interrupts
+    // Set APDS INT pin on IO Expander as input. Override any GPIO pin protection.
+    inkplate.internalIO.pinModeIO(IO_PIN_A0, INPUT, true);
+    // Set interrupts on IO expander.
+    inkplate.internalIO.setIntPinIO(IO_PIN_A0);
+    // Enable interrptus on STM32.
+    // NOTE: Must be set to CHANGE!
+    attachInterrupt(digitalPinToInterrupt(PG13), ioExpanderISR, CHANGE);
+
+    // Turn on the gesture sensor peripheral
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_APDS9960, true);
+    delay(100); // Wait a bit
 
     // Initialize APDS9960, notify user if init has failed
     if (!inkplate.apds9960.init())
@@ -54,7 +70,8 @@ void setup()
 
     // Start running the APDS9960 gesture sensor engine
     // The parameter is to turn on interrupts on or off
-    if (!inkplate.apds9960.enableGestureSensor(false))
+    // Turn them on for this example
+    if (!inkplate.apds9960.enableGestureSensor(true))
     {
         // Print error message if failed
         Serial.println("Gesture sensor failed to start");
@@ -80,41 +97,52 @@ void setup()
 
 void loop()
 {
-    // Check if new gesture is detected.
-    if (inkplate.apds9960.isGestureAvailable())
+    if (isrFlag)
     {
-        // Get the detected gesture and print the gesture on the screen.
-        switch (inkplate.apds9960.readGesture())
+        // Check if the INT pin for the APDS9960 is set to low. Otherwise ignore the INT event
+        // (must be set to low for INT event from APDS). Override any GPIO pin protection.
+        if (!inkplate.internalIO.digitalReadIO(IO_PIN_A0, true))
         {
-        case DIR_UP:
-        // Add two spaces so it's more of a centered print
-            inkplate.print("  UP");
-            break;
-        case DIR_DOWN:
-            inkplate.print(" DOWN");
-            break;
-        case DIR_LEFT:
-            inkplate.print(" LEFT");
-            break;
-        case DIR_RIGHT:
-            inkplate.print("RIGHT");
-            break;
-        case DIR_NEAR:
-            inkplate.print(" NEAR");
-            break;
-        case DIR_FAR:
-            inkplate.print("  FAR");
-            break;
-        default:
-            // If no gesture is detected, but something is detected, print out "?".
-            inkplate.print("    ?");
+
+            // Check if new gesture is detected.
+            if (inkplate.apds9960.isGestureAvailable())
+            {
+                // Get the detected gesture and print the gesture on the screen.
+                switch (inkplate.apds9960.readGesture())
+                {
+                case DIR_UP:
+                    // Add two spaces so it's more of a centered print
+                    inkplate.print("  UP");
+                    break;
+                case DIR_DOWN:
+                    inkplate.print(" DOWN");
+                    break;
+                case DIR_LEFT:
+                    inkplate.print(" LEFT");
+                    break;
+                case DIR_RIGHT:
+                    inkplate.print("RIGHT");
+                    break;
+                case DIR_NEAR:
+                    inkplate.print(" NEAR");
+                    break;
+                case DIR_FAR:
+                    inkplate.print("  FAR");
+                    break;
+                default:
+                    // If no gesture is detected, but something is detected, print out "?".
+                    inkplate.print("    ?");
+                }
+
+                // Quickly show on the display!
+                inkplate.partialUpdate(false);
+
+                // Now, erase what was previously written with a white fillRect
+                inkplate.fillRect(298, 627, 440, 109, WHITE);
+                inkplate.setCursor(450, 663); // Set the cursor back in it's original position
+            }
         }
-
-        // Quickly show on the display!
-        inkplate.partialUpdate(false);
-
-        // Now, erase what was previously written with a white fillRect
-        inkplate.fillRect(298, 627, 440, 109, WHITE);
-        inkplate.setCursor(450, 663); // Set the cursor back in it's original position
+        // Clear the flag so that new interrupt event can be detected.
+        isrFlag = false;
     }
 }
