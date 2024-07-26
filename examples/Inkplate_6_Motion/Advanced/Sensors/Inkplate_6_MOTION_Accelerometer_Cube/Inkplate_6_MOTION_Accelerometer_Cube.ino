@@ -1,13 +1,29 @@
-// Include Inkplate Motion Library.
+/**
+ **************************************************
+ *
+ * @file        Inkplate_6_MOTION_Accelerometer_Cube.ino
+ * @brief       This example will show you how to project a 3D cube to Inkplate and rotate it with data from the
+ *accelerometer
+ *
+ *              To successfully run the sketch:
+ *              -Connect Inkplate 6 MOTION via USB-C cable
+ *              -Press the programming button to put the device in the programming state
+ *              -Upload the code
+ *
+ * @see         solde.red/333321
+ *
+ * @authors     Robert @ soldered.com
+ * @date        July 2024
+ ***************************************************/
+
+// Include the Inkplate Motion library
 #include <InkplateMotion.h>
 
-// Create a Inkplate Motion object.
-Inkplate inkplate;
+Inkplate inkplate; // Create an Inkplate object
 
 // Variables which are used for drawing the 3D Cube
 // Cube vertices
 float cube[8][3] = {{-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1}, {-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}};
-
 // Cube edges
 int edges[12][2] = {
     {0, 1}, {1, 2}, {2, 3}, {3, 0}, // Bottom face
@@ -23,93 +39,96 @@ int edges[12][2] = {
 float angleX = 0;
 float angleY = 0;
 float angleZ = 0;
-
 // Also, remember the previous angles
 // This is just to calculate the average between the two in order to smooth out the movement
 float previousAngleX = 0;
 float previousAngleY = 0;
 float previousAngleZ = 0;
 
+uint32_t previousTime;
+
 // Setup code, runs only once
 void setup()
 {
-    // Initialize serial communication at 115200 bauds.
-    Serial.begin(115200);
-
-    // Send debug message.
-    Serial.println("Hello from Inkplate 6 Motion");
-
-    // Init Inkplate library (you should call this function ONLY ONCE)
-    inkplate.begin();
-
-    // Set automatic full update after 200 parital updates.
-    inkplate.setFullUpdateTreshold(200);
+    inkplate.begin();   // Init Inkplate library (you should call this function ONLY ONCE)
+    inkplate.display(); // Put clear image on display
 
     // Set text size to be 2x larger than default (5x7px)
     inkplate.setTextSize(2);
-    // Set the text color to black also.
-    inkplate.setTextColor(BLACK);
+    inkplate.setTextColor(BLACK); // Set the text color to black also
 
-    // Try to init the acccelerometer.
-    inkplate.lsm6ds3.begin();
+    // Turn on the LSM6DS3 peripheral
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_LSM6DS3, true);
+    delay(1000); // Wait a bit
+
+    // Try to init the acccelerometer
+    int result = inkplate.lsm6ds3.begin();
+
+    // Set 75 frames of partial updates for a full update
+    // Looks okay on this example
+    inkplate.setFullUpdateTreshold(75);
+
+    previousTime = millis();
 }
 
 void loop()
 {
-    // First, clear what was previously in the frame buffer.
+    // First, clear what was previously in the frame buffer
     inkplate.clearDisplay();
 
-    // Read values from the accelerometer
+    // Read values from the accelerometer (for display purposes)
     float accelX = inkplate.lsm6ds3.readRawAccelX();
     float accelY = inkplate.lsm6ds3.readRawAccelY();
     float accelZ = inkplate.lsm6ds3.readRawAccelZ();
 
     // Read values from the gyroscope
-    float gyroX = inkplate.lsm6ds3.readFloatGyroX();
-    float gyroY = inkplate.lsm6ds3.readFloatGyroY();
-    float gyroZ = inkplate.lsm6ds3.readFloatGyroZ();
+    float gyroX = inkplate.lsm6ds3.readFloatGyroX() / 18.5;
+    float gyroY = inkplate.lsm6ds3.readFloatGyroY() / 18.5;
+    float gyroZ = inkplate.lsm6ds3.readFloatGyroZ() / 18.5;
 
     // Print accelerometer readings on the display
-    inkplate.setCursor(40, 630);
+    inkplate.setCursor(10, 630);
     inkplate.print("ACC X:");
     inkplate.print(accelX, 4);
-    inkplate.setCursor(40, 650);
+    inkplate.setCursor(10, 650);
     inkplate.print("ACC Y:");
     inkplate.print(accelY, 4);
-    inkplate.setCursor(40, 670);
+    inkplate.setCursor(10, 670);
     inkplate.print("ACC Z:");
     inkplate.print(accelZ, 4);
 
     // Print gyroscope readings on the display also
-    inkplate.setCursor(40, 690);
+    inkplate.setCursor(10, 690);
     inkplate.print("GYRO X:");
     inkplate.print(gyroX, 4);
-    inkplate.setCursor(40, 710);
+    inkplate.setCursor(10, 710);
     inkplate.print("GYRO Y:");
     inkplate.print(gyroY, 4);
-    inkplate.setCursor(40, 730);
+    inkplate.setCursor(10, 730);
     inkplate.print("GYRO Z:");
     inkplate.print(gyroZ, 4);
 
-    // Let's draw the cube!
-    // Compute the angle modifier variables from the accelerometer data
-    angleX = accelX * ANGLE_MODIFIER;
-    angleY = accelY * ANGLE_MODIFIER;
-    angleZ = accelZ * ANGLE_MODIFIER;
+    // Calculate the time difference since the last loop
+    unsigned long currentTime = millis();
+    float dt = (currentTime - previousTime) / 1000.0; // Convert ms to seconds
+    previousTime = currentTime;
 
-    // Calculate the average between the previous
-    // This makes the movement smoother
+    // Integrate gyroscope data to get angles
+    angleX += gyroX * dt;
+    angleY += gyroY * dt;
+    angleZ += gyroZ * dt;
+
+    // Smoothing (average with previous angles)
     angleX = (angleX + previousAngleX) / 2;
     angleY = (angleY + previousAngleY) / 2;
     angleZ = (angleZ + previousAngleZ) / 2;
 
-    // Remember the value for the next loop
+    // Remember the values for the next loop
     previousAngleX = angleX;
     previousAngleY = angleY;
     previousAngleZ = angleZ;
 
     // Let's project the cube's edges!
-    // For each edge...
     for (int i = 0; i < 12; i++)
     {
         // Get the start and end vertices
@@ -119,21 +138,21 @@ void loop()
         // Rotate and project the vertices to 2D
         int x1, y1, x2, y2;
 
-        // Project it, notice that X, Y and Z are rearranged here and not in the default order
-        // This is due to the orientation of the gyroscope on the actual board
         project(v1, angleX, angleY, angleZ, &x1, &y1);
         project(v2, angleX, angleY, angleZ, &x2, &y2);
 
         // Draw the edge
+        // Draw three lines, offset by one pixel each, to get a thick line effect
         inkplate.drawLine(x1, y1, x2, y2, BLACK);
+        inkplate.drawLine(x1 + 1, y1 + 1, x2 + 1, y2 + 1, BLACK);
+        inkplate.drawLine(x1 + 2, y1 + 2, x2 + 2, y2 + 2, BLACK);
     }
 
-    // Finally, let's update the screen. Keep the epaper supply on all the time to speed up refresh.
-    // Library will automatically do full update to clear the screen.
+    // Do partial (fast) update!
     inkplate.partialUpdate(true);
 
-    // Wait 10ms so the frame rate isn't too fast
-    delay(5);
+    // Wait 1ms so the frame rate isn't too fast
+    delay(1);
 }
 
 // This function projects 3D space onto 2D with a set rotation
