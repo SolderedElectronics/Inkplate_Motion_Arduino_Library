@@ -15,7 +15,6 @@
 static uint8_t pixelMaskLUT[8] = {0b10000000, 0b01000000, 0b00100000, 0b00010000, 0b00001000, 0b00000100, 0b00000010, 0b00000001};
 static uint8_t pixelMaskGLUT1[2] = {0b11110000, 0b00001111};
 
-
 // LUT for the 1 bit "Waveform" helpers.
 // 1 Bit mode actually does not uses waveforms, but there is always a posibillity for future improvments.
 static uint8_t LUTBW[16] = {0b10101010, 0b10101001, 0b10100110, 0b10100101, 0b10011010, 0b10011001, 0b10010110, 0b10010101, 0b01101010, 0b01101001, 0b01100110, 0b01100101, 0b01011010, 0b01011001, 0b01010110, 0b01010101};
@@ -30,17 +29,15 @@ static uint8_t clearWavefrom1Bit[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
 
 // Default 4 bit wavefrom.
 static uint8_t waveform4BitLUT[17][16] = 
-{ // >>> Color >>> Black to white                    Phase
-  // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
-    //{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0},
+{
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 1, 1, 2, 2},
+    {1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 1, 1, 2, 1},
     {1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 0, 2, 2, 1, 1, 2},
     {1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2},
     {1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2},
@@ -53,9 +50,7 @@ static uint8_t waveform4BitLUT[17][16] =
 };
 
 static uint8_t waveform4BitPartialLUT[17][16] = 
-{ // >>> Color >>> Black to white                    Phase
-  // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
-    //{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0},
+{
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
@@ -75,8 +70,25 @@ static uint8_t waveform4BitPartialLUT[17][16] =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
+static uint8_t waveform4BitPartialLUTClean[11][16] = 
+{
+    {2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+    {2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+    {2, 2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3},
+    {2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 3, 3, 3, 3, 3},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+};
+
 static uint8_t clearWavefrom4Bit[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
 
+// Defines for the each display update mode.
+// 4 bit full update - Global update with clean.
 static InkplateWaveform default4BitWavefrom = 
 {
     .mode = INKPLATE_WF_4BIT,
@@ -89,6 +101,7 @@ static InkplateWaveform default4BitWavefrom =
     .name = "default4BitFullUpdate",
 };
 
+// 1 bit full update - Global update with clean.
 static InkplateWaveform default1BitWavefrom = 
 {
     .mode = INKPLATE_WF_1BIT,
@@ -101,14 +114,17 @@ static InkplateWaveform default1BitWavefrom =
     .name = "default1BitFullUpdate",
 };
 
-static uint8_t waveformPartialUpdate[5][16] = 
-{ // >>> Color >>> Black to white                    Phase
-  // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
-    {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2},
-    {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2},
-    {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2},
-    {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+// 4 bit partial update - partial update with removal of prev. pixles (fast clean display flashing).
+static InkplateWaveform default4BitPartialUpdate = 
+{
+    .mode = INKPLATE_WF_4BIT,
+    .type = INKPLATE_WF_PARTIAL_UPDATE,
+    .tag = 0xef,
+    .lutPhases = sizeof(waveform4BitLUT) / sizeof(waveform4BitLUT[0]),
+    .lut = (uint8_t*)&(waveform4BitLUT[0]),
+    .clearPhases = sizeof(waveform4BitPartialLUTClean) / sizeof(waveform4BitPartialLUTClean[0]),
+    .clearLUT = (uint8_t*)&(waveform4BitPartialLUTClean[0]),
+    .name = "default4BitPartialUpdate",
 };
 
 /*

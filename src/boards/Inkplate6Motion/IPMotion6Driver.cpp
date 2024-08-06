@@ -300,210 +300,133 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
     // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
     uint16_t *_fbPtr;
 
-    static uint8_t myLut[11][16] = 
-    { // >>> Color >>> Black to white                    Phase
-      // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
-        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
-        {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0},
-    };
+    // static uint8_t myLut[11][16] = 
+    // { // >>> Color >>> Black to white                    Phase
+    //   // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
+    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0},
+    // };
 
-    static uint8_t myLut2[16][16] = 
-    { // >>> Color >>> Black to white                    Phase
-      // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
-        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
-        {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    };
+    // static uint8_t myLut2[16][16] = 
+    // { // >>> Color >>> Black to white                    Phase
+    //   // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
+    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
+    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    // };
 
-    default4BitWavefrom.lut = myLut2;
+    // Workaround to avod copying the same code with some minor changes.
+    // ToDo: rewritte this!
+    uint8_t *_wf[] = {(uint8_t*)(_waveform4BitPartialInternal.clearLUT), (uint8_t*)(_waveform4BitPartialInternal.lut)};
+    uint16_t _phases[] = {_waveform4BitPartialInternal.clearPhases, _waveform4BitPartialInternal.lutPhases};
+    __IO uint8_t *_fb[] = {_currentScreenFB, _pendingScreenFB};
 
-    for (int k = 0; k < 16; k++)
+    for (int _operation = 0; _operation < 2; _operation++)
     {
-        volatile uint8_t *ptr = _currentScreenFB;
-
-        // First calculate the new fast GLUT for the current EPD waveform phase.
-        calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
-
-        // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
-        // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
-        // ~215MB/s read speed! Nice! Start the DMA transfer!
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_currentScreenFB, (uint32_t)_oneLine1,
-                          sizeof(_oneLine1), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0)
-            ;
-        stm32FMCClearSRAMCompleteFlag();
-        ptr += sizeof(_oneLine1);
-
-        // Set the current working RAM buffer to the first RAM Buffer (_oneLine1).
-        _fbPtr = (uint16_t *)_oneLine1;
-
-        // Decode the first line.
-        for (int n = 0; n < (SCREEN_WIDTH / 4); n++)
+        for (int k = 0; k < _phases[_operation]; k++)
         {
-            _decodedLine1[n] = _fastGLUT[*(_fbPtr++)];
-        }
+            volatile uint8_t *ptr = _fb[_operation];
 
-        // Set the pointers for double buffering.
-        _pendingDecodedLineBuffer = _decodedLine2;
-        _currentDecodedLineBuffer = _decodedLine1;
+            // First calculate the new fast GLUT for the current EPD waveform phase.
+            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_wf[_operation] + ((unsigned long)(k) << 4))));
 
-        // Send to the screen!
-        vScanStart();
-        for (int i = 0; i < SCREEN_HEIGHT; i++)
-        {
-            hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
-            HAL_MDMA_Start_IT(&hmdma_mdma_channel41_sw_0, (uint32_t)_currentDecodedLineBuffer + 2,
-                              (uint32_t)EPD_FMC_ADDR, sizeof(_decodedLine1), 1);
+            // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
+            // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
+            // ~215MB/s read speed! Nice! Start the DMA transfer!
+            HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_fb[_operation], (uint32_t)_oneLine1,
+                              sizeof(_oneLine1), 1);
+            ptr += sizeof(_oneLine1);
 
-            // Decode the pixels into Waveform for EPD.
+            // Set the current working RAM buffer to the first RAM Buffer (_oneLine1).
+            _fbPtr = (uint16_t *)_oneLine1;
+
+            // Decode the first line.
             for (int n = 0; n < (SCREEN_WIDTH / 4); n++)
             {
-                _pendingDecodedLineBuffer[n] = _fastGLUT[*(_fbPtr++)];
+                _decodedLine1[n] = _fastGLUT[*(_fbPtr++)];
             }
 
-            // Swap the buffers!
-            if (_currentDecodedLineBuffer == _decodedLine1)
-            {
-                _currentDecodedLineBuffer = _decodedLine2;
-                _pendingDecodedLineBuffer = _decodedLine1;
-            }
-            else
-            {
-                _currentDecodedLineBuffer = _decodedLine1;
-                _pendingDecodedLineBuffer = _decodedLine2;
-            }
-
-            // Can't start new transfer until all data is sent to EPD.
-            while (stm32FMCEPDCompleteFlag() == 0)
+            while (stm32FMCSRAMCompleteFlag() == 0)
                 ;
-            stm32FMCClearEPDCompleteFlag();
+            stm32FMCClearSRAMCompleteFlag();
 
-            // Advance the line on EPD.
-            vScanEnd();
+            // Set the pointers for double buffering.
+            _pendingDecodedLineBuffer = _decodedLine2;
+            _currentDecodedLineBuffer = _decodedLine1;
 
-            // Check if the buffer needs to be updated (after 16 lines).
-            if ((i & 0b00001111) == 0b00001110)
+            // Send to the screen!
+            vScanStart();
+            for (int i = 0; i < SCREEN_HEIGHT; i++)
             {
-                // Update the buffer pointer.
-                _fbPtr = (uint16_t *)_oneLine1;
+                hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
+                HAL_MDMA_Start_IT(&hmdma_mdma_channel41_sw_0, (uint32_t)_currentDecodedLineBuffer + 2,
+                                  (uint32_t)EPD_FMC_ADDR, sizeof(_decodedLine1), 1);
 
-                // Start new RAM DMA transfer.
-                HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)ptr, (uint32_t)(_oneLine1), sizeof(_oneLine1),
-                                  1);
+                // Decode the pixels into Waveform for EPD.
+                for (int n = 0; n < (SCREEN_WIDTH / 4); n++)
+                {
+                    _pendingDecodedLineBuffer[n] = _fastGLUT[*(_fbPtr++)];
+                }
 
-                ptr += sizeof(_oneLine1);
+                // Swap the buffers!
+                if (_currentDecodedLineBuffer == _decodedLine1)
+                {
+                    _currentDecodedLineBuffer = _decodedLine2;
+                    _pendingDecodedLineBuffer = _decodedLine1;
+                }
+                else
+                {
+                    _currentDecodedLineBuffer = _decodedLine1;
+                    _pendingDecodedLineBuffer = _decodedLine2;
+                }
 
-                // Wait for DMA transfer to complete.
-                while (stm32FMCSRAMCompleteFlag() == 0)
+                // Can't start new transfer until all data is sent to EPD.
+                while (stm32FMCEPDCompleteFlag() == 0)
                     ;
-                stm32FMCClearSRAMCompleteFlag();
-            }
-        }
-    }
+                stm32FMCClearEPDCompleteFlag();
 
-    default4BitWavefrom.lut = (uint8_t*)&(waveform4BitPartialLUT[0]);
-    for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
-    {
-        volatile uint8_t *ptr = _pendingScreenFB;
+                // Advance the line on EPD.
+                vScanEnd();
 
-        // First calculate the new fast GLUT for the current EPD waveform phase.
-        calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
+                // Check if the buffer needs to be updated (after 16 lines).
+                if ((i & 0b00001111) == 0b00001110)
+                {
+                    // Update the buffer pointer.
+                    _fbPtr = (uint16_t *)_oneLine1;
 
-        // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
-        // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
-        // ~215MB/s read speed! Nice! Start the DMA transfer!
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_pendingScreenFB, (uint32_t)_oneLine1,
-                          sizeof(_oneLine1), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0)
-            ;
-        stm32FMCClearSRAMCompleteFlag();
-        ptr += sizeof(_oneLine1);
+                    // Start new RAM DMA transfer.
+                    HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)ptr, (uint32_t)(_oneLine1), sizeof(_oneLine1),
+                                      1);
 
-        // Set the current working RAM buffer to the first RAM Buffer (_oneLine1).
-        _fbPtr = (uint16_t *)_oneLine1;
+                    ptr += sizeof(_oneLine1);
 
-        // Decode the first line.
-        for (int n = 0; n < (SCREEN_WIDTH / 4); n++)
-        {
-            _decodedLine1[n] = _fastGLUT[*(_fbPtr++)];
-        }
-
-        // Set the pointers for double buffering.
-        _pendingDecodedLineBuffer = _decodedLine2;
-        _currentDecodedLineBuffer = _decodedLine1;
-
-        // Send to the screen!
-        vScanStart();
-        for (int i = 0; i < SCREEN_HEIGHT; i++)
-        {
-            hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
-            HAL_MDMA_Start_IT(&hmdma_mdma_channel41_sw_0, (uint32_t)_currentDecodedLineBuffer + 2,
-                              (uint32_t)EPD_FMC_ADDR, sizeof(_decodedLine1), 1);
-
-            // Decode the pixels into Waveform for EPD.
-            for (int n = 0; n < (SCREEN_WIDTH / 4); n++)
-            {
-                _pendingDecodedLineBuffer[n] = _fastGLUT[*(_fbPtr++)];
-            }
-
-            // Swap the buffers!
-            if (_currentDecodedLineBuffer == _decodedLine1)
-            {
-                _currentDecodedLineBuffer = _decodedLine2;
-                _pendingDecodedLineBuffer = _decodedLine1;
-            }
-            else
-            {
-                _currentDecodedLineBuffer = _decodedLine1;
-                _pendingDecodedLineBuffer = _decodedLine2;
-            }
-
-            // Can't start new transfer until all data is sent to EPD.
-            while (stm32FMCEPDCompleteFlag() == 0)
-                ;
-            stm32FMCClearEPDCompleteFlag();
-
-            // Advance the line on EPD.
-            vScanEnd();
-
-            // Check if the buffer needs to be updated (after 16 lines).
-            if ((i & 0b00001111) == 0b00001110)
-            {
-                // Update the buffer pointer.
-                _fbPtr = (uint16_t *)_oneLine1;
-
-                // Start new RAM DMA transfer.
-                HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)ptr, (uint32_t)(_oneLine1), sizeof(_oneLine1),
-                                  1);
-
-                ptr += sizeof(_oneLine1);
-
-                // Wait for DMA transfer to complete.
-                while (stm32FMCSRAMCompleteFlag() == 0)
-                    ;
-                stm32FMCClearSRAMCompleteFlag();
+                    // Wait for DMA transfer to complete.
+                    while (stm32FMCSRAMCompleteFlag() == 0)
+                        ;
+                    stm32FMCClearSRAMCompleteFlag();
+                }
             }
         }
     }
@@ -1032,66 +955,6 @@ uint32_t EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingS
 
     // Return number of pixels needed to change.
     return _change;
-}
-
-void EPDDriver::differenceMask4Bit(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask)
-{
-    // Try to find the difference between two frame buffers.
-    // Idea is this: find the difference between two framebuffers, simple!
-    // Do this by by first calculating difference on framebuffers itself. Use bitwise XOR operation (_currentScreenFB
-    // XOR _pendingScreenFB). Convert this mask into EPD mask array. 1 convert to 00 and 0 to 11. Yes, output data will
-    // be two times larger since fraamebuffer is packed as 1BPP and EPD as 2BPP. Now, use pending framebuffer and do OR
-    // operation with EPD mask array. In this case any same pixels on both framebuffers will have '11' bit combinaiton
-    // (11 on epaper means skip this pixel, do not change it), any other will get the state of the pending framebuffer.
-    // Example:
-    // _currentScreenFB = 0b11001010
-    // _pendingScreenFB = 0b00101101
-    // _differenceMask  = 0b11100111
-    // _differenceMask -> _differenceEDPMask = 0b0000001111000000
-    // _pendingScreenFB -> _pendingScreenEPD = 0b1010011001011001
-    // _finalEPDData = _pendingScreenEPD | _differenceEDPMask = 0b1010011111011001 -> WWBSSBWB (W = New White Pixel, B =
-    // New Black Pixel S = Skip Pixel).
-
-    // Set the offset for the framebuffer address.
-    uint32_t _fbAddressOffset = 0;
-
-    // Used for counting how many pixels will change.
-    uint32_t _change = 0;
-
-    // Using a pointer, interpret 8 bit array as 16 bit array.
-    uint16_t *_outDataArray = (uint16_t*)_oneLine3;
-
-    while (_fbAddressOffset < ((SCREEN_HEIGHT * SCREEN_WIDTH / 8)))
-    {
-        // Get the 64 lines from the current screen buffer into internal RAM.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_currentScreenFB + _fbAddressOffset, (uint32_t)_oneLine1, sizeof(_oneLine1), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
-
-        // Copy 64 lines from pending framebuffer of the EPD.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_pendingScreenFB + _fbAddressOffset, (uint32_t)_oneLine2, sizeof(_oneLine2), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
-
-        // Find the difference between two framebuffers and make EPD mask!
-        for (uint32_t i = 0; i < sizeof(_oneLine1); i++)
-        {
-            uint8_t _pixelMask = _oneLine1[i] ^ _oneLine2[i];
-            uint16_t epdPixelData = LUTBW[_oneLine2[i] >> 4] << 8 | LUTBW[_oneLine2[i] & 0x0F];
-            uint16_t outData = LUTP[_pixelMask >> 4] << 8 | LUTP[_pixelMask & 0x0F];
-            uint16_t maskedOutData = outData | epdPixelData;
-            _outDataArray[i] = (maskedOutData >> 8) | (maskedOutData << 8);
-        }
-
-        // Send data to the difference mask. Difference mask for EPD is two times larger than the framebuffer for 1 bit
-        // mode.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_oneLine3, (uint32_t)(_differenceMask) + (_fbAddressOffset << 1), sizeof(_oneLine3), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
-
-        // Update the pointer.
-        _fbAddressOffset += sizeof(_oneLine1);
-    }
 }
 
 void EPDDriver::drawBitmapFast(const uint8_t *_p)

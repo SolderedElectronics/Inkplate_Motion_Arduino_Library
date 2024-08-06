@@ -190,8 +190,6 @@ class EPDDriver : public Helpers
         // Also returns the number of pixel that will be changed.
         uint32_t differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
 
-        void differenceMask4Bit(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
-
         void display1b(uint8_t _leaveOn);
         
         void display4b(uint8_t _leaveOn);
@@ -215,7 +213,7 @@ class EPDDriver : public Helpers
         InkplateWaveform _waveform1BitInternal = default1BitWavefrom;
 
         // Internal typedef for the 4 bit waveform - partial update.
-        InkplateWaveform _waveform4BitPartialInternal;
+        InkplateWaveform _waveform4BitPartialInternal = default4BitPartialUpdate;
 
         // Variable keeps track on how many partial updates have been executed for automatic full update.
         uint16_t _partialUpdateCounter = 0;
