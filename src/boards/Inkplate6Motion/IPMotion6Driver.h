@@ -51,10 +51,8 @@
 static SPIClass _systemSpi(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO, INKPLATE_MICROSD_SPI_SCK);
 
 // --- Functions declared static inline here for less calling overhead. ---
-// TODO: Try to store this function into the the internal RAM for faster execution.
-
 // Start writing the frame on the epaper display.
-static inline void vScanStart()
+__attribute__((always_inline)) static inline void vScanStart()
 {
     CKV_SET;
     delayMicroseconds(7);
@@ -170,13 +168,13 @@ class EPDDriver : public Helpers
 
         // External SRAM frame buffers astart addresses. Statically allocated due speed.
         // Frame buffer for current image on the screen. 2MB in size (2097152 bytes).
-        __IO uint8_t *_currentScreenFB = (__IO uint8_t *)0xD0000000;
+        volatile uint8_t *_currentScreenFB = (uint8_t *)0xD0000000;
 
         // Frame buffer for the image that will be written to the screen on update. 2MB in size (2097152 bytes).
-        __IO uint8_t *_pendingScreenFB = (__IO uint8_t *)0xD0200000;
+        volatile uint8_t *_pendingScreenFB = (uint8_t *)0xD0200000;
 
         // "Scratchpad memory" used for calculations (partial update for example). 2MB in size (2097152 bytes).
-        __IO uint8_t *_scratchpadMemory = (__IO uint8_t *)0xD0400000;
+        volatile uint8_t *_scratchpadMemory = (uint8_t *)0xD0400000;
 
     private:
         // Sets EPD control GPIO pins to the output or High-Z state.
@@ -193,6 +191,14 @@ class EPDDriver : public Helpers
         void display1b(uint8_t _leaveOn);
         
         void display4b(uint8_t _leaveOn);
+
+        void pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _bitsPerPx);
+
+        static void pixelDecode4BitEPD(void *_out, void *_lut, void *_fb);
+        
+        static void pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb);
+
+        static void pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb);
 
         // Object for the SdFat SPI STM32 library.
         SdSpiConfig* _microSDCardSPIConf = nullptr;
