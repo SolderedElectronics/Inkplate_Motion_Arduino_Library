@@ -90,7 +90,7 @@ __attribute__((always_inline)) static inline void hScanStart(uint8_t _d1, uint8_
     SPH_CLEAR;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d1;
     CKV_SET;
-    cycleDelay(10ULL);
+    cycleDelay(55ULL);
     SPH_SET;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d2;
 }
@@ -99,11 +99,11 @@ __attribute__((always_inline)) static inline void hScanStart(uint8_t _d1, uint8_
 __attribute__((always_inline)) static inline void vScanEnd()
 {
     CKV_CLEAR;
-    cycleDelay(10ULL);
+    cycleDelay(55ULL);
     LE_SET;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = 0;
     LE_CLEAR;
-    cycleDelay(10ULL);
+    cycleDelay(55ULL);
 }
 // --- End of static inline declared functions. ---
 

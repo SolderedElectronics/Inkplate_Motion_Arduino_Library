@@ -7,8 +7,6 @@ static volatile bool _esp32HandshakePinFlag = false;
 // SPI Settings for ESP32.
 static SPISettings _esp32AtSpiSettings(20000000ULL, MSBFIRST, SPI_MODE0);
 
-extern SPIClass _inkplateSystemSPI;
-
 // ISR for the ESP32 handshake pin. This will be called automatically from the interrupt.
 static void esp32HandshakeISR()
 {
@@ -28,7 +26,6 @@ void WiFiClass::hwSetup(SPIClass *_spiClass)
 {
     // Copy the references.
     _spi = _spiClass;
-    //epd = _epdClass;
 }
 
 /**

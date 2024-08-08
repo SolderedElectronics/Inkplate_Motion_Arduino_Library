@@ -387,7 +387,7 @@ int EPDDriver::epdPSU(uint8_t _state)
         internalIO.digitalWriteIO(TPS_VCOM_CTRL_PIN, HIGH, true);
 
         // Wait until EPD PMIC has all needed voltages at it's outputs.
-        // 250 ms should be long enough.
+        // One second should be long enough.
         unsigned long timer = millis();
         do
         {
@@ -426,7 +426,7 @@ int EPDDriver::epdPSU(uint8_t _state)
         // Disable buffer for the control ePaper lines.
         EPD_BUF_SET;
 
-        // 250ms should be long enough to shut down all EPD PMICs voltage rails.
+        // One second should be long enough to shut down all EPD PMICs voltage rails.
         unsigned long timer = millis();
         do
         {
@@ -912,15 +912,12 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
 
         // Send to the screen!
         vScanStart();
-        cycleDelay(200ULL);
         for (int i = 0; i < SCREEN_HEIGHT; i++)
         {
             hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
-            cycleDelay(200ULL);
 
             HAL_MDMA_Start_IT(&hmdma_mdma_channel41_sw_0, (uint32_t)_currentDecodedLineBuffer + 2,
                               (uint32_t)EPD_FMC_ADDR, sizeof(_decodedLine1), 1);
-            cycleDelay(200ULL);
 
             // Decode the pixels into Waveform for EPD.
             (_pixelDecode)(_pendingDecodedLineBuffer, _waveformLut, _fbPtr);
@@ -945,7 +942,6 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
 
             // Advance the line on EPD.
             vScanEnd();
-            cycleDelay(200ULL);
 
             // Check if the buffer needs to be updated (after 16 lines).
             if ((i & _prebufferedLines) == (_prebufferedLines - 1))
