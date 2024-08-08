@@ -52,7 +52,7 @@ static SPIClass _systemSpi(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO,
 
 // --- Functions declared static inline here for less calling overhead. ---
 // Start writing the frame on the epaper display.
-__attribute__((always_inline)) static inline void vScanStart()
+static inline void vScanStart()
 {
     CKV_SET;
     delayMicroseconds(7);
