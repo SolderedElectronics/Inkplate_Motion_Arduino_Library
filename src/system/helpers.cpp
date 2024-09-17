@@ -16,8 +16,8 @@ void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuff
     {
         // Start DMA transfer from SDRAM to internal STM32 SRAM.
         HAL_MDMA_Start_IT(hmdma, (uint32_t)_srcBuffer, (uint32_t)_destBuffer, _internalBufferSize, 1);
-        while(stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
+        while(stm32FmcSdramCompleteFlag() == 0);
+        stm32FmcClearSdramCompleteFlag();
 
         // Increment the pointers.
         _srcBuffer += _internalBufferSize;
@@ -28,7 +28,7 @@ void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuff
     if (_lastChinkSize != 0)
     {
         HAL_MDMA_Start_IT(hmdma, (uint32_t)_srcBuffer, (uint32_t)_destBuffer, _lastChinkSize, 1);
-        while(stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
+        while(stm32FmcSdramCompleteFlag() == 0);
+        stm32FmcClearSdramCompleteFlag();
     }
 }

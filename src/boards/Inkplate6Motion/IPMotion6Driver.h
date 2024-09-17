@@ -22,9 +22,6 @@
 // Include library for the STM32 FMC
 #include "../../stm32System/stm32FMC.h"
 
-// Include Master DMA library for STM32.
-#include "../../stm32System/stm32MDMA.h"
-
 // Include library defines
 #include "../../system/defines.h"
 
@@ -55,26 +52,27 @@ static SPIClass _systemSpi(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO,
 static inline void vScanStart()
 {
     CKV_SET;
-    delayMicroseconds(7);
+    delayMicroseconds(1);
     SPV_CLEAR;
-    delayMicroseconds(10);
+    delayMicroseconds(6);
     CKV_CLEAR;
-    delayMicroseconds(1);
+    delayMicroseconds(7);
     CKV_SET;
-    delayMicroseconds(8);
+    delayMicroseconds(7);
     SPV_SET;
-    delayMicroseconds(10);
+    delayMicroseconds(6);
     CKV_CLEAR;
     delayMicroseconds(1);
     CKV_SET;
     delayMicroseconds(10);
     CKV_CLEAR;
-    delayMicroseconds(1);
+    delayMicroseconds(10);
     CKV_SET;
     delayMicroseconds(10);
     CKV_CLEAR;
-    delayMicroseconds(1);
+    delayMicroseconds(10);
     CKV_SET;
+    delayMicroseconds(10);
 }
 
 // Compiler be nice, please do not optimise this function.
@@ -88,9 +86,10 @@ __attribute__((always_inline)) static inline void hScanStart(uint8_t _d1, uint8_
 {
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d1;
     SPH_CLEAR;
+    cycleDelay(5ULL);
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d1;
     CKV_SET;
-    cycleDelay(55ULL);
+    cycleDelay(150ULL);
     SPH_SET;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d2;
 }
@@ -99,11 +98,13 @@ __attribute__((always_inline)) static inline void hScanStart(uint8_t _d1, uint8_
 __attribute__((always_inline)) static inline void vScanEnd()
 {
     CKV_CLEAR;
-    cycleDelay(55ULL);
+    cycleDelay(5ULL);
     LE_SET;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = 0;
+    cycleDelay(5ULL);
     LE_CLEAR;
-    cycleDelay(55ULL);
+    *(__IO uint8_t *)(EPD_FMC_ADDR) = 0;
+    cycleDelay(5ULL);
 }
 // --- End of static inline declared functions. ---
 
@@ -202,6 +203,10 @@ class EPDDriver : public Helpers
 
         // Object for the SdFat SPI STM32 library.
         SdSpiConfig* _microSDCardSPIConf = nullptr;
+
+        // Typedef handles for Master DMA.
+        MDMA_HandleTypeDef *_epdMdmaHandle;
+        MDMA_HandleTypeDef *_sdramMdmaHandle;
 
         // Default EPD PSU state is off.
         uint8_t _epdPSUState = 0;

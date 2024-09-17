@@ -26,15 +26,20 @@ extern "C" void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram);
 extern "C" void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef* hsdram);
 
 void stm32FmcInit();
-void stM32FmcDeInit();
-void stm32MpuInit();
-void stm32MDMAInit();
-void stm32FMCSRAMTransferCompleteCallback(MDMA_HandleTypeDef *_mdma);
-void stm32FMCEPDTransferCompleteCallback(MDMA_HandleTypeDef *_mdma);
-void stm32FMCClearEPDCompleteFlag();
-void stm32FMCClearSRAMCompleteFlag();
-uint8_t stm32FMCEPDCompleteFlag();
-uint8_t stm32FMCSRAMCompleteFlag();
+void stm32FmcDeInit();
+void stm32FmcMpuInit();
+void stm32FmcMdmaInit();
+SRAM_HandleTypeDef *stm32FmcGetEpdInstance();
+SDRAM_HandleTypeDef *stm32FmcGetSdramInstance();
+MDMA_HandleTypeDef *stm32FmcGetEpdMdmaInstance();
+MDMA_HandleTypeDef *stm32FmcGetSdramMdmaInstance();
+MPU_Region_InitTypeDef *stm32FmcGetMpuInstance();
+void stm32FmcSdramTransferCompleteCallback(MDMA_HandleTypeDef *_mdma);
+void stm32FmcEpdTransferCompleteCallback(MDMA_HandleTypeDef *_mdma);
+void stm32FmcClearEpdCompleteFlag();
+void stm32FmcClearSdramCompleteFlag();
+uint8_t stm32FmcEpdCompleteFlag();
+uint8_t stm32FmcSdramCompleteFlag();
 extern "C" void MDMA_IRQHandler();
 
 #endif

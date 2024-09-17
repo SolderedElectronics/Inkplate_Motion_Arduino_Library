@@ -20,23 +20,33 @@ __attribute__((section(".dma_buffer"))) uint8_t _decodedLine2[MULTIPLE_OF_4(SCRE
 __attribute__((section(".dma_buffer"))) uint8_t *_currentDecodedLineBuffer = NULL;
 __attribute__((section(".dma_buffer"))) uint8_t *_pendingDecodedLineBuffer = NULL;
 
-extern SRAM_HandleTypeDef hsram1;   // EPD
-extern SDRAM_HandleTypeDef hsdram1; // SDRAM
-extern MDMA_HandleTypeDef hmdma_mdma_channel40_sw_0;
-extern MDMA_HandleTypeDef hmdma_mdma_channel41_sw_0;
-
 // STM32 SPI class for internal Inkplate SPI (used by microSD card and WiFi).
 // Must be declared this way, for some reason, it hangs when used new operator on microSD card init.
 SPIClass _inkplateSystemSPI(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO, INKPLATE_MICROSD_SPI_SCK);
 
+/**
+ * @brief Constructor for EPDDriver object.
+ * 
+ */
 EPDDriver::EPDDriver()
 {
     // Empty constructor.
 }
 
+/**
+ * @brief   ePaper driver initializer for the Inkplate Motion 6 board.
+ * 
+ * @return  int
+ *          0 = Initialization has faild, check debug messages for more info.
+ *          1 = Initialization ok. 
+ */
 int EPDDriver::initDriver()
 {
     INKPLATE_DEBUG_MGS("EPD Driver init started");
+
+    // Get the instances for DMA.
+    _epdMdmaHandle  = stm32FmcGetEpdMdmaInstance();
+    _sdramMdmaHandle  = stm32FmcGetSdramMdmaInstance();
 
     // Configure IO expander.
     if (!internalIO.beginIO(IO_EXPANDER_INTERNAL_I2C_ADDR))
@@ -83,6 +93,16 @@ int EPDDriver::initDriver()
     return 1;
 }
 
+/**
+ * @brief   Method for clearing the contennt form the screen.
+ * 
+ * @param   uint8_t *_clearWavefrom
+ *          Waveform look up table for clearing the screen.
+ * @param   _wavefromPhases _wavefromPhases
+ *          how many phases are needed to clean the screen (it's related to the waveform!).
+ * @note    For more info about the waveforms, see waveforms.h! Also, this function keeps EPD PMIC
+ *          on, it's up to the user to turn off the PMIC!
+ */
 void EPDDriver::cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases)
 {
     // Enable EPD PSU.
@@ -109,15 +129,15 @@ void EPDDriver::cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases)
             hScanStart(_data, _data);
 
             // Start DMA transfer!
-            HAL_MDMA_Start_IT(&hmdma_mdma_channel41_sw_0, (uint32_t)_decodedLine1, (uint32_t)EPD_FMC_ADDR,
+            HAL_MDMA_Start_IT(_epdMdmaHandle, (uint32_t)_decodedLine1, (uint32_t)EPD_FMC_ADDR,
                               sizeof(_decodedLine1) - 2, 1);
 
             // Wait until the transfer has ended.
-            while (!stm32FMCEPDCompleteFlag())
+            while (!stm32FmcEpdCompleteFlag())
                 ;
 
             // Clear the flag.
-            stm32FMCClearEPDCompleteFlag();
+            stm32FmcClearEpdCompleteFlag();
 
             // End the line write.
             vScanEnd();
@@ -128,6 +148,10 @@ void EPDDriver::cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases)
     // It needs to be additionally or manually turned off.
 }
 
+/**
+ * @brief   Clears content from the internal frame buffer, but not on the screen itself.
+ * 
+ */
 void EPDDriver::clearDisplay()
 {
     // Framebuffer if filled with different data depending on the cuurrent mode.
@@ -149,6 +173,14 @@ void EPDDriver::clearDisplay()
     }
 }
 
+/**
+ * @brief   Partailly update the screen. Remove and add only necessary changes.
+ *          Also, do not clear the whole screen (screen won't flash in 1 bit mode).
+ * 
+ * @param   uint8_t _leaveOn
+ *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
+ *          1 = Keep EPD PMIC active after ePaper refresh.
+ */
 void EPDDriver::partialUpdate(uint8_t _leaveOn)
 {
     INKPLATE_DEBUG_MGS("Partial update 1bit start");
@@ -202,7 +234,7 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
 
     // Copy everything in current screen framebuffer.
     // Use DMA to transfer framebuffers!
-    copySDRAMBuffers(&hmdma_mdma_channel40_sw_0, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB, (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB, (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
 
     INKPLATE_DEBUG_MGS("Partial update done");
 
@@ -218,6 +250,14 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
     }
 }
 
+/**
+ * @brief   Partailly update the screen. Remove and add only necessary changes.
+ *          Use a rapid clean to speed up the clean process of the pixels that will be changed.
+ * 
+ * @param   uint8_t _leaveOn
+ *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
+ *          1 = Keep EPD PMIC active after ePaper refresh.
+ */
 void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
 {
     // Power up EPD PMIC. Abort update if failed.
@@ -254,10 +294,18 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
         epdPSU(0);
 
     // Update the current framebuffer! Use DMA to transfer framebuffers.
-    copySDRAMBuffers(&hmdma_mdma_channel40_sw_0, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
                      (SCREEN_WIDTH * SCREEN_HEIGHT / 2));
 }
 
+/**
+ * @brief   Update the whole screen using global updates. This means the whole screen
+ *          will flicker to clean the previous image.
+ * 
+ * @param   uint8_t _leaveOn
+ *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
+ *          1 = Keep EPD PMIC active after ePaper refresh. 
+ */
 void EPDDriver::display(uint8_t _leaveOn)
 {
     // Depending on the mode, use on or the other function.
@@ -275,7 +323,15 @@ void EPDDriver::display(uint8_t _leaveOn)
     }
 }
 
-// Display content from RAM to display (1 bit per pixel,. monochrome picture).
+
+/**
+ * @brief   Use global 1 bit full update to update the content on the screen.
+ *          Waveform for the 1 bit mode can be changed.
+ * 
+ * @param   uint8_t _leaveOn
+ *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
+ *          1 = Keep EPD PMIC active after ePaper refresh. 
+ */
 void EPDDriver::display1b(uint8_t _leaveOn)
 {
     // Power up EPD PMIC. Abort update if failed.
@@ -284,7 +340,7 @@ void EPDDriver::display1b(uint8_t _leaveOn)
 
     // Full update? Copy everything in screen buffer before refresh!
     // Use DMA to transfer framebuffers!
-    copySDRAMBuffers(&hmdma_mdma_channel40_sw_0, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
                      (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
 
     // Pointer to the framebuffer (used by the fast GLUT). It gets 8 pixels from the framebuffer.
@@ -309,6 +365,15 @@ void EPDDriver::display1b(uint8_t _leaveOn)
         epdPSU(0);
 }
 
+/**
+ * @brief   Use global 4 bit full update to update the content on the screen.
+ *          Waveform for the 4 bit mode can be changed. Image will be displayed
+ *          in grayscale.
+ * 
+ * @param   uint8_t _leaveOn
+ *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
+ *          1 = Keep EPD PMIC active after ePaper refresh. 
+ */
 void EPDDriver::display4b(uint8_t _leaveOn)
 {
     // Power up EPD PMIC. Abort update if failed.
@@ -317,7 +382,7 @@ void EPDDriver::display4b(uint8_t _leaveOn)
 
     // Full update? Copy everything in screen buffer before refresh!
     // Use DMA to transfer framebuffers!
-    copySDRAMBuffers(&hmdma_mdma_channel40_sw_0, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
                      (SCREEN_WIDTH * SCREEN_HEIGHT / 2));
 
     // Do a clear sequence!
@@ -339,6 +404,13 @@ void EPDDriver::display4b(uint8_t _leaveOn)
         epdPSU(0);
 }
 
+/**
+ * @brief   
+ * 
+ * @param _customWaveform 
+ * @return true 
+ * @return false 
+ */
 bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
 {
     // Do a few checks.
@@ -581,14 +653,14 @@ uint32_t EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingS
     while (_fbAddressOffset < ((SCREEN_HEIGHT * SCREEN_WIDTH / 8)))
     {
         // Get the 64 lines from the current screen buffer into internal RAM.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_currentScreenFB + _fbAddressOffset, (uint32_t)_oneLine1, sizeof(_oneLine1), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_currentScreenFB + _fbAddressOffset, (uint32_t)_oneLine1, sizeof(_oneLine1), 1);
+        while (stm32FmcSdramCompleteFlag() == 0);
+        stm32FmcClearSdramCompleteFlag();
 
         // Copy 64 lines from pending framebuffer of the EPD.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_pendingScreenFB + _fbAddressOffset, (uint32_t)_oneLine2, sizeof(_oneLine2), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_pendingScreenFB + _fbAddressOffset, (uint32_t)_oneLine2, sizeof(_oneLine2), 1);
+        while (stm32FmcSdramCompleteFlag() == 0);
+        stm32FmcClearSdramCompleteFlag();
 
         // Find the difference between two framebuffers and make EPD mask!
         for (uint32_t i = 0; i < sizeof(_oneLine1); i++)
@@ -602,9 +674,9 @@ uint32_t EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingS
 
         // Send data to the difference mask. Difference mask for EPD is two times larger than the framebuffer for 1 bit
         // mode.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_oneLine3, (uint32_t)(_differenceMask) + (_fbAddressOffset << 1), sizeof(_oneLine3), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_oneLine3, (uint32_t)(_differenceMask) + (_fbAddressOffset << 1), sizeof(_oneLine3), 1);
+        while (stm32FmcSdramCompleteFlag() == 0);
+        stm32FmcClearSdramCompleteFlag();
 
         // Update the pointer.
         _fbAddressOffset += sizeof(_oneLine1);
@@ -629,9 +701,9 @@ void EPDDriver::drawBitmapFast(const uint8_t *_p)
         memcpy(_oneLine1, _p + i, sizeof(_oneLine1));
 
         // Start DMA transfer into pending screen framebuffer.
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_oneLine1, (uint32_t)(_pendingScreenFB) + i, sizeof(_oneLine1), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0);
-        stm32FMCClearSRAMCompleteFlag();
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_oneLine1, (uint32_t)(_pendingScreenFB) + i, sizeof(_oneLine1), 1);
+        while (stm32FmcSdramCompleteFlag() == 0);
+        stm32FmcClearSdramCompleteFlag();
     }
 }
 
@@ -663,7 +735,7 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
         if (!_en)
         {
             // If SDRAM must be disabled, first de-init the SDRAM.
-            stM32FmcDeInit();
+            stm32FmcDeInit();
 
             // Disable power to the SDRAM.
             digitalWrite(INKPLATE_SDRAM_EN, HIGH);
@@ -856,7 +928,7 @@ void EPDDriver::selectDisplayMode(uint8_t _mode)
     clearDisplay();
 
     // Force clearing current screen buffer. 
-    copySDRAMBuffers(&hmdma_mdma_channel40_sw_0, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
                      (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
     
     // Block the partial updates.
@@ -892,11 +964,11 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
         // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
         // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
         // ~215MB/s read speed! Nice! Start the DMA transfer!
-        HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_frameBuffer, (uint32_t)_oneLine1,
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_frameBuffer, (uint32_t)_oneLine1,
                           sizeof(_oneLine1), 1);
-        while (stm32FMCSRAMCompleteFlag() == 0)
+        while (stm32FmcSdramCompleteFlag() == 0)
             ;
-        stm32FMCClearSRAMCompleteFlag();
+        stm32FmcClearSdramCompleteFlag();
         _frameBuffer += sizeof(_oneLine1);
 
         // Set the current working RAM buffer to the first RAM Buffer (_oneLine1).
@@ -916,7 +988,7 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
         {
             hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
 
-            HAL_MDMA_Start_IT(&hmdma_mdma_channel41_sw_0, (uint32_t)_currentDecodedLineBuffer + 2,
+            HAL_MDMA_Start_IT(_epdMdmaHandle, (uint32_t)_currentDecodedLineBuffer + 2,
                               (uint32_t)EPD_FMC_ADDR, sizeof(_decodedLine1), 1);
 
             // Decode the pixels into Waveform for EPD.
@@ -936,9 +1008,9 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
             }
 
             // Can't start new transfer until all data is sent to EPD.
-            while (stm32FMCEPDCompleteFlag() == 0)
+            while (stm32FmcEpdCompleteFlag() == 0)
                 ;
-            stm32FMCClearEPDCompleteFlag();
+            stm32FmcClearEpdCompleteFlag();
 
             // Advance the line on EPD.
             vScanEnd();
@@ -950,15 +1022,15 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
                 _fbPtr = (uint16_t *)_oneLine1;
 
                 // Start new RAM DMA transfer.
-                HAL_MDMA_Start_IT(&hmdma_mdma_channel40_sw_0, (uint32_t)_frameBuffer, (uint32_t)(_oneLine1), sizeof(_oneLine1),
+                HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_frameBuffer, (uint32_t)(_oneLine1), sizeof(_oneLine1),
                                   1);
 
                 _frameBuffer += sizeof(_oneLine1);
 
                 // Wait for DMA transfer to complete.
-                while (stm32FMCSRAMCompleteFlag() == 0)
+                while (stm32FmcSdramCompleteFlag() == 0)
                     ;
-                stm32FMCClearSRAMCompleteFlag();
+                stm32FmcClearSdramCompleteFlag();
             }
         }
 }
