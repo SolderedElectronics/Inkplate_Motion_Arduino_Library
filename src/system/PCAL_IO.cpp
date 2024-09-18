@@ -133,6 +133,8 @@ void IOExpander::updatePCALRegister(uint8_t _regIndex, uint8_t _d)
  * @param       uint8_t _mode
  *              mode for pin to be set (INPUT=0x01, OUTPUT=0x02,
  * INPUT_PULLUP=0x05)
+ * @param       bool _bypassCheck
+ *              Setting this to true will bypass user block on this GPIO pin.
  */
 void IOExpander::pinModeIO(uint8_t _pin, uint8_t _mode, bool _bypassCheck)
 {
@@ -151,6 +153,8 @@ void IOExpander::pinModeIO(uint8_t _pin, uint8_t _mode, bool _bypassCheck)
  * are pins from 0-8) only use 9-15
  * @param       uint8_t _state
  *              output pin state (0 or 1)
+ * @param       bool _bypassCheck
+ *              Setting this to true will bypass user block on this GPIO pin.
  *
  */
 void IOExpander::digitalWriteIO(uint8_t _pin, uint8_t _state, bool _bypassCheck)
@@ -167,7 +171,9 @@ void IOExpander::digitalWriteIO(uint8_t _pin, uint8_t _state, bool _bypassCheck)
  *
  * @param       uint8_t _pin
  *              pin to set mode
- *
+ * @param       bool _bypassCheck
+ *              Setting this to true will bypass user block on this GPIO pin.
+ * 
  * @return      HIGH or LOW (1 or 0) value
  */
 uint8_t IOExpander::digitalReadIO(uint8_t _pin, bool _bypassCheck)
@@ -235,6 +241,15 @@ uint16_t IOExpander::getPortsIO()
     return getPortsInternal();
 }
 
+/**
+ * @brief   Sets block on specific pin so user could not use it. This is to prevent damage to the
+ *          board since some of the GPIO pins from the I/O expander are connected to something on the board
+ *          (for example TPS).
+ * 
+ * @param   uint8_t _pin
+ *          I/O exapnder GPIO pin (IO_PIN_A0 - IO_PIN_A7, IO_PIN_B0 - 
+ *          IO_PIN_B7).
+ */
 void IOExpander::blockPinUsage(uint8_t _pin)
 {
     // Only pins from 0 to 15 are allowed.
@@ -244,6 +259,13 @@ void IOExpander::blockPinUsage(uint8_t _pin)
     _blockedPinsForUser |= 1ULL << _pin;
 }
 
+/**
+ * @brief   Remove block on specific pin so user could use it.
+ * 
+ * @param   uint8_t _pin
+ *          I/O exapnder GPIO pin (IO_PIN_A0 - IO_PIN_A7, IO_PIN_B0 - 
+ *          IO_PIN_B7).
+ */
 void IOExpander::unblockPinUsage(uint8_t _pin)
 {
     // Only pins from 0 to 15 are allowed.
@@ -440,6 +462,16 @@ uint16_t IOExpander::getPortsInternal()
     return (_ioExpanderRegs[PCAL6416A_INPORT0_ARRAY] | (_ioExpanderRegs[PCAL6416A_INPORT1_ARRAY]) << 8);
 }
 
+/**
+ * @brief   Checks for the pins taht users are not allowed to use.
+ * 
+ * @param   uint8_t _pin
+ *          GPIO pin on the I/O expander
+ * @return  bool    
+ *          true - Pin in blocked for the user - user must not use this pin (it's internally
+ *          connected to something on the board, check the schematic!
+ * @return  false - User can use this pin.
+ */
 bool IOExpander::checkForBlockedPins(uint8_t _pin)
 {
     // Check if the pin usage for this specific pin is blocked for user comparing it with the internal table.

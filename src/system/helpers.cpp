@@ -1,6 +1,25 @@
 // Inclucde header the file.
 #include "helpers.h"
 
+/**
+ * @brief   Function copy part of the SDRAM and writes it into dedicated DMA buffers.
+ *          Transfer is done using MDMA.
+ * 
+ * @param   MDMA_HandleTypeDef *hmdma
+ *          STM32 Master DMA pointer to the instance/typedef.
+ * @param   uint8_t *_internalBuffer
+ *          Internal buffer used for DMA copying. MUST BE INSIDE DTCMRAM!
+ * @param   uint32_t _internalBufferSize
+ *          Size of the buffer used for reading chunk-by-chunk in bytes.
+ *          Recommended size of the buffer is 8kB (8192 bytes).
+ * @param   volatile uint8_t *_srcBuffer
+ *          Address of the source buffer (SDRAM).
+ * @param   volatile uint8_t *_destBuffer
+ *          Pointer to the destiantion buffer.
+ * @param   uint32_t _size
+ *          Total size of the read (in bytes).
+ *          
+ */
 void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize, volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size)
 {
     // Calculate how many memory segments there are.

@@ -11,6 +11,13 @@
 #define MULTIPLE_OF_4(x) (((x - 1) | 3) + 1)
 
 // Fast conversion from Wavefrom to EPD data.
+/**
+ * @brief   Fast conversion from Wavefrom to EPD data.
+ * 
+ * @param   uint8_t _epdByte
+ *          Used for epaper clean function. Allowed values (0, 1, 2, 3).
+ * 
+ */
 __attribute__((always_inline)) static inline uint8_t wavefromElementToEpdData(uint8_t _epdByte)
 {
     // Limit byte from 0 to 3.

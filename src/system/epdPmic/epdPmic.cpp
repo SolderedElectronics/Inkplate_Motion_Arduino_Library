@@ -1,10 +1,22 @@
+// Include main library header file.
 #include "epdPmic.h"
 
+/**
+ * @brief Constructor for a new EpdPmic object.
+ * 
+ */
 EpdPmic::EpdPmic()
 {
     // Empty constructor.
 }
 
+/**
+ * @brief   Initialize ePaper PMIC library. Check for the hardware.
+ * 
+ * @return  bool
+ *          true - Hardware detected.
+ *          false - Hardware not detected.
+ */
 bool EpdPmic::begin()
 {
     // Try to ping PMIC. Return false if failed.
@@ -15,6 +27,12 @@ bool EpdPmic::begin()
     return (_ret != 0?false:true);
 }
 
+/**
+ * @brief   Set the state of the each EPD power rail.
+ * 
+ * @param   uint8_t _rails
+ *          Enable or disable each rail, see datasheet.
+ */
 void EpdPmic::setRails(uint8_t _rails)
 {
     // Disable or enable rails on the PMIC.
@@ -26,6 +44,13 @@ void EpdPmic::setRails(uint8_t _rails)
     writeRegister(TPS651851_ENABLE, &_rails, 1);
 }
 
+/**
+ * @brief   Set the VCOM value. This is not permanent VCOM programming,
+ *          this will be erased when TPS is set in sleep.
+ * 
+ * @param   double _vcom
+ *          VCOM voltage for the display (ex. -1.34V).
+ */
 void EpdPmic::setVCOM(double _vcom)
 {
     // Array for VCOM registers.
@@ -48,6 +73,12 @@ void EpdPmic::setVCOM(double _vcom)
     writeRegister(TPS651851_VCOM1, _vcomRegs, 2);
 }
 
+/**
+ * @brief   read the VCOM value from the TPS.
+ * 
+ * @return  double
+ *          VCOM voltage value (ex. -1.23V). 
+ */
 double EpdPmic::getVCOM()
 {
     // Array to store the content of the VCOM registers.
@@ -66,6 +97,19 @@ double EpdPmic::getVCOM()
     return (_vcomVolts * (-1));
 }
 
+/**
+ * @brief   Set power rails power up sequence with it's delays.
+ *          between each rail power on.
+ * 
+ * @param   uint8_t _upSeq
+ *          Power up sequence. Use Power up sequence defines defined in
+ *          epdPmicDefs.h (for example TPS651851_VDDH_UPSEQ_1, TPS651851_VPOS_UPSEQ_2 etc).
+ *          See the datasheet for more info.
+ * @param   uint8_t _upSeqDelay
+ *          Delay between each rail enable/power up. Use Power up delay defines defined in
+ *          epdPmicDefs.h (for example TPS651851_UPSEQ_STB3_STB4_3MS, TPS651851_UPSEQ_STB2_STB3_6MS etc).
+ *          See the datasheet for more info.
+ */
 void EpdPmic::setPowerOnSeq(uint8_t _upSeq, uint8_t _upSeqDelay)
 {
     // Array to store register values.
@@ -81,6 +125,18 @@ void EpdPmic::setPowerOnSeq(uint8_t _upSeq, uint8_t _upSeqDelay)
     writeRegister(TPS651851_UPSEQ0, _upSeqRegs, 2);
 }
 
+/**
+ * @brief   Set power rails power down sequence with it's delays.
+ * 
+ * @param   uint8_t _dwnSeq
+ *          Power down sequence. Use Power down sequence defines defined in
+ *          epdPmicDefs.h (for example TPS651851_VDDH_DWNSEQ_1, TPS651851_VPOS_DWNSEQ_2 etc).
+ *          See the datasheet for more info.
+ * @param   uint8_t _dwnSeqDelay
+ *          Delay between each rail disale/power down. Use Power down delay defines defined in
+ *          epdPmicDefs.h (for example TPS651851_DWNSEQ_STB3_STB4_6MS, TPS651851_DWNSEQ_STB2_STB3_12MS etc).
+ *          See the datasheet for more info.
+ */
 void EpdPmic::setPowerOffSeq(uint8_t _dwnSeq, uint8_t _dwnSeqDelay)
 {
     // Array to store register values.
@@ -96,6 +152,21 @@ void EpdPmic::setPowerOffSeq(uint8_t _dwnSeq, uint8_t _dwnSeqDelay)
     writeRegister(TPS651851_DWNSEQ0, _dwnSeqRegs, 2);
 }
 
+/**
+ * @brief   Program VCOM value (and power up / down sequence with delays) into
+ *          TPS EEPROM. That way these settings are permanently set.
+ * 
+ * @param   double _vcom
+ *          VCOM value that will be programed.
+ * @return  bool
+ *          true - VCOM programming was successful.
+ *          false - VCOM programming has failed.
+ * 
+ * @note    BE CAREFUL! EEPROM can only be programmed about 100 times afterwhich this
+ *          config is permament and can't  be changed.
+ *          Also, if you set up power up/down sequence before calling this method
+ *          these settings *can* be also programmed (did not test it).
+ */
 bool EpdPmic::programVCOM(double _vcom)
 {
     // Variable for VCOM programming flag. Set the default value to 0x04
@@ -143,6 +214,12 @@ bool EpdPmic::programVCOM(double _vcom)
     return false;
 }
 
+/**
+ * @brief   Reads the temperature from built-in temperature sensor.
+ * 
+ * @return  int
+ *          Temperature in celsius. 
+ */
 int EpdPmic::getTemperature()
 {
     // Temp. variable for storing temperature data.
@@ -180,6 +257,13 @@ int EpdPmic::getTemperature()
     return (int8_t)(_temp);
 }
 
+/**
+ * @brief   Check returns current state of the rails. All rails must be ready before sending 
+ *          data to the screen.
+ * 
+ * @return  uint8_t
+ *          PWR_GOOD flags, check the datasheet or compare against TPS651851_PWR_GOOD_OK flag.
+ */
 uint8_t EpdPmic::getPwrgoodFlag()
 {
     // Temp. variable for storing power good flag.
@@ -192,6 +276,13 @@ uint8_t EpdPmic::getPwrgoodFlag()
     return _pwrGood;
 }
 
+/**
+ * @brief   Enable the interrutps on TPS PMIC.
+ * 
+ * @param   uint16_t _intMask
+ *          Interrupt mask, check the datasheet or use TPS615851 Interrupt Status Registers
+ *          defined in epdPmicDefs.h (for example TPS651851_INT_STATUS_DTX_EN).
+ */
 void EpdPmic::enableInterrupts(uint16_t _intMask)
 {
     // Get the INT register value from the TPS.
@@ -205,6 +296,13 @@ void EpdPmic::enableInterrupts(uint16_t _intMask)
     writeRegister(TPS651851_INT_EN1, (uint8_t*)(&_intEnableRegs), 2);
 }
 
+/**
+ * @brief   Disable the interrutps on TPS PMIC.
+ * 
+ * @param   uint16_t _intMask
+ *          Interrupt mask, check the datasheet or use TPS615851 Interrupt Status Registers
+ *          defined in epdPmicDefs.h (for example TPS651851_INT_STATUS_DTX_EN).
+ */
 void EpdPmic::disableInterrupts(uint16_t _intMask)
 {
     // Get the INT register value from the TPS.
@@ -218,6 +316,12 @@ void EpdPmic::disableInterrupts(uint16_t _intMask)
     writeRegister(TPS651851_INT_EN1, (uint8_t*)(&_intEnableRegs), 2);
 }
 
+/**
+ * @brief   Adjust voltage on the VPOS and VNEG rails. Use macro defines defined
+ *          in epdPmicDefs.h (for example TPS651851_VADJ_VSET_15000).
+ * 
+ * @param _vAdj 
+ */
 void EpdPmic::voltageAdjust(uint8_t _vAdj)
 {
     // Mask the data.
@@ -238,6 +342,13 @@ void EpdPmic::voltageAdjust(uint8_t _vAdj)
     writeRegister(TPS651851_VADJ, &_vAdjReg, 1);
 }
 
+/**
+ * @brief   Read the current interrupt flags.
+ * 
+ * @return  uint16_t
+ *          Interrutpt flags, check the datasheet or use TPS615851 Interrupt Status Registers
+ *          defined in epdPmicDefs.h (for example TPS651851_INT_STATUS_DTX_EN)
+ */
 uint16_t EpdPmic::getIntStatus()
 {
     // Read the current INT status values from the TPS.
@@ -248,6 +359,16 @@ uint16_t EpdPmic::getIntStatus()
     return _intStatusRegs;
 }
 
+/**
+ * @brief   Reads the data from the TPS I2C registers. Also, auto increment pointer address.
+ * 
+ * @param   uint8_t _reg
+ *          Start I2C TPS register address.
+ * @param   uint8_t *_data
+ *          Pointer to the address where to store data read from the TPS.
+ * @param   uint8_t _n
+ *          Number of bytes to read.
+ */
 void EpdPmic::readRegister(uint8_t _reg, uint8_t *_data, uint8_t _n)
 {
     // Set the register address.
@@ -263,6 +384,16 @@ void EpdPmic::readRegister(uint8_t _reg, uint8_t *_data, uint8_t _n)
     }
 }
 
+/**
+ * @brief   Write the data to the TPS I2C registers. Also, auto increment pointer address.
+ * 
+ * @param   uint8_t _reg
+ *          Stert I2C TPS register address.
+ * @param   uint8_t *_data
+ *          Pointer to the data buffer of the data that needs to be written to the TPS.
+ * @param   uint8_t _n
+ *          Number of bytes to write.
+ */
 void EpdPmic::writeRegister(uint8_t _reg, uint8_t *_data, uint8_t _n)
 {
     // Set the register address.

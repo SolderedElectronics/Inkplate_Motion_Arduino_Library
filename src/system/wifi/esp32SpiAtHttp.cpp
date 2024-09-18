@@ -135,15 +135,8 @@ int WiFiClient::available(bool _blocking)
         // Try to get new data. If new data is available, update the size and current pointer for the data.
         if (WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
         {
-            // if (strstr(_dataBuffer, esp32AtCmdResponseError) == NULL)
-            //{
-            // uint16_t _len = 0;
-            // if (cleanHttpGetResponse(_dataBuffer, &_len))
-            //{
             _bufferLen += _len;
             _currentPos = _dataBuffer;
-            //}
-            //}
         }
     }
 
