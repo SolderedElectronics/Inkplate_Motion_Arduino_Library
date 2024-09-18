@@ -221,7 +221,7 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
     uint8_t *_fbPtr;
 
     // Find the difference mask for the partial update (use scratchpad memory!).
-    uint32_t _pxDiff = differenceMask((uint8_t *)_currentScreenFB, (uint8_t *)_pendingScreenFB, (uint8_t *)_scratchpadMemory);
+    differenceMask((uint8_t *)_currentScreenFB, (uint8_t *)_pendingScreenFB, (uint8_t *)_scratchpadMemory);
 
     for (int k = 0; k < 9; k++)
     {
@@ -1056,19 +1056,24 @@ void EPDDriver::setFullUpdateTreshold(uint16_t _numberOfPartialUpdates)
 /**
  * @brief   Method that do it's magic to update the screen. It's universal for all modes.
  * 
- * @param _frameBuffer 
- * @param _waveformLut 
- * @param _pixelDecode 
- * @param _prebufferedLines 
- * @param _bitsPerPx 
+ * @param   volatile uint8_t *_frameBuffer
+ *          Pointer to the framebuffer storing pixels.
+ * @param   uint8_t *_waveformLut
+ *          Used LUT for converting from pixels into waveform.
+ * @param   void (*_pixelDecode)(void*, void*, void*)
+ *          Callback to the function that will be used for decoding pixels to wavefrom (data ready to be sent to the ePaper).
+ * @param   const uint8_t _prebufferedLines
+ *          How many lines to read at one from the framebuffer (SDRAM). It depends on BPP and buffer size (_oneLine1, _oneLine2, _oneLine3).
+ * @param   uint8_t _pixelsPerByte
+ *          How many pixels are stored in one byte inside framebuffer (4 bit = 2 pixels, 1 bit = 8 pixels).
  */
-void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _bitsPerPx)
+void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _pixelsPerByte)
 {
         // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
         uint16_t *_fbPtr;
 
         // Calculate byte shift for each line.
-        uint16_t _lineByteIncrement = SCREEN_WIDTH / (_bitsPerPx * 2);
+        uint16_t _lineByteIncrement = SCREEN_WIDTH / (_pixelsPerByte * 2);
 
         // First calculate the new fast GLUT for the current EPD waveform phase.
         //calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
@@ -1147,6 +1152,17 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
         }
 }
 
+/**
+ * @brief   Static method used for covnverting framebuffer pixel data to data ready to be send to ePaper.
+ * 
+ * @param   void *_out
+ *          Pointer to the locaton where to store decoded pixels.
+ * @param   void *_lut
+ *          Pointer to the location of the LUT used for decode.
+ * @param   void *_fb
+ *          Pointer to the location of the piel framebuffer.
+ *          
+ */
 void EPDDriver::pixelDecode4BitEPD(void *_out, void *_lut, void *_fb)
 {
     uint16_t *_fbHelper = (uint16_t*)_fb;
@@ -1156,6 +1172,17 @@ void EPDDriver::pixelDecode4BitEPD(void *_out, void *_lut, void *_fb)
     }
 }
 
+/**
+ * @brief   Static method used for covnverting framebuffer pixel data to data ready to be send to ePaper.
+ * 
+ * @param   void *_out
+ *          Pointer to the locaton where to store decoded pixels.
+ * @param   void *_lut
+ *          Pointer to the location of the LUT used for decode.
+ * @param   void *_fb
+ *          Pointer to the location of the piel framebuffer.
+ *          
+ */
 void EPDDriver::pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb)
 {
     uint8_t *_fbHelper = (uint8_t*)_fb;
@@ -1166,6 +1193,17 @@ void EPDDriver::pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb)
     }
 }
 
+/**
+ * @brief   Static method used for covnverting framebuffer pixel data to data ready to be send to ePaper.
+ * 
+ * @param   void *_out
+ *          Pointer to the locaton where to store decoded pixels.
+ * @param   void *_lut
+ *          Pointer to the location of the LUT used for decode.
+ * @param   void *_fb
+ *          Pointer to the location of the piel framebuffer.
+ *          
+ */
 void EPDDriver::pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb)
 {
     uint8_t *_fbHelper = (uint8_t*)_fb;

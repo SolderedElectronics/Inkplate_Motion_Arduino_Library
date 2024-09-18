@@ -13,21 +13,15 @@
 // Needed for Debug messages
 #include "../system/defines.h"
 
-// Define SRAM start address
-#define EXTERNAL_SRAM_ADDR  0x60000000
-
-// Define EPD FMC Peripheral address
-#define EPD_FMC_ADDR        0x68000000
-
 // STM32 HAL functions for initialization of the FMP Peripheral hardware (GPIO pins, clocks, etc).
 // Must be defined as extern for HAL driver to be able to find them.
 extern "C" void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram);
 extern "C" void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram);
 extern "C" void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef* hsdram);
 
-void stm32FmcInit();
+void stm32FmcInit(uint32_t _ePaperPeriphAddress);
 void stm32FmcDeInit();
-void stm32FmcMpuInit();
+void stm32FmcMpuInit(uint32_t _epaperPeriphAddress);
 void stm32FmcMdmaInit();
 SRAM_HandleTypeDef *stm32FmcGetEpdInstance();
 SDRAM_HandleTypeDef *stm32FmcGetSdramInstance();

@@ -15,12 +15,17 @@ MPU_Region_InitTypeDef _mpuInitStructEpd;
 static uint32_t _stm32FmcInitialized = 0;
 static uint32_t _stm32FmcDeInitialized = 0;
 
-// Interrupt flags.
+// Interrupt flags for MDMA transfer scomplete status.
 volatile uint8_t _stm32MdmaEpdCompleteFlag = 0;
 volatile uint8_t _stm32MdmaSdramCompleteFlag = 0;
 
 // Really low level STM32 related stuff. Do not change anything unless you really know what you are doing!
-/* FMC initialization function */
+
+/**
+ * @brief   FMC initialization function for the STM32 FMC peripheral. This peripheral is used to communicate with the
+ *          SDRAM and ePaper parallel bus.
+ * 
+ */
 static void MX_FMC_Init(void)
 {
     FMC_NORSRAM_TimingTypeDef _timing = {0};
@@ -141,6 +146,10 @@ static void MX_FMC_Init(void)
     }
 }
 
+/**
+ * @brief   Initializaton of the FMC Hardware (PLL, GPIOs, Clocks etc).
+ * 
+ */
 static void HAL_FMC_MspInit(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct ={0};
@@ -265,11 +274,19 @@ static void HAL_FMC_MspInit(void)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
+/**
+ * @brief   STM32 HAL function for initialization STM32 FMC peripheral (ePaper peripheral).
+ * 
+ */
 extern "C" void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
 {
     HAL_FMC_MspInit();
 }
 
+/**
+ * @brief   Deinitializaton of the FMC Hardware (PLL, GPIOs, Clocks etc).
+ * 
+ */
 static void HAL_FMC_MspDeInit(void)
 {
     if (_stm32FmcDeInitialized)
@@ -345,17 +362,31 @@ static void HAL_FMC_MspDeInit(void)
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_5|GPIO_PIN_6);
 }
 
+/**
+ * @brief   STM32 HAL function for deinitialization STM32 FMC peripheral (ePaper peripheral).
+ * 
+ */
 extern "C" void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram)
 {
     HAL_FMC_MspDeInit();
 }
 
+/**
+ * @brief   STM32 HAL function for deinitialization STM32 FMC peripheral (SDRAM peripheral).
+ * 
+ */
 extern "C" void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef* hsdram)
 {
     HAL_FMC_MspDeInit();
 }
 
-void stm32FmcInit()
+/**
+ * @brief   Function sets and initializes whole STM32 FMC peripheral.
+ * 
+ * @param   uint32_t _ePaperPeriphAddress
+ *          SRAM LCD (ePaper) peripheral address - used to disable cache on this address.
+ */
+void stm32FmcInit(uint32_t _ePaperPeriphAddress)
 {
     INKPLATE_DEBUG_MGS("STM32 FMC Driver Init started");
 
@@ -382,7 +413,7 @@ void stm32FmcInit()
      * It can be fixed by enabling HAL_SetFMCMemorySwappingConfig(FMC_SWAPBMAP_SDRAM_SRAM); but this will hurt SDRAM R/W
      * performace! Real workaround is to disable cache on LCD memory allocation with MPU (Memory Protection Unit).
      */
-    stm32FmcMpuInit();
+    stm32FmcMpuInit(_ePaperPeriphAddress);
 
     // Init DMA (MDMA - Master DMA) for external RAM.
     stm32FmcMdmaInit();
@@ -400,6 +431,10 @@ void stm32FmcInit()
     INKPLATE_DEBUG_MGS("STM32 FMC Driver Init done");
 }
 
+/**
+ * @brief   Deinitializaton of the complete FMC peripheral.
+ * 
+ */
 void stm32FmcDeInit()
 {
     // De-Init FMC.
@@ -409,6 +444,12 @@ void stm32FmcDeInit()
     __HAL_RCC_FMC_CLK_ENABLE();
 }
 
+/**
+ * @brief   Initializaton of the STM32 MDMA (Master Direct Memory Access controller).
+ *          Used for getting data from the SDRAM into internal SRAM and to transfer
+ *          ePaper dat ato the ePaper fast as possible. Also enables the interrutps on DMA.
+ * 
+ */
 void stm32FmcMdmaInit()
 {
     /* MDMA controller clock enable */
@@ -463,47 +504,84 @@ void stm32FmcMdmaInit()
     HAL_NVIC_EnableIRQ(MDMA_IRQn);
 }
 
+/**
+ * @brief   Returns the address of the SRAM instance (used for data transfer between STM32 and ePaper).
+ * 
+ * @return  SRAM_HandleTypeDef*
+ *          Pointer to the STM32 SRAM/LCD FMC Instance.
+ */
 SRAM_HandleTypeDef *stm32FmcGetEpdInstance()
 {
     // Handle for the FMC LCD interface (for EPD).
     return &_hsram1;
 }
 
+/**
+ * @brief   Returns the address of the SDRAM instance (used for communication between SDRAM and STM32).
+ * 
+ * @return  SDRAM_HandleTypeDef*
+ *          Pointer to the STM32 SDRAM FMC Instance.
+ */
 SDRAM_HandleTypeDef *stm32FmcGetSdramInstance()
 {
     // Handle for the SDRAM FMC interface.
     return &_hsdram1;
 }
 
+/**
+ * @brief   Returns the STM32 Master DMA instance used by the ePaper (STM32->ePaper data transfer).
+ * 
+ * @return  MDMA_HandleTypeDef*
+ *          Address of the Master DMA STM32 instance.
+ */
 MDMA_HandleTypeDef *stm32FmcGetEpdMdmaInstance()
 {
     // Handle for Master DMA for FMC LCD (EPD).
     return &_hmdmaMdmaChannel41Sw0;
 }
 
+// 
+/**
+ * @brief   Returns the STM32 Master DMA instance used by the SDRAM (STM32<-SDRAM data transfer).
+ * 
+ * @return  MDMA_HandleTypeDef*
+ *          Address of the Master DMA STM32 instance.
+ * 
+ * @note    It is used for data transfer between SDRAM and STM32, but not otherway around.
+ */
 MDMA_HandleTypeDef *stm32FmcGetSdramMdmaInstance()
 {
     // Handle for Master DMA for SDRAM.
     return &_hmdmaMdmaChannel40Sw0;
 }
 
+/**
+ * @brief   Gets the instance of the STM32 MPU (Memory Protection Unit).
+ * 
+ * @return  MPU_Region_InitTypeDef*
+ *          Returns the address of the STM32 MPU instance.
+ */
 MPU_Region_InitTypeDef *stm32FmcGetMpuInstance()
 {
     return &_mpuInitStructEpd;
 }
 
 /**
- * @brief       It disables cacheing on LCD FMC memory area, but not affecting caching on SRAM by using MPU.
- *
+ * @brief   It disables cacheing on LCD FMC memory area, but not affecting caching on SRAM by using MPU.
+ *          Initializaton and setup of the MPU on FMC SRAM part of the peripheral. This is neeeded due epaper
+ *          control timings.
+ * 
+ * @param   uint32_t _ePaperPeriphAddress
+ *          SRAM LCD (ePaper) peripheral address - used to disable cache on this address.
  */
-void stm32FmcMpuInit()
+void stm32FmcMpuInit(uint32_t _epaperPeriphAddress)
 {
     INKPLATE_DEBUG_MGS("STM32 MPU Init started");
 
     HAL_MPU_Disable();
     // Disable only cache on LCD interface, NOT SRAM!
     _mpuInitStructEpd.Enable = MPU_REGION_ENABLE;
-    _mpuInitStructEpd.BaseAddress = 0x68000000;
+    _mpuInitStructEpd.BaseAddress = _epaperPeriphAddress;
     _mpuInitStructEpd.Size = MPU_REGION_SIZE_64MB;
     _mpuInitStructEpd.AccessPermission = MPU_REGION_FULL_ACCESS;
     _mpuInitStructEpd.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
@@ -520,36 +598,76 @@ void stm32FmcMpuInit()
     INKPLATE_DEBUG_MGS("STM32 MPU Init done");
 }
 
+/**
+ * @brief   Callback function called after the data transfer for the SDRAM has completed.
+ * 
+ * @param   MDMA_HandleTypeDef *_mdma
+ *          Pointer to the MDMA handle - required by the STM32 HAL library.
+ */
 void stm32FmcSdramTransferCompleteCallback(MDMA_HandleTypeDef *_mdma)
 {
     _stm32MdmaSdramCompleteFlag = 1;
 }
 
+/**
+ * @brief   Callback function called after the data transfer for the ePaper has completed.
+ * 
+ * @param   MDMA_HandleTypeDef *_mdma
+ *          Pointer to the MDMA handle - required by the STM32 HAL library.
+ */
 void stm32FmcEpdTransferCompleteCallback(MDMA_HandleTypeDef *_mdma)
 {
     _stm32MdmaEpdCompleteFlag = 1;
 }
 
+/**
+ * @brief   Clears the transfer complete flag to ready for the next transfer.
+ * 
+ */
 void stm32FmcClearEpdCompleteFlag()
 {
     _stm32MdmaEpdCompleteFlag = 0;
 }
 
+/**
+ * @brief   Clears the transfer complete flag to ready for the next transfer.
+ * 
+ */
 void stm32FmcClearSdramCompleteFlag()
 {
     _stm32MdmaSdramCompleteFlag = 0;
 }
 
+/**
+ * @brief   Returns the transfer complete flag state.
+ * 
+ * @return  uint8_t
+ *          1 = transfer complete.
+ *          0 = transfet still in progress.
+ * 
+ */
 uint8_t stm32FmcEpdCompleteFlag()
 {
     return _stm32MdmaEpdCompleteFlag;
 }
 
+/**
+ * @brief   Returns the transfer complete flag state.
+ * 
+ * @return  uint8_t
+ *          1 = transfer complete.
+ *          0 = transfet still in progress.
+ * 
+ */
 uint8_t stm32FmcSdramCompleteFlag()
 {
     return _stm32MdmaSdramCompleteFlag;
 }
 
+/**
+ * @brief   STM32 function for interrupt callback register.
+ * 
+ */
 extern "C" void MDMA_IRQHandler()
 {
     HAL_MDMA_IRQHandler(&_hmdmaMdmaChannel40Sw0);
