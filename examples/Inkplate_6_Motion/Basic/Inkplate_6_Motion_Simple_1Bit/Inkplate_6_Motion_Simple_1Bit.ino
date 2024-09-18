@@ -14,7 +14,7 @@ void setup()
     Serial.begin(115200);
 
     // Send debug message.
-    Serial.println("Inkplate Motion 6 Example started.");
+    Serial.println("Inkplate 6 Motion Example started.");
 
     // Initialize Inkplate Motion Library in 1 bit mode.
     inkplate.begin(INKPLATE_1BW);

@@ -34,7 +34,7 @@ EPDDriver::EPDDriver()
 }
 
 /**
- * @brief   ePaper driver initializer for the Inkplate Motion 6 board.
+ * @brief   ePaper driver initializer for the Inkplate 6 Motion board.
  * 
  * @return  int
  *          0 = Initialization has faild, check debug messages for more info.
@@ -405,11 +405,15 @@ void EPDDriver::display4b(uint8_t _leaveOn)
 }
 
 /**
- * @brief   
+ * @brief   Loads custom wavefrom in Inkplate 6 Motion Driver
  * 
- * @param _customWaveform 
- * @return true 
- * @return false 
+ * @param   InkplateWaveform _customWaveform
+ *          Custom wavefrom / non-default one. Check wavefroms.h file for more info!
+ * @return  bool
+ *          true - Waveform loaded successfully
+ *          false - Wavefrom load failed
+ * @note    Improper usage of this feature can PERMANETLY DAMAGE THE DISPLAY.
+ *          Use it of your own risk! Preloaded waveforms from wavefroms.h are safe.
  */
 bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
 {
@@ -430,6 +434,16 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
     return true;
 }
 
+/**
+ * @brief   Enables or disables power rails and GPIOs to the ePaper bus.
+ * 
+ * @param   uint8_t _state
+ *          1 = Enable the ePaper PSU and set GPIOs for ePaper data bus.
+ *          0 = Disable the ePaper PSU and disable GPIOs for ePaper data bus.
+ * @return  int
+ *          1 = New state successfully set.
+ *          0 = New state of the ePaper PSU and GPIOs has failed (usually due ePaper PSU).
+ */
 int EPDDriver::epdPSU(uint8_t _state)
 {
     // Check if the atate is already set.
@@ -529,6 +543,11 @@ int EPDDriver::epdPSU(uint8_t _state)
     return 1;
 }
 
+/**
+ * @brief   Initializes all the GPIOs of the Inkplate 6 Motion (SDRAM Supply Enable,
+ *          ePaper PSU GPIOs, WiFi GPIO and WiFi SPI, Rotary Encoder Power Enable etc).
+ * 
+ */
 void EPDDriver::gpioInit()
 {
     // Disable user usage on some GPIO expander pins.
@@ -576,6 +595,15 @@ void EPDDriver::gpioInit()
     WiFi.hwSetup(&_inkplateSystemSPI);
 }
 
+/**
+ * @brief   Reads the battery voltage (main battery conneted to the JST connector).
+ * 
+ * @return  double
+ *          Battery voltage in volts.
+ * @note    This method assumes 16 bit resolution on the ADC. Library sets ADC to 16 bit resolution at the start.
+ *          If the ADC resolution changes, battery voltage measurement will be incorrect.
+ * 
+ */
 double EPDDriver::readBattery()
 {
     // Enable MOSFET for viltage divider.
@@ -599,6 +627,15 @@ double EPDDriver::readBattery()
     return _voltage;
 }
 
+/**
+ * @brief   Sets GPIOs of the ePaper control lines to output or Hi-Z.
+ *          This is used by the epdPSU()
+ * 
+ * @param   uint8_t _state
+ *          EPD_DRIVER_PINS_OUTPUT = ePaper pins are set as outputs.
+ *          EPD_DRIVER_PINS_H_ZI = ePaper control pins are set to Hi-Z state to save
+ *          the power.
+ */
 void EPDDriver::epdGpioState(uint8_t _state)
 {
     if (_state)
@@ -623,7 +660,20 @@ void EPDDriver::epdGpioState(uint8_t _state)
     }
 }
 
-uint32_t EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask)
+/**
+ * @brief   Used by the 1 bit partial update, it calculates difference between what is currently
+ *          on the screen and what is pending in the framebuffer only stores different pixels.
+ *          Also, packs them in wavefrom ready to be sent to the ePaper using FMC.
+ * 
+ * @param   uint8_t *_currentScreenFB
+ *          Pointer to the framebuffer that stores current content of the screen.
+ * @param   uint8_t *_pendingScreenFB
+ *          Pointer to the framebuffer with pending changes.
+ * @param   uint8_t *_differenceMask
+ *          Pointer to the framebuffer where to store difference between _currentScreenFB and _pendingScreenFB
+ *          packed ready to be sent to the ePaper with STM32 FMC peripheral.
+ */
+void EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask)
 {
     // Try to find the difference between two frame buffers.
     // Idea is this: find the difference between two framebuffers, simple!
@@ -643,9 +693,6 @@ uint32_t EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingS
 
     // Set the offset for the framebuffer address.
     uint32_t _fbAddressOffset = 0;
-
-    // Used for counting how many pixels will change.
-    uint32_t _change = 0;
 
     // Using a pointer, interpret 8 bit array as 16 bit array.
     uint16_t *_outDataArray = (uint16_t*)_oneLine3;
@@ -681,11 +728,17 @@ uint32_t EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingS
         // Update the pointer.
         _fbAddressOffset += sizeof(_oneLine1);
     }
-
-    // Return number of pixels needed to change.
-    return _change;
 }
 
+/**
+ * @brief   Used to draw a full screen image in frame buffer as fast as possible.
+ *          Used by the 1 bit partial updates (the ultra fast ones).
+ * 
+ * @param   const uint8_t *_p
+ *          Pointer to the image bitmap data.
+ * 
+ * @note    To-Do: Try to implement STM32 DMA2D for this.
+ */
 void EPDDriver::drawBitmapFast(const uint8_t *_p)
 {
     // For now, image must be in full resolution of the screen!
@@ -707,6 +760,13 @@ void EPDDriver::drawBitmapFast(const uint8_t *_p)
     }
 }
 
+/**
+ * @brief   Initializes the microSD card on the Inkplate 6 Motion.
+ * 
+ * @return  bool
+ *          true = Initialization is successfull.
+ *          false = Initialization has failed.
+ */
 bool EPDDriver::microSDCardInit()
 {
     // Power up the card!
@@ -725,7 +785,15 @@ bool EPDDriver::microSDCardInit()
     return _microSdInit;
 }
 
-// Enable selected peripherals.
+/**
+ * @brief   Enable or dosable Inkplate 6 Motion peripherals to sve the power in sleep.
+ * 
+ * @param   uint8_t _peripheral
+ *          Selected peripheral (INKPLATE_PERIPHERAL_SDRAM, INKPLATE_PERIPHERAL_ROTARY_ENCODER, etc).
+ *          See all of them in featureSelect.h in (src/features).
+ * @param   bool _en
+ *          Set the state of the currently selected peripheral; true = enable it, false = disable it.
+ */
 void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
 {
     // You can disable or enable multiple peripher. at once.
@@ -899,6 +967,15 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
     }
 }
 
+/**
+ * @brief   Method calcuates fast look-up table for the 4 bit global update mode.
+ *          It calculates the LUT for the current waveform phase.
+ * 
+ * @param   uint8_t *_lut
+ *          Pointer to the array where to store calculated LUT (must be 65536 bytes).
+ * @param   uint8_t *_waveform
+ *          Waveform LUT, see wavefroms.h or pixelDecode4BitEPD() to see example usage.
+ */
 void EPDDriver::calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform)
 {
     for (uint32_t i = 0; i < 65536; i++)
@@ -913,6 +990,16 @@ void EPDDriver::calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform)
     }
 }
 
+/**
+ * @brief   Select current display mode.
+ *          It can be 4 bit grayscale or 1 bit.
+ * 
+ * @param   uint8_t _mode
+ *          INKPLATE_GL16 = 4 bit mode.
+ *          INKPLATE_1BW = 1 bit mode.
+ * 
+ * @note    Once mode has been changed, all content of the framebuffers is cleared.
+ */
 void EPDDriver::selectDisplayMode(uint8_t _mode)
 {
     // Block the parameter to only two possible values.
@@ -935,11 +1022,28 @@ void EPDDriver::selectDisplayMode(uint8_t _mode)
     _blockPartial = 1;
 }
 
+/**
+ * @brief   Get the current display mode (BW or grayscale).
+ * 
+ * @return  uint8_t
+ *          INKPLATE_GL16 = 4 bit mode.
+ *          INKPLATE_1BW = 1 bit mode.
+ */
 uint8_t EPDDriver::getDisplayMode()
 {
     return _displayMode;
 }
 
+/**
+ * @brief   Set the number of partial updates afterwhich full screen update is performed.
+ * 
+ * @param   uint16_t _numberOfPartialUpdates
+ *          Number of allowed partial updates afterwhich full update is performed.
+ *          0 = disabled, no automatic full update will be performed.
+ * 
+ * @note    By default, this is disabled, but to keep best image quality perform a full update
+ *          every 60-80 partial updates.
+ */
 void EPDDriver::setFullUpdateTreshold(uint16_t _numberOfPartialUpdates)
 {
     // Copy the value into the local variable.
@@ -949,7 +1053,15 @@ void EPDDriver::setFullUpdateTreshold(uint16_t _numberOfPartialUpdates)
     if (_numberOfPartialUpdates != 0) _blockPartial = true;
 }
 
-
+/**
+ * @brief   Method that do it's magic to update the screen. It's universal for all modes.
+ * 
+ * @param _frameBuffer 
+ * @param _waveformLut 
+ * @param _pixelDecode 
+ * @param _prebufferedLines 
+ * @param _bitsPerPx 
+ */
 void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _bitsPerPx)
 {
         // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.

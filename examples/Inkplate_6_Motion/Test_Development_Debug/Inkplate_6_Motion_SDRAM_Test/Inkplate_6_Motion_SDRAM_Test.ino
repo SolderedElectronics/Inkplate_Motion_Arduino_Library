@@ -21,7 +21,7 @@ void setup()
 {
     // Serial debugging.
     Serial.begin(115200);
-    Serial.printf("Inkplate Motion 6 code is starting...");
+    Serial.printf("Inkplate 6 Motion code is starting...");
 
     // Initialize the library (needed for the SDRAM and MDMA).
     inkplate.begin(INKPLATE_GL16);

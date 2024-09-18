@@ -5,7 +5,7 @@
 #ifdef BOARD_INKPLATE6_MOTION
 
 // Inkplate Board name.
-#define INKPLATE_BOARD_NAME "Inkplate 6 MOTION"
+#define INKPLATE_BOARD_NAME "Inkplate 6 Motion"
 
 // Include main header file for the Arduino.
 #include "Arduino.h"
@@ -186,19 +186,20 @@ class EPDDriver : public Helpers
         void calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform);
 
         // Function calculates the difference between tfo framebuffers (usually between current image on the screen and pending in the MCU memory).
-        // Also returns the number of pixel that will be changed.
-        uint32_t differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
+        void differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
 
+        // Internal method for global 1 bit ePaper screen update.
         void display1b(uint8_t _leaveOn);
         
+        // Internal method for global 4 bit ePaper screen update.
         void display4b(uint8_t _leaveOn);
 
+        // Universal method fot the ePaper screen update.
         void pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _bitsPerPx);
 
+        // Mode dependant methods for conversion framebuffer data into waveforem data. Used by the pixelsUpdate.
         static void pixelDecode4BitEPD(void *_out, void *_lut, void *_fb);
-        
         static void pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb);
-
         static void pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb);
 
         // Object for the SdFat SPI STM32 library.
