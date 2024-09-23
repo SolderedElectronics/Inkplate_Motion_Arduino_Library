@@ -15,6 +15,9 @@
 // Include main library header file.
 #include "STM32H7RTC.h"
 
+// User callback function pointer.
+void (*STM32H7RTC::userFcn)() = nullptr;
+
 /**
  * @brief   Constructor for a new STM32H7RTC object.
  * 

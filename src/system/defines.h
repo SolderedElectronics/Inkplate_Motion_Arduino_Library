@@ -56,11 +56,15 @@ typedef struct InkplateWaveform
     uint16_t lutPhases = 0;
     // Pointer to the LUT for screen refresh.
     void *lut = NULL;
+    // Timing paramerter for line write (delay is in CPU cycles).
+    uint32_t cycleDelay = 140ULL;
     // Number of phases for screen clear. 0 if not used.
     // In case of partial update it's used for prev image.
     uint16_t clearPhases;
     // LUT for screen clear.
     uint8_t *clearLUT;
+    // Timing parameter for line write for clean (delay is in CPU cycles).
+    uint32_t clearCycleDelay = 125ULL;
     // Name for the wavefrom.
     const char *name;
 };

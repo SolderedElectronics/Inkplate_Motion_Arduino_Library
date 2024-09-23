@@ -134,8 +134,10 @@ static InkplateWaveform default4BitWavefrom =
     .tag = 0xef,
     .lutPhases = sizeof(waveform4BitLUT) / sizeof(waveform4BitLUT[0]),
     .lut = (uint8_t*)&(waveform4BitLUT[0]),
+    .cycleDelay = 140ULL,
     .clearPhases = sizeof(clearWavefrom4Bit) / sizeof(clearWavefrom4Bit[0]),
     .clearLUT = clearWavefrom4Bit,
+    .clearCycleDelay = 140ULL,
     .name = "default4BitFullUpdate",
 };
 
@@ -147,8 +149,10 @@ static InkplateWaveform default1BitWavefrom =
     .tag = 0xef,
     .lutPhases = sizeof(wavefrom1BitLUT) / sizeof(wavefrom1BitLUT[0]),
     .lut = (uint8_t*)&(wavefrom1BitLUT[0]),
+    .cycleDelay = 140ULL,
     .clearPhases = sizeof(clearWavefrom1Bit) / sizeof(clearWavefrom1Bit[0]),
     .clearLUT = clearWavefrom1Bit,
+    .clearCycleDelay = 140ULL,
     .name = "default1BitFullUpdate",
 };
 
@@ -160,8 +164,10 @@ static InkplateWaveform default4BitPartialUpdate =
     .tag = 0xef,
     .lutPhases = sizeof(waveform4BitLUT) / sizeof(waveform4BitLUT[0]),
     .lut = (uint8_t*)&(waveform4BitLUT[0]),
+    .cycleDelay = 140ULL,
     .clearPhases = sizeof(waveform4BitPartialLUTClean) / sizeof(waveform4BitPartialLUTClean[0]),
     .clearLUT = (uint8_t*)&(waveform4BitPartialLUTClean[0]),
+    .clearCycleDelay = 140ULL,
     .name = "default4BitPartialUpdate",
 };
 
