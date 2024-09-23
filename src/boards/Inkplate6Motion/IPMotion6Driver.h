@@ -26,7 +26,7 @@
 #include "../../system/defines.h"
 
 // Include library for PCAL6416A GPIO expander.
-#include "../../system/PCAL_IO.h"
+#include "../../system/pcalExpander.h"
 
 // Include the STM32 Helpers functions.
 #include "../../system/helpers.h"

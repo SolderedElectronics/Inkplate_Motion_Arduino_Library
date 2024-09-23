@@ -1,5 +1,17 @@
-#ifndef __WIFISPITYPEDEF_H__
-#define __WIFISPITYPEDEF_H__
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAtTypedefs.h
+ * @brief       Header file with all typedef and macros used in
+ *              the esp32SpiAt library.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
+#ifndef __ESP32_SPI_AT_TYPEDEFS_H__
+#define __ESP32_SPI_AT_TYPEDEFS_H__
 
 // ESP32 Commands for SPI protocol.
 #define INKPLATE_ESP32_SPI_CMD_REQ_TO_SEND_DATA 0x01

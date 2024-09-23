@@ -1,10 +1,21 @@
+/**
+ **************************************************
+ *
+ * @file        helpers.cpp
+ * @brief       Source file for the helpers functions.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Inclucde header the file.
 #include "helpers.h"
 
 /**
  * @brief   Function copy part of the SDRAM and writes it into dedicated DMA buffers.
  *          Transfer is done using MDMA.
- * 
+ *
  * @param   MDMA_HandleTypeDef *hmdma
  *          STM32 Master DMA pointer to the instance/typedef.
  * @param   uint8_t *_internalBuffer
@@ -18,9 +29,10 @@
  *          Pointer to the destiantion buffer.
  * @param   uint32_t _size
  *          Total size of the read (in bytes).
- *          
+ *
  */
-void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize, volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size)
+void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize,
+                               volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size)
 {
     // Calculate how many memory segments there are.
     uint16_t _chunks = _size / _internalBufferSize;
@@ -35,7 +47,8 @@ void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuff
     {
         // Start DMA transfer from SDRAM to internal STM32 SRAM.
         HAL_MDMA_Start_IT(hmdma, (uint32_t)_srcBuffer, (uint32_t)_destBuffer, _internalBufferSize, 1);
-        while(stm32FmcSdramCompleteFlag() == 0);
+        while (stm32FmcSdramCompleteFlag() == 0)
+            ;
         stm32FmcClearSdramCompleteFlag();
 
         // Increment the pointers.
@@ -47,7 +60,8 @@ void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuff
     if (_lastChinkSize != 0)
     {
         HAL_MDMA_Start_IT(hmdma, (uint32_t)_srcBuffer, (uint32_t)_destBuffer, _lastChinkSize, 1);
-        while(stm32FmcSdramCompleteFlag() == 0);
+        while (stm32FmcSdramCompleteFlag() == 0)
+            ;
         stm32FmcClearSdramCompleteFlag();
     }
 }

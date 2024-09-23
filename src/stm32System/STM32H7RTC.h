@@ -1,3 +1,18 @@
+/**
+ **************************************************
+ *
+ * @file        STM32H7RTC.h
+ * @brief       Main header file for the STM32 built-in RTC
+ *              peripheral. RTC uses exteranl clock source (external XTAL
+ *              of 32.768kHz). Library Sets and gets the time, date, alarms,
+ *              sets user Alarm callbacks, manages backup memory region etc.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
+// Add a header guard for the STm32 RTC library.
 #ifndef __STM32H7RTC_H__
 #define __STM32H7RTC_H__
 

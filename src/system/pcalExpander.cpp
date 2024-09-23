@@ -1,22 +1,17 @@
 /**
  **************************************************
- * @file        Pcal.cpp
- * @brief       class for controling pcal expander
  *
- *              https://github.com/e-radionicacom/Inkplate-Arduino-library
- *              For support, please reach over forums: forum.e-radionica.com/en
- *              For more info about the product, please check: www.inkplate.io
+ * @file        pcalExpander.cpp
+ * @brief       Source file for the PCAL6416 GPIO Expander control.
+ *              Enables expanding number of GPIOs with I2C commuinication.
+ *              Mostly used for Inkplate peripherals.
  *
- *              This code is released under the GNU Lesser General Public
- *License v3.0: https://www.gnu.org/licenses/lgpl-3.0.en.html Please review the
- *LICENSE file included with this example. If you have any questions about
- *licensing, please contact techsupport@e-radionica.com Distributed as-is; no
- *warranty is given.
  *
- * @authors     Soldered
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
  ***************************************************/
 
-#include "PCAL_IO.h"
+#include "pcalExpander.h"
 
 /**
  * @brief       ioBegin function starts pcal expander and sets registers values
@@ -139,7 +134,8 @@ void IOExpander::updatePCALRegister(uint8_t _regIndex, uint8_t _d)
 void IOExpander::pinModeIO(uint8_t _pin, uint8_t _mode, bool _bypassCheck)
 {
     // If the usage of the pin is blocked, return without register modify.
-    if (checkForBlockedPins(_pin) && !_bypassCheck) return;
+    if (checkForBlockedPins(_pin) && !_bypassCheck)
+        return;
 
     // Pin not blocked? Set new pin mode.
     pinModeInternal(_pin, _mode);
@@ -160,7 +156,8 @@ void IOExpander::pinModeIO(uint8_t _pin, uint8_t _mode, bool _bypassCheck)
 void IOExpander::digitalWriteIO(uint8_t _pin, uint8_t _state, bool _bypassCheck)
 {
     // If the usage of the pin is blocked, return without register modify.
-    if (checkForBlockedPins(_pin) && !_bypassCheck) return;
+    if (checkForBlockedPins(_pin) && !_bypassCheck)
+        return;
 
     // Pin not blocked? Set new state of the pin.
     digitalWriteInternal(_pin, _state);
@@ -173,13 +170,14 @@ void IOExpander::digitalWriteIO(uint8_t _pin, uint8_t _state, bool _bypassCheck)
  *              pin to set mode
  * @param       bool _bypassCheck
  *              Setting this to true will bypass user block on this GPIO pin.
- * 
+ *
  * @return      HIGH or LOW (1 or 0) value
  */
 uint8_t IOExpander::digitalReadIO(uint8_t _pin, bool _bypassCheck)
 {
     // If the usage of the pin is blocked, return without register modify.
-    if (checkForBlockedPins(_pin) && !_bypassCheck) return 0;
+    if (checkForBlockedPins(_pin) && !_bypassCheck)
+        return 0;
 
     // Pin not blocked? Read the sate of the pin.
     return digitalReadInternal(_pin);
@@ -245,9 +243,9 @@ uint16_t IOExpander::getPortsIO()
  * @brief   Sets block on specific pin so user could not use it. This is to prevent damage to the
  *          board since some of the GPIO pins from the I/O expander are connected to something on the board
  *          (for example TPS).
- * 
+ *
  * @param   uint8_t _pin
- *          I/O exapnder GPIO pin (IO_PIN_A0 - IO_PIN_A7, IO_PIN_B0 - 
+ *          I/O exapnder GPIO pin (IO_PIN_A0 - IO_PIN_A7, IO_PIN_B0 -
  *          IO_PIN_B7).
  */
 void IOExpander::blockPinUsage(uint8_t _pin)
@@ -261,9 +259,9 @@ void IOExpander::blockPinUsage(uint8_t _pin)
 
 /**
  * @brief   Remove block on specific pin so user could use it.
- * 
+ *
  * @param   uint8_t _pin
- *          I/O exapnder GPIO pin (IO_PIN_A0 - IO_PIN_A7, IO_PIN_B0 - 
+ *          I/O exapnder GPIO pin (IO_PIN_A0 - IO_PIN_A7, IO_PIN_B0 -
  *          IO_PIN_B7).
  */
 void IOExpander::unblockPinUsage(uint8_t _pin)
@@ -349,13 +347,14 @@ void IOExpander::digitalWriteInternal(uint8_t _pin, uint8_t _state)
     uint8_t _port = _pin / 8;
     _pin %= 8;
 
-    _state ? _ioExpanderRegs[PCAL6416A_OUTPORT0_ARRAY + _port] |= (1 << _pin) : _ioExpanderRegs[PCAL6416A_OUTPORT0_ARRAY + _port] &= ~(1 << _pin);
+    _state ? _ioExpanderRegs[PCAL6416A_OUTPORT0_ARRAY + _port] |= (1 << _pin)
+           : _ioExpanderRegs[PCAL6416A_OUTPORT0_ARRAY + _port] &= ~(1 << _pin);
     updatePCALRegister(PCAL6416A_OUTPORT0_ARRAY + _port, _ioExpanderRegs[PCAL6416A_OUTPORT0_ARRAY + _port]);
 }
 
 /**
  * @brief       digitalReadInternal reads io exapnder internal pin state
- * 
+ *
  *              pointer to array that holds io exapnder registers
  * @param       uint8_t _pin
  *              pin to set mode
@@ -464,10 +463,10 @@ uint16_t IOExpander::getPortsInternal()
 
 /**
  * @brief   Checks for the pins taht users are not allowed to use.
- * 
+ *
  * @param   uint8_t _pin
  *          GPIO pin on the I/O expander
- * @return  bool    
+ * @return  bool
  *          true - Pin in blocked for the user - user must not use this pin (it's internally
  *          connected to something on the board, check the schematic!
  * @return  false - User can use this pin.
@@ -475,7 +474,8 @@ uint16_t IOExpander::getPortsInternal()
 bool IOExpander::checkForBlockedPins(uint8_t _pin)
 {
     // Check if the pin usage for this specific pin is blocked for user comparing it with the internal table.
-    if (_blockedPinsForUser & (1ULL << _pin)) return true;
+    if (_blockedPinsForUser & (1ULL << _pin))
+        return true;
 
     // Pin is not blocked, user can use it.
     return false;

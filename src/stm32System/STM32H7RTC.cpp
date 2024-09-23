@@ -1,14 +1,15 @@
 /**
  **************************************************
  *
- * @file        HX711-easyC-SOLDERED.h
- * @brief       Header file for firmware for HX711 Load Cell easyC breakout
+ * @file        STM32H7RTC.cpp
+ * @brief       Main source file for the STM32 built-in RTC
+ *              peripheral. RTC uses exteranl clock source (external XTAL
+ *              of 32.768kHz). Library Sets and gets the time, date, alarms,
+ *              sets user Alarm callbacks, manages backup memory region etc.
  *
- * @note        Based on HX711 Arduino Library by Bogdan Necula
- *              This is essentially a stripped down version of the full library
  *
  * @copyright   GNU General Public License v3.0
- * @authors     Robert Soric for Soldered.com
+ * @authors     Borna Biro for soldered.com
  ***************************************************/
 
 // Include main library header file.

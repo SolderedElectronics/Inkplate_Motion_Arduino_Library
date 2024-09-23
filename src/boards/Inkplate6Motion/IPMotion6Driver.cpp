@@ -1,5 +1,18 @@
-#include "IPMotion6Driver.h"
+/**
+ **************************************************
+ *
+ * @file        IP6MotionDriver.h
+ * @brief       
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
 
+// Include main header ffile for the driver.
+#include "IP6MotionDriver.h"
+
+// Include the WiFi Library.
 #include "../../system/wifi/esp32SpiAt.h"
 
 // Header guard for the Arduino include

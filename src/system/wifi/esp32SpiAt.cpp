@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAt.cpp
+ * @brief       Main source file for the ESP32 WiFi used with AT commands
+ *              through SPI communication.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Include header file.
 #include "esp32SpiAt.h"
 
@@ -116,14 +128,15 @@ bool WiFiClass::power(bool _en, bool _resetSettings)
             return false;
 
         // Enable default message filters.
-        if (!defaultMsgFiltersEn()) return false;
+        if (!defaultMsgFiltersEn())
+            return false;
 
         // Disable stroing data in NVM. Return false if failed.
         if (!storeSettingsInNVM(false))
             return false;
 
         // Disable system messages. Can disrupt flow of the library.
-        if(!systemMessages(0))
+        if (!systemMessages(0))
             return false;
 
         // Initialize WiFi radio.
@@ -163,7 +176,7 @@ bool WiFiClass::sendAtCommand(char *_atCommand, uint16_t _len)
     flushModemReadReq();
 
     // Get the data size. Use lenght parameter if array is not a nul-terminated string.
-    uint16_t _dataLen = _len != 0?_len:strlen(_atCommand);
+    uint16_t _dataLen = _len != 0 ? _len : strlen(_atCommand);
 
     // First make a request for data send.
     dataSendRequest(_dataLen, 0);
@@ -251,10 +264,11 @@ bool WiFiClass::getAtResponse(char *_response, uint32_t _bufferLen, unsigned lon
     _response[_resposeArrayOffset] = '\0';
 
     // If poiter is provided, pass number of received bytes.
-    if (_rxLen != NULL) *_rxLen = _resposeArrayOffset;
+    if (_rxLen != NULL)
+        *_rxLen = _resposeArrayOffset;
 
     // Check if any data is received. If not, return false.
-    return (_resposeArrayOffset != 0?true:false);
+    return (_resposeArrayOffset != 0 ? true : false);
 }
 
 /**
@@ -324,91 +338,104 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
     }
 
     // Check if any data is received. If not, return false.
-    return (_responseLen != 0?true:false);
+    return (_responseLen != 0 ? true : false);
 }
 
-bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeoutAtCommand, unsigned long _rxDataTimeoutAtCommand, char *_expectedResponseAtCmd, uint8_t _expectedResponsePosition, bool _terminateOnAtResponseError, char *_dataPart, uint16_t _dataPartLen, unsigned long _timeoutDataPart, char *_expectedResponseData, uint16_t *_len)
+bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeoutAtCommand,
+                                          unsigned long _rxDataTimeoutAtCommand, char *_expectedResponseAtCmd,
+                                          uint8_t _expectedResponsePosition, bool _terminateOnAtResponseError,
+                                          char *_dataPart, uint16_t _dataPartLen, unsigned long _timeoutDataPart,
+                                          char *_expectedResponseData, uint16_t *_len)
 {
     // Return value.
     bool _retValue = false;
 
     // Variable to store response length from ESP32.
     uint16_t _respLen = 0;
-  
+
     // Check if the _atCommand id not null. Is it is, then do not send the command.
     if (_atCommand != NULL)
     {
         // Send AT Command! If send failed (ESP32 SPI status == readable), return false.
-        if (!sendAtCommand(_atCommand)) return false;
+        if (!sendAtCommand(_atCommand))
+            return false;
     }
 
-    // If the timeout is not zero, get the respose. If there is no any kind of response in preddefined time (timeout) return false (maybe flush will needed before new AT Command send, but that feature can be activated within the libary).
+    // If the timeout is not zero, get the respose. If there is no any kind of response in preddefined time (timeout)
+    // return false (maybe flush will needed before new AT Command send, but that feature can be activated within the
+    // libary).
     if (_timeoutAtCommand != 0)
     {
         // First wait for the any kind of response by using HANDSHAKE pin.
         unsigned long _timeoutCounter = millis();
         while (((unsigned long)(millis() - _timeoutCounter) <= _timeoutAtCommand) && (!getHandshakePinState()))
 
-        // If there is no handshake pin activity, timeout occured, return false.
-        if (((unsigned long)(millis() - _timeoutCounter) > _timeoutAtCommand))
-        {
-          Serial.print("[DEBUG] no handshake pin activity, abort! Timeout value: ");
-          Serial.println((unsigned long)(millis() - _timeoutCounter), DEC);
-          return false;
-        }
+            // If there is no handshake pin activity, timeout occured, return false.
+            if (((unsigned long)(millis() - _timeoutCounter) > _timeoutAtCommand))
+            {
+                Serial.print("[DEBUG] no handshake pin activity, abort! Timeout value: ");
+                Serial.println((unsigned long)(millis() - _timeoutCounter), DEC);
+                return false;
+            }
 
         // If something is received, read the response.
-        if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _rxDataTimeoutAtCommand, &_respLen)) return false;
+        if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _rxDataTimeoutAtCommand, &_respLen))
+            return false;
 
         // Try to parse if expected response exists.
         if (_expectedResponseAtCmd != NULL)
         {
             // Add null terminating char at the end (needed for string manipulating functions).
             _dataBuffer[_respLen] = '\0';
-            
+
             // Calculate the position of start of the buffer.
             char *_bufferStart = NULL;
             switch (_expectedResponsePosition)
             {
-                case INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START:
-                  _bufferStart = _dataBuffer;
-                  break;
-                case INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY:
-                  _bufferStart = _dataBuffer;
-                  break;
-                case INKPLATE_ESP32_AT_EXPECTED_RESPONSE_END:
-                  _bufferStart = _dataBuffer + _respLen - strlen(_expectedResponseAtCmd) - 5;
-                  break;
-                default:
-                  _bufferStart = _dataBuffer;
+            case INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START:
+                _bufferStart = _dataBuffer;
+                break;
+            case INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY:
+                _bufferStart = _dataBuffer;
+                break;
+            case INKPLATE_ESP32_AT_EXPECTED_RESPONSE_END:
+                _bufferStart = _dataBuffer + _respLen - strlen(_expectedResponseAtCmd) - 5;
+                break;
+            default:
+                _bufferStart = _dataBuffer;
             }
-          
+
             // Save the first match occurance position.
             char *_responseMatch = strstr(_dataBuffer, _expectedResponseAtCmd);
-    
+
             // If substring function returns NULL, match is not found.
             if (strstr(_dataBuffer, _expectedResponseAtCmd) == NULL)
             {
                 // If flag for termination on unexpected response is set, return from the function.
-                if (_terminateOnAtResponseError) return false;
+                if (_terminateOnAtResponseError)
+                    return false;
             }
             else
             {
                 // Ok, something is found. Check position in the case of the INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START.
-                if ((_expectedResponsePosition == INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START) && ((_responseMatch - _bufferStart) > 5))
+                if ((_expectedResponsePosition == INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START) &&
+                    ((_responseMatch - _bufferStart) > 5))
                 {
                     // If flag for termination on unexpected response is set, return from the function.
-                    if (_terminateOnAtResponseError) return false;
+                    if (_terminateOnAtResponseError)
+                        return false;
                 }
 
-                // Heh, it this is so simple. Sometimes, modem can respond with the command but also with the OK or ERROR after that command.
-                // It's ok if there is no reponse, but it there is response and it's not ok, something is wrong!
+                // Heh, it this is so simple. Sometimes, modem can respond with the command but also with the OK or
+                // ERROR after that command. It's ok if there is no reponse, but it there is response and it's not ok,
+                // something is wrong!
                 if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 200ULL, &_respLen))
                 {
                     // Check of OK. If not found, return error.
-                    if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL) _retValue = false;
+                    if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL)
+                        _retValue = false;
                 }
-    
+
                 // Everything is ok with the response!
                 _retValue = true;
             }
@@ -419,27 +446,35 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
     if (_dataPart != NULL)
     {
         // Check the _dataPartLen. If is zero, then _dataPart is string. Use strlen to get the lenght of the string.
-        if (_dataPartLen == 0) _dataPartLen = strlen (_dataPart);
+        if (_dataPartLen == 0)
+            _dataPartLen = strlen(_dataPart);
 
         // Send AT Command! If send failed (ESP32 SPI status == readable), return false.
-        if (!sendAtCommand(_dataPart, _dataPartLen)) return false;
+        if (!sendAtCommand(_dataPart, _dataPartLen))
+            return false;
 
-        // If the timeout is not zero, get the respose. If there is no any kind of response in preddefined time (timeout) return false (maybe flush will needed before new AT Command send, but that feature can be activated within the libary).
+        // If the timeout is not zero, get the respose. If there is no any kind of response in preddefined time
+        // (timeout) return false (maybe flush will needed before new AT Command send, but that feature can be activated
+        // within the libary).
         if (_timeoutDataPart)
         {
-            // Ok, now wait for the response. This can be tricky since some commands sends additional OK after successful AT command (ex. +ATXYZ\r\n [delay] \r\nOK\r\n).
-            if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutDataPart, &_respLen)) return false;
+            // Ok, now wait for the response. This can be tricky since some commands sends additional OK after
+            // successful AT command (ex. +ATXYZ\r\n [delay] \r\nOK\r\n).
+            if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutDataPart, &_respLen))
+                return false;
 
             if (_expectedResponseData != NULL)
             {
                 // Check for the expected response.
-                if (strstr(_dataBuffer, _expectedResponseData) == NULL) return false;
+                if (strstr(_dataBuffer, _expectedResponseData) == NULL)
+                    return false;
 
                 // Ok, is something is found, check for additional OK/ERROR.
                 if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 200ULL, &_respLen))
                 {
                     // Check of OK. If not found, return error.
-                    if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL) _retValue = false;
+                    if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL)
+                        _retValue = false;
                 }
             }
 
@@ -449,7 +484,8 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
     }
 
     // In needed, copy response len.
-    if (_len != NULL) *_len = _respLen;
+    if (_len != NULL)
+        *_len = _respLen;
 
     // Return success/fail flag.
     return _retValue;
@@ -457,7 +493,7 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
 
 /**
  * @brief   Send AT Command + Data part
- * 
+ *
  * @param   char *_atCommand
  *          AT Command (must contain \r\n at the end).
  * @param   char *_dataPart
@@ -473,28 +509,36 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
  *          true - Command and data are accepted.
  *          false - Command or data failed.
  */
-bool WiFiClass::sendDataPart(char *_atCommand, char *_dataPart, uint16_t _dataPartLen, unsigned long _timeout, char *_expectedResponse)
+bool WiFiClass::sendDataPart(char *_atCommand, char *_dataPart, uint16_t _dataPartLen, unsigned long _timeout,
+                             char *_expectedResponse)
 {
     if (_dataPart != NULL)
     {
         // If lenght is 0, it means this is string.
-        if (_dataPartLen == 0) _dataPartLen = strlen(_dataPart);
+        if (_dataPartLen == 0)
+            _dataPartLen = strlen(_dataPart);
 
         // Not a empty data set or string.
         if (_dataPartLen > 0)
         {
             // Send AT Command!
-            if (sendAtCommand(_atCommand)) return false;
+            if (sendAtCommand(_atCommand))
+                return false;
             // Get the resposne (should response with ">").
-            if (getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20ULL)) return false;
+            if (getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20ULL))
+                return false;
             // Check for the response.
-            if (strstr(_dataBuffer, "\r\n>") == NULL) return false;
+            if (strstr(_dataBuffer, "\r\n>") == NULL)
+                return false;
             // Send the client ID itself.
-            if (sendAtCommand(_dataPart, _dataPartLen)) return false;
+            if (sendAtCommand(_dataPart, _dataPartLen))
+                return false;
             // Now wait for the proper AT response.
-            if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeout));
+            if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeout))
+                ;
             // Check for the "OK". If is missing from the response, return error.
-            if (strstr(_dataBuffer, _expectedResponse) == NULL) return false;
+            if (strstr(_dataBuffer, _expectedResponse) == NULL)
+                return false;
         }
     }
 
@@ -502,26 +546,31 @@ bool WiFiClass::sendDataPart(char *_atCommand, char *_dataPart, uint16_t _dataPa
     return true;
 }
 
-bool WiFiClass::messageFilter(bool _enable, char* _headFilter, char *_tailFilter)
+bool WiFiClass::messageFilter(bool _enable, char *_headFilter, char *_tailFilter)
 {
     // Return value.
     bool _retValue = false;
-  
+
     // Check the each size of the filter.
     int _headFilterLen = 0;
     int _tailFilterLen = 0;
-    
-    if (_headFilter != NULL) _headFilterLen = strlen(_headFilter);
-    if (_tailFilter != NULL) _tailFilterLen = strlen(_tailFilter);
 
-    // Send AT Command for message filter. If the filter should be enabled, first parameter must be 1, otherwise if needs to be removed set it to 2.
-    sprintf(_dataBuffer, "AT+SYSMSGFILTERCFG=%d,%d,%d\r\n", _enable?1:2, _headFilterLen, _tailFilterLen);
-    
+    if (_headFilter != NULL)
+        _headFilterLen = strlen(_headFilter);
+    if (_tailFilter != NULL)
+        _tailFilterLen = strlen(_tailFilter);
+
+    // Send AT Command for message filter. If the filter should be enabled, first parameter must be 1, otherwise if
+    // needs to be removed set it to 2.
+    sprintf(_dataBuffer, "AT+SYSMSGFILTERCFG=%d,%d,%d\r\n", _enable ? 1 : 2, _headFilterLen, _tailFilterLen);
+
     // Send AT Command! If send failed (ESP32 SPI status == readable), return false.
-    if (!sendAtCommand(_dataBuffer)) return false;
+    if (!sendAtCommand(_dataBuffer))
+        return false;
 
     // Now wait for the response. It should send "\r\nOK\r\n\r\n>".
-    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL)) return false;
+    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL))
+        return false;
 
     // Check for the response.
     char *_match = strstr(_dataBuffer, "\r\nOK\r\n\r\n>");
@@ -529,7 +578,8 @@ bool WiFiClass::messageFilter(bool _enable, char* _headFilter, char *_tailFilter
     // It must be at the start of the response.
     if (_match != NULL)
     {
-        if ((_match - _dataBuffer) > 5) return false;
+        if ((_match - _dataBuffer) > 5)
+            return false;
     }
     else
     {
@@ -541,7 +591,8 @@ bool WiFiClass::messageFilter(bool _enable, char* _headFilter, char *_tailFilter
     if (_headFilter != NULL)
     {
         // If failed, return false.
-        if (!sendAtCommand(_headFilter)) return false;
+        if (!sendAtCommand(_headFilter))
+            return false;
 
         // Must be delay!
         delay(5);
@@ -551,20 +602,23 @@ bool WiFiClass::messageFilter(bool _enable, char* _headFilter, char *_tailFilter
     if (_tailFilter != NULL)
     {
         // If failed, return false.
-        if (!sendAtCommand(_tailFilter)) return false;
+        if (!sendAtCommand(_tailFilter))
+            return false;
 
         // No delay this time.
     }
 
     // Wait for the response. It should send "\r\nOK\r\n".
-    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL)) return false;
+    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL))
+        return false;
 
     // Check for the response.
     _match = strstr(_dataBuffer, "\r\nOK\r\n");
 
     // Match must exits!
-    if (_match != NULL) _retValue = true;
-  
+    if (_match != NULL)
+        _retValue = true;
+
     // Return success flag.
     return _retValue;
 }
@@ -611,7 +665,8 @@ bool WiFiClass::systemRestore()
     delay(2200);
 
     // Read a response to clear the flag.
-    if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 40ULL)) return false;
+    if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 40ULL))
+        return false;
 
     // Everything went ok? Return true.
     return true;
@@ -637,7 +692,9 @@ bool WiFiClass::storeSettingsInNVM(bool _store)
     sprintf(_dataBuffer, "AT+SYSSTORE=%d\r\n", _store ? 1 : 0);
 
     // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-    if (!sendAtCommandWithResponse(_dataBuffer, 20ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!sendAtCommandWithResponse(_dataBuffer, 20ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Otherwise return true.
     return true;
@@ -670,7 +727,9 @@ bool WiFiClass::systemMessages(uint8_t _cfg)
     sprintf(_dataBuffer, "AT+SYSMSG=%d\r\n", _cfg);
 
     // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-    if (!sendAtCommandWithResponse(_dataBuffer, 20ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!sendAtCommandWithResponse(_dataBuffer, 20ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Return true if everything is ok.
     return true;
@@ -679,10 +738,10 @@ bool WiFiClass::systemMessages(uint8_t _cfg)
 /**
  * @brief   Method enables or disables flushing ESP32 from data read requests before
  *          AT Command send.
- * 
+ *
  * @param   bool _en
  *          true - Flush the ESP32 before every AT Command send.
- *          false - Do not flush ESP32 from data read request before AT command send. 
+ *          false - Do not flush ESP32 from data read request before AT command send.
  */
 void WiFiClass::flushBeforeCommand(bool _en)
 {
@@ -693,16 +752,20 @@ void WiFiClass::flushBeforeCommand(bool _en)
 bool WiFiClass::defaultMsgFiltersEn()
 {
     // Enable message filter for the WiFi Connect.
-    if (!messageFilter(true, "^WIFI CONNECTED\r\n", NULL)) return false;
+    if (!messageFilter(true, "^WIFI CONNECTED\r\n", NULL))
+        return false;
 
     // Enable message filter for the WiFi Disconnect.
-    if (!messageFilter(true, "^WIFI DISCONNECT\r\n", NULL)) return false;
+    if (!messageFilter(true, "^WIFI DISCONNECT\r\n", NULL))
+        return false;
 
     // Enable message filter for the WIFI GOT IP message.
-    if (!messageFilter(true, "^WIFI GOT IP\r\n", NULL)) return false;
+    if (!messageFilter(true, "^WIFI GOT IP\r\n", NULL))
+        return false;
 
     // Enable system message filters. Return false if failed.
-    if (!systemMsgFiltering(true)) return false;
+    if (!systemMsgFiltering(true))
+        return false;
 
     // If code got to here, everything seems ok, return true for success.
     return true;
@@ -711,10 +774,12 @@ bool WiFiClass::defaultMsgFiltersEn()
 bool WiFiClass::systemMsgFiltering(bool _en)
 {
     // Create AT Command with sprintf.
-    sprintf(_dataBuffer, "AT+SYSMSGFILTER=%d\r\n", _en?1:0);
+    sprintf(_dataBuffer, "AT+SYSMSGFILTER=%d\r\n", _en ? 1 : 0);
 
     // Send AT command and wait for the respose. If there is no expected response, return false;
-    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 5ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 5ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Otherwise return true.
     return true;
@@ -724,7 +789,7 @@ bool WiFiClass::systemMsgFiltering(bool _en)
  * @brief   Methods sets WiFi mode (null, station, SoftAP or station and SoftAP).
  *
  * @param   uint8_t _wifiMode
- *          Use preddifend macros (can be found in WiFiSPITypedef.h)
+ *          Use preddifend macros (can be found in esp32SpiAtTypedefs.h)
  *          INKPLATE_WIFI_MODE_NULL - Null mode (modem disabled)
  *          INKPLATE_WIFI_MODE_STA - Station mode
  *          INKPLATE_WIFI_MODE_AP - Soft Access Point (not implemeted yet!)
@@ -746,7 +811,9 @@ bool WiFiClass::setMode(uint8_t _wifiMode)
     sprintf(_dataBuffer, "AT+CWMODE=%d\r\n", _wifiMode);
 
     // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Otherwise, return ok.
     return true;
@@ -815,7 +882,8 @@ bool WiFiClass::connected()
     else
     {
         // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-        if (sendAtCommandWithResponse((char*)"AT+CWSTATE?\r\n", 200ULL, 4ULL, "+CWSTATE:", INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        if (sendAtCommandWithResponse((char *)"AT+CWSTATE?\r\n", 200ULL, 4ULL,
+                                      "+CWSTATE:", INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
         {
             // Parse the data.
             int _result;
@@ -845,7 +913,9 @@ bool WiFiClass::connected()
 bool WiFiClass::disconnect()
 {
     // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-    if (!sendAtCommandWithResponse((char*)esp32AtWiFiDisconnectCommand, 2000ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!sendAtCommandWithResponse((char *)esp32AtWiFiDisconnectCommand, 2000ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Otherwise, return ok.
     return true;
@@ -860,7 +930,8 @@ bool WiFiClass::disconnect()
 int WiFiClass::scanNetworks()
 {
     // Issue a WiFi Scan command and get the response. Check if the response is expected. Otherwise, return false.
-    if (sendAtCommandWithResponse((char*)esp32AtWiFiScan, 2000ULL, 4ULL, (char*)("+CWLAP:"), INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+    if (sendAtCommandWithResponse((char *)esp32AtWiFiScan, 2000ULL, 4ULL, (char *)("+CWLAP:"),
+                                  INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
     {
         // Find first occurance of the first found network.
         char *_wifiAPStart = strstr(_dataBuffer, "+CWLAP:");
@@ -995,7 +1066,8 @@ IPAddress WiFiClass::dns(uint8_t i)
     int _dhcpFlag = 0;
 
     // Issue a AT Command for DNS. Return invalid IP address if failed.
-    if (sendAtCommandWithResponse((char*)esp32AtGetDns, 200ULL, 4ULL, (char*)("+CIPDNS:"), INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+    if (sendAtCommandWithResponse((char *)esp32AtGetDns, 200ULL, 4ULL, (char *)("+CIPDNS:"),
+                                  INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
     {
         // Try to parse the data.
         char *_responseStart = strstr(_dataBuffer, "+CIPDNS:");
@@ -1005,10 +1077,11 @@ IPAddress WiFiClass::dns(uint8_t i)
             INADDR_NONE;
 
         // Parse it!
-        int _res = sscanf(_responseStart, "+CIPDNS:%d,\"%d.%d.%d.%d\",\"%d.%d.%d.%d\",\"%d.%d.%d.%d\"", &_dhcpFlag,
-                        &_dnsIpAddresses[0][0], &_dnsIpAddresses[0][1], &_dnsIpAddresses[0][2], &_dnsIpAddresses[0][3],
-                        &_dnsIpAddresses[1][0], &_dnsIpAddresses[1][1], &_dnsIpAddresses[1][2], &_dnsIpAddresses[1][3],
-                        &_dnsIpAddresses[2][0], &_dnsIpAddresses[2][1], &_dnsIpAddresses[2][2], &_dnsIpAddresses[2][3]);
+        int _res =
+            sscanf(_responseStart, "+CIPDNS:%d,\"%d.%d.%d.%d\",\"%d.%d.%d.%d\",\"%d.%d.%d.%d\"", &_dhcpFlag,
+                   &_dnsIpAddresses[0][0], &_dnsIpAddresses[0][1], &_dnsIpAddresses[0][2], &_dnsIpAddresses[0][3],
+                   &_dnsIpAddresses[1][0], &_dnsIpAddresses[1][1], &_dnsIpAddresses[1][2], &_dnsIpAddresses[1][3],
+                   &_dnsIpAddresses[2][0], &_dnsIpAddresses[2][1], &_dnsIpAddresses[2][2], &_dnsIpAddresses[2][3]);
 
         // Check if all is parsed correctly, it should find at least one DNS. If not, return invalid IP Address.
         if (_res < 4)
@@ -1035,7 +1108,8 @@ IPAddress WiFiClass::dns(uint8_t i)
 char *WiFiClass::macAddress()
 {
     // Send AT Command for getting AT Command from the module.
-    if (sendAtCommandWithResponse((char*)esp32AtWiFiGetMac, 200ULL, 4ULL, (char*)("+CIPAPMAC:"), INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+    if (sendAtCommandWithResponse((char *)esp32AtWiFiGetMac, 200ULL, 4ULL, (char *)("+CIPAPMAC:"),
+                                  INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
     {
         // Try to parse it.
         char *_responseStart = strstr(_dataBuffer, "+CIPAPMAC:");
@@ -1077,8 +1151,11 @@ bool WiFiClass::macAddress(char *_mac)
     // Create a string for the new MAC address.
     sprintf(_dataBuffer, "AT+CIPAPMAC=\"%s\"\r\n", _mac);
 
-    // Send AT commands and check for the expected response ("\r\nOK\r\n"). If sending AT command failed or there is no response, return false indicating error.
-    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    // Send AT commands and check for the expected response ("\r\nOK\r\n"). If sending AT command failed or there is no
+    // response, return false indicating error.
+    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Otherwise return true.
     return true;
@@ -1140,7 +1217,9 @@ bool WiFiClass::config(IPAddress _staticIP, IPAddress _gateway, IPAddress _subne
                 _subnet[0], _subnet[1], _subnet[2], _subnet[3]);
 
         // Send AT command, wait for the response.
-        if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+        if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                       INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+            return false;
     }
 
     // Check the same thing, but for DNS.
@@ -1151,7 +1230,9 @@ bool WiFiClass::config(IPAddress _staticIP, IPAddress _gateway, IPAddress _subne
                 _dns2[0], _dns2[1], _dns2[2], _dns2[3]);
 
         // Send AT command, wait for the response.
-        if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+        if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                       INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+            return false;
     }
 
     // If the code got so far, everything went ok, return true for success.
@@ -1341,7 +1422,7 @@ void WiFiClass::sendSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiData
 bool WiFiClass::commandEcho(bool _en)
 {
     // Turn the Echo on or off.
-    sprintf(_dataBuffer, "ATE%d\r\n", _en?1:0);
+    sprintf(_dataBuffer, "ATE%d\r\n", _en ? 1 : 0);
     if (!sendAtCommand(_dataBuffer))
         return false;
     if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20ULL))
@@ -1511,7 +1592,7 @@ bool WiFiClass::dataSendRequest(uint16_t _len, uint8_t _seqNumber)
  *          enabled. Enable or disable can be done with flushBeforeCommand(bool _en).
  *          Additional check for this setting doesn't have to be done, since this is
  *          already done in the method.
- * 
+ *
  * @return  bool
  *          true - Flush done (there was some kind of read data request from the ESP32).
  *          flase - No data read request from the ESP32 - flush did not happend.
@@ -1623,7 +1704,9 @@ bool WiFiClass::wiFiModemInit(bool _status)
     sprintf(_dataBuffer, "AT+CWINIT=%d\r\n", _status);
 
     // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Otherwise return true.
     return true;
@@ -1637,7 +1720,7 @@ bool WiFiClass::wiFiModemInit(bool _status)
  * @param   int8_t *_lastUsedSsidNumber
  *          Pointer tothe variable that holds the last selected ID number.
  * @param   struct spiAtWiFiScanTypedef *_scanData
- *          Can be found in WiFiSPITypedef.h, holds SSID name, auth flag, RSSI value.
+ *          Can be found in esp32SpiAtTypedefs.h, holds SSID name, auth flag, RSSI value.
  * @return  bool
  *          true - Scaned WiFi network data parsed successfully.
  *          false - Parsing failed.
@@ -1688,17 +1771,19 @@ IPAddress WiFiClass::ipAddressParse(char *_ipAddressType)
     sprintf(_ipAddressTypeStringShort, "+CIPSTA:%s:", _ipAddressType);
 
     // Send AT command and get the response. Check if the response is expected. Otherwise, return false.
-    if (sendAtCommandWithResponse((char *)esp32AtWiFiGetIP, 200ULL, 4ULL, _ipAddressTypeStringShort, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY, true, NULL, 0, 0, NULL))
+    if (sendAtCommandWithResponse((char *)esp32AtWiFiGetIP, 200ULL, 4ULL, _ipAddressTypeStringShort,
+                                  INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY, true, NULL, 0, 0, NULL))
     {
         // Get the exact location of the response.
         char *_ipAddressStart = strstr(_dataBuffer, _ipAddressTypeStringShort);
 
         // Check one more time. If NULL, no match (no IP address found), return invalid IP address.
-        if (_ipAddressStart == NULL) return INADDR_NONE;
+        if (_ipAddressStart == NULL)
+            return INADDR_NONE;
 
         // Get the IP Address from the response.
-        int _res =
-            sscanf(_ipAddressStart, _ipAddressTypeString, &_ipAddress[0], &_ipAddress[1], &_ipAddress[2], &_ipAddress[3]);
+        int _res = sscanf(_ipAddressStart, _ipAddressTypeString, &_ipAddress[0], &_ipAddress[1], &_ipAddress[2],
+                          &_ipAddress[3]);
 
         // If can't find 4 bytes, return invalid IP Address.
         if (_res != 4)

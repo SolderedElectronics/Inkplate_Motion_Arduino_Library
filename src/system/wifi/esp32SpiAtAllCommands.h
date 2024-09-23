@@ -1,3 +1,14 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAtAllCommands.h
+ * @brief       Header files for the most commonly used AT commands.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Add a header guard.
 #ifndef __ESP32_SPI_AT_ALL_COMMANDS_H__
 #define __ESP32_SPI_AT_ALL_COMMANDS_H__

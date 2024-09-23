@@ -1,3 +1,17 @@
+/**
+ **************************************************
+ *
+ * @file        stm32FMC.cpp
+ * @brief       Main source file for the STM32 FMC peripheral
+ *              used for SDRAM and ePaper driver. Handles FMC
+ *              peripheral initialization/deinitialization, timings,
+ *              Master DMA init, Master DMA interrupts etc.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Include header file of this .cpp file
 #include "stm32FMC.h"
 

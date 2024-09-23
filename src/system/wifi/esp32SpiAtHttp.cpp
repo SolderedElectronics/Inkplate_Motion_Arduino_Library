@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAtHttp.cpp
+ * @brief       Source file that is part of the esp32SpiAt library
+ *              for the HTTP protocol related stuff.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Innclude main header file.
 #include "esp32SpiAt.h"
 
@@ -28,13 +40,16 @@ bool WiFiClient::begin(const char *_url)
     _fileSize = 0;
 
     // Save the address of the URL.
-    _urlStr = (char*)_url;
+    _urlStr = (char *)_url;
 
     // Set the URL since HTTPCGET has limitations on the URL size and on characters.
     sprintf(_dataBuffer, "AT+HTTPURLCFG=%d\r\n", strlen(_url));
 
     // Send AT command, wait for the response.
-    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)"\r\nOK\r\n\r\n>", INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, (char*)_url, strlen(_url), 20ULL, "SET OK")) return false;
+    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)"\r\nOK\r\n\r\n>",
+                                        INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, (char *)_url, strlen(_url),
+                                        20ULL, "SET OK"))
+        return false;
 
     // Return true success.
     return true;
@@ -86,18 +101,24 @@ bool WiFiClient::POST(const char *_body, uint16_t _bodyLen)
 {
     // First set the message filter to set the modem in pass-trough mode.
     // Remove the header and "enter" at the end.
-    if (!WiFi.messageFilter(true, "+HTTPCPOST:[0-9]*,", "\r\n$")) return false;
+    if (!WiFi.messageFilter(true, "+HTTPCPOST:[0-9]*,", "\r\n$"))
+        return false;
 
     // Remove "SEND OK" at the end.
-    if (!WiFi.messageFilter(true, NULL, "\r\nSEND OK\r\n")) return false;
+    if (!WiFi.messageFilter(true, NULL, "\r\nSEND OK\r\n"))
+        return false;
 
     // Try to connect to the host. Return false if failed.
     sprintf(_dataBuffer, "AT+HTTPCPOST=\"\",%d\r\n", _bodyLen);
     uint16_t _len = 0;
-    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)"\r\nOK\r\n\r\n>", INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, (char*)_body, _bodyLen, 20000ULL, NULL, &_len)) return false;
+    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)"\r\nOK\r\n\r\n>",
+                                        INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, (char *)_body, _bodyLen,
+                                        20000ULL, NULL, &_len))
+        return false;
 
     // Check if the response is not "SEND FAIL". If so, return false.
-    if (strstr(_dataBuffer, "SEND FAIL") != NULL) return false;
+    if (strstr(_dataBuffer, "SEND FAIL") != NULL)
+        return false;
 
     // Increment position and set current new position of the pointer for POST response data read.
     _bufferLen += _len;
@@ -228,7 +249,8 @@ bool WiFiClient::end()
     WiFi.messageFilter(false, NULL, "\r\nSEND OK\r\n");
 
     // Clear all HTTP headers.
-    if (!addHeader(NULL)) return false;
+    if (!addHeader(NULL))
+        return false;
 
     // Everything went ok? Return true for success.
     return true;
@@ -253,7 +275,9 @@ bool WiFiClient::addHeader(char *_header)
     if (_header == NULL)
     {
         // Send AT command, wait for the response.
-        if (!WiFi.sendAtCommandWithResponse("AT+HTTPCHEAD=0\r\n", 20ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+        if (!WiFi.sendAtCommandWithResponse("AT+HTTPCHEAD=0\r\n", 20ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                            INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+            return false;
     }
     else
     {
@@ -261,7 +285,10 @@ bool WiFiClient::addHeader(char *_header)
         sprintf(_dataBuffer, "AT+HTTPCHEAD=%d\r\n", strlen(_header));
 
         // Send AT command with data part, wait for the response.
-        if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char*)esp32AtCmdResponseOK, INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, _header, strlen(_header), 200ULL, NULL)) return false;
+        if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, (char *)esp32AtCmdResponseOK,
+                                            INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, _header, strlen(_header),
+                                            200ULL, NULL))
+            return false;
     }
 
     // Everything went ok? Return true!
@@ -288,7 +315,9 @@ int WiFiClient::getFileSize(char *_url, uint32_t _timeout)
     sprintf(_dataBuffer, "AT+HTTPGETSIZE=\"\"\r\n", _url);
 
     // Send AT command, wait for the response.
-    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, _timeout, 10ULL, (char*)"+HTTPGETSIZE:", INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL)) return false;
+    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, _timeout, 10ULL, (char *)"+HTTPGETSIZE:",
+                                        INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, NULL, 0, 0, NULL))
+        return false;
 
     // Parse the reponse. Return 0 if something failed.
     if (strstr(_dataBuffer, "+HTTPGETSIZE:"))
