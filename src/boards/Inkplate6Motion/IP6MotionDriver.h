@@ -119,7 +119,6 @@ class EPDDriver : public Helpers
         void cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases);
         void clearDisplay();
         void partialUpdate(uint8_t _leaveOn = 0);
-        void partialUpdate4Bit(uint8_t _leaveOn);
         void display(uint8_t _leaveOn = 0);
         int epdPSU(uint8_t _state);
         bool loadWaveform(InkplateWaveform _customWaveform);
@@ -205,6 +204,12 @@ class EPDDriver : public Helpers
         static void pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb);
         static void pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb);
 
+        // Internal 4 bit partial update method.
+        void partialUpdate4Bit(uint8_t _leaveOn);
+
+        // Internal 1 bit partial update method.
+        void partialUpdate1Bit(uint8_t _leaveOn);
+
         // Object for the SdFat SPI STM32 library.
         SdSpiConfig* _microSDCardSPIConf = nullptr;
 
@@ -229,6 +234,9 @@ class EPDDriver : public Helpers
 
         // Internal typedef for the 4 bit waveform - partial update.
         InkplateWaveform _waveform4BitPartialInternal = default4BitPartialUpdate;
+
+        // Internal typedef for the 1 bit waveform - partial update.
+        InkplateWaveform _waveform1BitPartialInternal = default1BitPartialUpdate;
 
         // Variable keeps track on how many partial updates have been executed for automatic full update.
         uint16_t _partialUpdateCounter = 0;

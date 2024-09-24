@@ -168,7 +168,6 @@ void EPDDriver::cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases)
 void EPDDriver::clearDisplay()
 {
     // Framebuffer if filled with different data depending on the cuurrent mode.
-    // If the
     if (getDisplayMode() == INKPLATE_1BW)
     {
         for (int i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH / 8); i++)
@@ -195,6 +194,75 @@ void EPDDriver::clearDisplay()
  *          1 = Keep EPD PMIC active after ePaper refresh.
  */
 void EPDDriver::partialUpdate(uint8_t _leaveOn)
+{
+    // Automatically select partial update method depending on the screen mode (1 bit or 4 bit),
+    if (getDisplayMode() == INKPLATE_1BW)
+    {
+        partialUpdate1Bit(_leaveOn);
+    }
+    else
+    {
+        partialUpdate4Bit(_leaveOn);
+    }
+}
+
+/**
+ * @brief   Partailly update the screen. Remove and add only necessary changes.
+ *          Use a rapid clean to speed up the clean process of the pixels that will be changed.
+ * 
+ * @param   uint8_t _leaveOn
+ *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
+ *          1 = Keep EPD PMIC active after ePaper refresh.
+ */
+void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
+{
+    // Power up EPD PMIC. Abort update if failed.
+    if (!epdPSU(1))
+        return;
+
+    // Check the mode.
+    if (getDisplayMode() != INKPLATE_GL16)
+        return;
+
+    // Main princaple of the 4 bit partial update is to first clear all pixels
+    // by setting them all into white color using custom waveform.
+
+    // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
+    uint16_t *_fbPtr;
+
+    // Workaround to avod copying the same code with some minor changes.
+    uint8_t *_wf[] = {(uint8_t*)(_waveform4BitPartialInternal.clearLUT), (uint8_t*)(_waveform4BitPartialInternal.lut)};
+    uint16_t _phases[] = {_waveform4BitPartialInternal.clearPhases, _waveform4BitPartialInternal.lutPhases};
+    __IO uint8_t *_fb[] = {_currentScreenFB, _pendingScreenFB};
+    uint32_t _lineLoadTimings[] = {_waveform4BitPartialInternal.clearCycleDelay, _waveform4BitPartialInternal.cycleDelay};
+
+    // First operations is cleaning old pixels from the ePaper, second is writing new pixels to the ePaper.
+    for (int _operation = 0; _operation < 2; _operation++)
+    {
+        // Go trough the phases of the epaper update wavefrom.
+        for (int k = 0; k < _phases[_operation]; k++)
+        {
+            // Load the line load timings - the slower, the better image quality.
+            _lineWriteWaitCycles = _lineLoadTimings[_operation];
+
+            // First calculate the new fast GLUT for the current EPD waveform phase.
+            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_wf[_operation] + ((unsigned long)(k) << 4))));
+
+            // Decode and send the pixels to the ePaper.
+            pixelsUpdate(_fb[_operation], _fastGLUT, pixelDecode4BitEPD, 15, 2);
+        }
+    }
+
+    // Disable EPD PSU if needed.
+    if (!_leaveOn)
+        epdPSU(0);
+
+    // Update the current framebuffer! Use DMA to transfer framebuffers.
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
+                     (SCREEN_WIDTH * SCREEN_HEIGHT / 2));
+}
+
+void EPDDriver::partialUpdate1Bit(uint8_t _leaveOn)
 {
     INKPLATE_DEBUG_MGS("Partial update 1bit start");
 
@@ -236,7 +304,11 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
     // Find the difference mask for the partial update (use scratchpad memory!).
     differenceMask((uint8_t *)_currentScreenFB, (uint8_t *)_pendingScreenFB, (uint8_t *)_scratchpadMemory);
 
-    for (int k = 0; k < 9; k++)
+    // Load the timing.
+    _lineWriteWaitCycles = _waveform1BitPartialInternal.cycleDelay;
+
+    // Do the epaper phases.
+    for (int k = 0; k < _waveform1BitPartialInternal.lutPhases; k++)
     {
         pixelsUpdate(_scratchpadMemory, NULL, pixelDecode1BitEPDPartial, 31, 4);
     }
@@ -261,54 +333,6 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
         // Increment the counter.
         _partialUpdateCounter++;
     }
-}
-
-/**
- * @brief   Partailly update the screen. Remove and add only necessary changes.
- *          Use a rapid clean to speed up the clean process of the pixels that will be changed.
- * 
- * @param   uint8_t _leaveOn
- *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
- *          1 = Keep EPD PMIC active after ePaper refresh.
- */
-void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
-{
-    // Power up EPD PMIC. Abort update if failed.
-    if (!epdPSU(1))
-        return;
-
-    // Main princaple of the 4 bit partial update is to first clear all pixels
-    // by setting them all into white color using custom waveform.
-
-    // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
-    uint16_t *_fbPtr;
-
-    // Workaround to avod copying the same code with some minor changes.
-    uint8_t *_wf[] = {(uint8_t*)(_waveform4BitPartialInternal.clearLUT), (uint8_t*)(_waveform4BitPartialInternal.lut)};
-    uint16_t _phases[] = {_waveform4BitPartialInternal.clearPhases, _waveform4BitPartialInternal.lutPhases};
-    __IO uint8_t *_fb[] = {_currentScreenFB, _pendingScreenFB};
-
-    // First operations is cleaning old pixels from the ePaper, second is writing new pixels to the ePaper.
-    for (int _operation = 0; _operation < 2; _operation++)
-    {
-        // Go trough the phases of the epaper update wavefrom.
-        for (int k = 0; k < _phases[_operation]; k++)
-        {
-            // First calculate the new fast GLUT for the current EPD waveform phase.
-            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_wf[_operation] + ((unsigned long)(k) << 4))));
-
-            // Decode and send the pixels to the ePaper.
-            pixelsUpdate(_fb[_operation], _fastGLUT, pixelDecode4BitEPD, 15, 2);
-        }
-    }
-
-    // Disable EPD PSU if needed.
-    if (!_leaveOn)
-        epdPSU(0);
-
-    // Update the current framebuffer! Use DMA to transfer framebuffers.
-    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
-                     (SCREEN_WIDTH * SCREEN_HEIGHT / 2));
 }
 
 /**
@@ -359,7 +383,7 @@ void EPDDriver::display1b(uint8_t _leaveOn)
     // Pointer to the framebuffer (used by the fast GLUT). It gets 8 pixels from the framebuffer.
     uint8_t *_fbPtr;
     
-    // Use write timing for the clear.
+    // Use line write timing for the clear.
     _lineWriteWaitCycles = _waveform1BitInternal.clearCycleDelay;
 
     // Do a clear sequence!
@@ -404,11 +428,17 @@ void EPDDriver::display4b(uint8_t _leaveOn)
     copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
                      (SCREEN_WIDTH * SCREEN_HEIGHT / 2));
 
+    // Use line write timing for the clear.
+    _lineWriteWaitCycles = _waveform4BitInternal.clearCycleDelay;
+
     // Do a clear sequence!
     cleanFast(_waveform4BitInternal.clearLUT, _waveform4BitInternal.clearPhases);
 
     // Set waveform.
     default4BitWavefrom.lut = (uint8_t*)&(waveform4BitPartialLUT[0]);
+
+    // Now use timing for the 4 bit full update.
+    _lineWriteWaitCycles = _waveform4BitInternal.cycleDelay;
 
     for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
     {
@@ -437,16 +467,42 @@ void EPDDriver::display4b(uint8_t _leaveOn)
 bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
 {
     // Do a few checks.
-    if ((_customWaveform.lut == NULL) || (_customWaveform.lutPhases == 0) || (_customWaveform.tag != 0xef)) return false;
+    if ((_customWaveform.lutPhases == 0) || (_customWaveform.tag != 0xef)) return false;
 
     // Check if the waveform is used on 1 bit mode or 4 bit mode.
     if (_customWaveform.mode == INKPLATE_WF_1BIT)
     {
-        _waveform1BitInternal = _customWaveform;
+        // Check if the 1 bit partial update waveform is used or for global update.
+        if (_customWaveform.type == INKPLATE_WF_PARTIAL_UPDATE)
+        {
+            // Copy it internally.
+            _waveform1BitPartialInternal = _customWaveform;
+        }
+        else
+        {
+            // Check for the LUTs. If is null, return error.
+            if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL) return 0;
+
+            // Copy it internally.
+            _waveform1BitInternal = _customWaveform;
+        }
     }
     else
     {
-        _waveform4BitInternal = _customWaveform;
+        // Check if the 1 bit partial update waveform is used or for global update.
+        if (_customWaveform.type == INKPLATE_WF_PARTIAL_UPDATE)
+        {
+            // Copy it internally.
+            _waveform4BitPartialInternal = _customWaveform;
+        }
+        else
+        {
+            // Check for the LUTs. If is null, return error.
+            if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL) return 0;
+
+            // Copy it internally.
+            _waveform4BitInternal = _customWaveform;
+        }
     }
 
     // Return 1 for success.

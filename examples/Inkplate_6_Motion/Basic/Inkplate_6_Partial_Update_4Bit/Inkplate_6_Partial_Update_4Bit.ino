@@ -61,7 +61,7 @@ void loop()
     inkplate.drawBitmap4Bit((inkplate.width() - myImages[currentImage].w) / 2, (inkplate.height() - myImages[currentImage].h) / 2, myImages[currentImage].ptr, myImages[currentImage].w, myImages[currentImage].h);
     
     // Update the screen using partial updates.
-    inkplate.partialUpdate4Bit(true);
+    inkplate.partialUpdate(true);
 
     // Increment the image counter.
     currentImage++;

@@ -66,11 +66,11 @@ void setup()
         // Serial.println();
         drawGrad(&inkplate, 0, _yStep * i, inkplate.width(), _yStep, _colors, 16);
     }
-    inkplate.partialUpdate4Bit(false);
+    inkplate.partialUpdate();
     delay(2000);
 
     inkplate.clearDisplay();
-    inkplate.partialUpdate4Bit(false);
+    inkplate.partialUpdate();
 
     // Set the image change button to WAKE UP button.
     pinMode(PC13, INPUT);

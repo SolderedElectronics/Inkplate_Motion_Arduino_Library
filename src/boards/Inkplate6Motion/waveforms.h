@@ -1,4 +1,6 @@
+// Add a header guard.
 #ifndef __WAVEFROMS_INKPLATE_6_MOTION_H__
+#define __WAVEFROMS_INKPLATE_6_MOTION_H__
 
 // Block usage on any other board - Arduino thing...
 #ifdef BOARD_INKPLATE6_MOTION
@@ -85,43 +87,6 @@ static uint8_t waveform4BitPartialLUTClean[11][16] =
     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
 };
 
-    // static uint8_t myLut[11][16] = 
-    // { // >>> Color >>> Black to white                    Phase
-    //   // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
-    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0},
-    // };
-
-    // static uint8_t myLut2[16][16] = 
-    // { // >>> Color >>> Black to white                    Phase
-    //   // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15,
-    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 0, 0, 2, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
-    //     {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    // };
-
 static uint8_t clearWavefrom4Bit[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
 
@@ -141,7 +106,7 @@ static InkplateWaveform default4BitWavefrom =
     .name = "default4BitFullUpdate",
 };
 
-// 1 bit full update - Global update with clean.
+// 1 bit partial update - LUT parameter is ignored since it's optimised on the update function.
 static InkplateWaveform default1BitWavefrom = 
 {
     .mode = INKPLATE_WF_1BIT,
@@ -154,6 +119,22 @@ static InkplateWaveform default1BitWavefrom =
     .clearLUT = clearWavefrom1Bit,
     .clearCycleDelay = 140ULL,
     .name = "default1BitFullUpdate",
+};
+
+// 1 bit partial update - Partial update with removal of prev. pixles.
+// Note: 
+static InkplateWaveform default1BitPartialUpdate = 
+{
+    .mode = INKPLATE_WF_1BIT,
+    .type = INKPLATE_WF_PARTIAL_UPDATE,
+    .tag = 0xef,
+    .lutPhases = 9,
+    .lut = nullptr,
+    .cycleDelay = 140ULL,
+    .clearPhases = 0,
+    .clearLUT = nullptr,
+    .clearCycleDelay = 140ULL,
+    .name = "default1BitPartialUpdate",
 };
 
 // 4 bit partial update - partial update with removal of prev. pixles (fast clean display flashing).
