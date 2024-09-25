@@ -372,11 +372,7 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
 
             // If there is no handshake pin activity, timeout occured, return false.
             if (((unsigned long)(millis() - _timeoutCounter) > _timeoutAtCommand))
-            {
-                Serial.print("[DEBUG] no handshake pin activity, abort! Timeout value: ");
-                Serial.println((unsigned long)(millis() - _timeoutCounter), DEC);
                 return false;
-            }
 
         // If something is received, read the response.
         if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _rxDataTimeoutAtCommand, &_respLen))
@@ -1625,8 +1621,6 @@ bool WiFiClass::flushModemReadReq()
                 // We "totally read" all data from the ESP32.
                 dataRead(_dataBuffer, _len);
                 dataReadEnd();
-
-                Serial.println("Flush it!");
 
                 // Wait a little bit for new data.
                 delay(5ULL);

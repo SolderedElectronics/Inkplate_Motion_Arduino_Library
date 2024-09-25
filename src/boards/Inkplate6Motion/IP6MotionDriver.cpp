@@ -246,7 +246,7 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
             _lineWriteWaitCycles = _lineLoadTimings[_operation];
 
             // First calculate the new fast GLUT for the current EPD waveform phase.
-            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_wf[_operation] + ((unsigned long)(k) << 4))));
+            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_wf[_operation]) + ((unsigned long)(k) << 4)));
 
             // Decode and send the pixels to the ePaper.
             pixelsUpdate(_fb[_operation], _fastGLUT, pixelDecode4BitEPD, 15, 2);
@@ -443,9 +443,7 @@ void EPDDriver::display4b(uint8_t _leaveOn)
     for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
     {
         // First calculate the new fast GLUT for the current EPD waveform phase.
-        //calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
         calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_waveform4BitInternal.lut) + ((unsigned long)(k) << 4)));
-
         pixelsUpdate(_pendingScreenFB, _fastGLUT, pixelDecode4BitEPD, 15, 2);
     }
 
@@ -1150,9 +1148,6 @@ void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformL
 
         // Calculate byte shift for each line.
         uint16_t _lineByteIncrement = SCREEN_WIDTH / (_pixelsPerByte * 2);
-
-        // First calculate the new fast GLUT for the current EPD waveform phase.
-        //calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
 
         // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
         // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
