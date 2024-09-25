@@ -443,7 +443,8 @@ void EPDDriver::display4b(uint8_t _leaveOn)
     for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
     {
         // First calculate the new fast GLUT for the current EPD waveform phase.
-        calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
+        //calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(default4BitWavefrom.lut + ((unsigned long)(k) << 4))));
+        calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_waveform4BitInternal.lut) + ((unsigned long)(k) << 4)));
 
         pixelsUpdate(_pendingScreenFB, _fastGLUT, pixelDecode4BitEPD, 15, 2);
     }
@@ -476,7 +477,7 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
         if (_customWaveform.type == INKPLATE_WF_PARTIAL_UPDATE)
         {
             // Copy it internally.
-            _waveform1BitPartialInternal = _customWaveform;
+            memcpy(&_waveform1BitPartialInternal, &_customWaveform, sizeof(InkplateWaveform));
         }
         else
         {
@@ -484,7 +485,7 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
             if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL) return 0;
 
             // Copy it internally.
-            _waveform1BitInternal = _customWaveform;
+            memcpy(&_waveform1BitInternal, &_customWaveform, sizeof(InkplateWaveform));
         }
     }
     else
@@ -493,7 +494,7 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
         if (_customWaveform.type == INKPLATE_WF_PARTIAL_UPDATE)
         {
             // Copy it internally.
-            _waveform4BitPartialInternal = _customWaveform;
+            memcpy(&_waveform4BitPartialInternal, &_customWaveform, sizeof(InkplateWaveform));
         }
         else
         {
@@ -501,7 +502,7 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
             if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL) return 0;
 
             // Copy it internally.
-            _waveform4BitInternal = _customWaveform;
+            memcpy(&_waveform4BitInternal, &_customWaveform, sizeof(InkplateWaveform));
         }
     }
 
