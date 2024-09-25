@@ -5,7 +5,7 @@
 #ifdef BOARD_INKPLATE6_MOTION
 
 // Inkplate Board name.
-#define INKPLATE_BOARD_NAME "Inkplate 6 MOTION"
+#define INKPLATE_BOARD_NAME "Inkplate 6 Motion"
 
 // Include main header file for the Arduino.
 #include "Arduino.h"
@@ -22,14 +22,11 @@
 // Include library for the STM32 FMC
 #include "../../stm32System/stm32FMC.h"
 
-// Include Master DMA library for STM32.
-#include "../../stm32System/stm32MDMA.h"
-
 // Include library defines
 #include "../../system/defines.h"
 
 // Include library for PCAL6416A GPIO expander.
-#include "../../system/PCAL_IO.h"
+#include "../../system/pcalExpander.h"
 
 // Include the STM32 Helpers functions.
 #include "../../system/helpers.h"
@@ -50,33 +47,35 @@
 // STM32 SPI for Inkplate System Stuff (WiFi & microSD).
 static SPIClass _systemSpi(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO, INKPLATE_MICROSD_SPI_SCK);
 
-// --- Functions declared static inline here for less calling overhead. ---
-// TODO: Try to store this function into the the internal RAM for faster execution.
+// Timings for the line write wait.
+static uint32_t _lineWriteWaitCycles = 140ULL;
 
+// --- Functions declared static inline here for less calling overhead. ---
 // Start writing the frame on the epaper display.
 static inline void vScanStart()
 {
     CKV_SET;
-    delayMicroseconds(7);
+    delayMicroseconds(1);
     SPV_CLEAR;
-    delayMicroseconds(10);
+    delayMicroseconds(6);
     CKV_CLEAR;
-    delayMicroseconds(1);
+    delayMicroseconds(7);
     CKV_SET;
-    delayMicroseconds(8);
+    delayMicroseconds(7);
     SPV_SET;
-    delayMicroseconds(10);
+    delayMicroseconds(6);
     CKV_CLEAR;
     delayMicroseconds(1);
     CKV_SET;
     delayMicroseconds(10);
     CKV_CLEAR;
-    delayMicroseconds(1);
+    delayMicroseconds(10);
     CKV_SET;
     delayMicroseconds(10);
     CKV_CLEAR;
-    delayMicroseconds(1);
+    delayMicroseconds(10);
     CKV_SET;
+    delayMicroseconds(10);
 }
 
 // Compiler be nice, please do not optimise this function.
@@ -90,9 +89,10 @@ __attribute__((always_inline)) static inline void hScanStart(uint8_t _d1, uint8_
 {
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d1;
     SPH_CLEAR;
+    cycleDelay(5ULL);
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d1;
     CKV_SET;
-    cycleDelay(10ULL);
+    cycleDelay(_lineWriteWaitCycles);
     SPH_SET;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = _d2;
 }
@@ -101,11 +101,13 @@ __attribute__((always_inline)) static inline void hScanStart(uint8_t _d1, uint8_
 __attribute__((always_inline)) static inline void vScanEnd()
 {
     CKV_CLEAR;
-    cycleDelay(10ULL);
+    cycleDelay(5ULL);
     LE_SET;
     *(__IO uint8_t *)(EPD_FMC_ADDR) = 0;
+    cycleDelay(5ULL);
     LE_CLEAR;
-    cycleDelay(10ULL);
+    *(__IO uint8_t *)(EPD_FMC_ADDR) = 0;
+    cycleDelay(5ULL);
 }
 // --- End of static inline declared functions. ---
 
@@ -117,10 +119,7 @@ class EPDDriver : public Helpers
         void cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases);
         void clearDisplay();
         void partialUpdate(uint8_t _leaveOn = 0);
-        void partialUpdate4Bit(uint8_t _leaveOn);
         void display(uint8_t _leaveOn = 0);
-        void display1b(uint8_t _leaveOn);
-        void display4b(uint8_t _leaveOn);
         int epdPSU(uint8_t _state);
         bool loadWaveform(InkplateWaveform _customWaveform);
         double readBattery();
@@ -172,13 +171,13 @@ class EPDDriver : public Helpers
 
         // External SRAM frame buffers astart addresses. Statically allocated due speed.
         // Frame buffer for current image on the screen. 2MB in size (2097152 bytes).
-        __IO uint8_t *_currentScreenFB = (__IO uint8_t *)0xD0000000;
+        volatile uint8_t *_currentScreenFB = (uint8_t *)0xD0000000;
 
         // Frame buffer for the image that will be written to the screen on update. 2MB in size (2097152 bytes).
-        __IO uint8_t *_pendingScreenFB = (__IO uint8_t *)0xD0200000;
+        volatile uint8_t *_pendingScreenFB = (uint8_t *)0xD0200000;
 
         // "Scratchpad memory" used for calculations (partial update for example). 2MB in size (2097152 bytes).
-        __IO uint8_t *_scratchpadMemory = (__IO uint8_t *)0xD0400000;
+        volatile uint8_t *_scratchpadMemory = (uint8_t *)0xD0400000;
 
     private:
         // Sets EPD control GPIO pins to the output or High-Z state.
@@ -189,11 +188,34 @@ class EPDDriver : public Helpers
         void calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform);
 
         // Function calculates the difference between tfo framebuffers (usually between current image on the screen and pending in the MCU memory).
-        // Also returns the number of pixel that will be changed.
-        uint32_t differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
+        void differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
+
+        // Internal method for global 1 bit ePaper screen update.
+        void display1b(uint8_t _leaveOn);
+        
+        // Internal method for global 4 bit ePaper screen update.
+        void display4b(uint8_t _leaveOn);
+
+        // Universal method fot the ePaper screen update.
+        void pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _bitsPerPx);
+
+        // Mode dependant methods for conversion framebuffer data into waveforem data. Used by the pixelsUpdate.
+        static void pixelDecode4BitEPD(void *_out, void *_lut, void *_fb);
+        static void pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb);
+        static void pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb);
+
+        // Internal 4 bit partial update method.
+        void partialUpdate4Bit(uint8_t _leaveOn);
+
+        // Internal 1 bit partial update method.
+        void partialUpdate1Bit(uint8_t _leaveOn);
 
         // Object for the SdFat SPI STM32 library.
         SdSpiConfig* _microSDCardSPIConf = nullptr;
+
+        // Typedef handles for Master DMA.
+        MDMA_HandleTypeDef *_epdMdmaHandle;
+        MDMA_HandleTypeDef *_sdramMdmaHandle;
 
         // Default EPD PSU state is off.
         uint8_t _epdPSUState = 0;
@@ -211,7 +233,10 @@ class EPDDriver : public Helpers
         InkplateWaveform _waveform1BitInternal = default1BitWavefrom;
 
         // Internal typedef for the 4 bit waveform - partial update.
-        InkplateWaveform _waveform4BitPartialInternal;
+        InkplateWaveform _waveform4BitPartialInternal = default4BitPartialUpdate;
+
+        // Internal typedef for the 1 bit waveform - partial update.
+        InkplateWaveform _waveform1BitPartialInternal = default1BitPartialUpdate;
 
         // Variable keeps track on how many partial updates have been executed for automatic full update.
         uint16_t _partialUpdateCounter = 0;

@@ -2,7 +2,6 @@
 #include <InkplateMotion.h>
 
 // Select one of provided images. Do not forget to update the image name in drawBitmap4Bit!
-// Source https://www.pexels.com/photo/sevilla-plaza-de-espana-20682311/
 //#include "image1.h" (Marina's picture).
 
 // Road.

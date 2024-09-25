@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAtMqtt.h
+ * @brief       Header file for the MQTT communication with the ESP32.
+ *              This file is used with esp32SpiAt library.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Add headerguard do prevent multiple include.
 #ifndef __ESP32_SPI_AT_MQTT_H__
 #define __ESP32_SPI_AT_MQTT_H__
@@ -33,7 +45,7 @@ class WiFiMQTT
     bool subscribe(const char *_topic);
 
     // If data is received, this function will return topic name.
-    char* topic();
+    char *topic();
 
     // Disconnect from the server/broker.
     bool disconnect();
@@ -43,7 +55,7 @@ class WiFiMQTT
 
     // Publish data to specified topic.
     bool publish(char *_topic, char *_payload, uint16_t _len = 0, bool _retain = 0);
-    
+
     // Check if there is connection to the MQTT broker.
     bool connected();
 
@@ -76,7 +88,8 @@ class WiFiMQTT
     // Pointer to the RX data buffer for subscribed topics. It can be user-defined or allocated.
     char *_rxDataBuffer = NULL;
 
-    // Flag if the RX buffer for MQTT subscribed topic data is allocated (set to true) or user-defined buffer is used (false).
+    // Flag if the RX buffer for MQTT subscribed topic data is allocated (set to true) or user-defined buffer is used
+    // (false).
     bool _allocated = false;
 
     // Pointer pointed to the current last read data byte in the RX buffer, used by the read method.

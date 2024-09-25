@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAtHttp.h
+ * @brief       Header file for the esp32SpiAthtpp.cpp file used for
+ *              WiFi HTTP protocol.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Add headerguard do prevent multiple include.
 #ifndef __ESP32_SPI_AT_HTTP_H__
 #define __ESP32_SPI_AT_HTTP_H__
@@ -14,7 +26,7 @@ class WiFiClient
   public:
     WiFiClient();
     bool begin(const char *_url);
-    //bool connect(const char *_url);
+    // bool connect(const char *_url);
     bool GET();
     bool POST(const char *_body = NULL, uint16_t _bodyLen = 0);
     int available(bool _blocking = true);

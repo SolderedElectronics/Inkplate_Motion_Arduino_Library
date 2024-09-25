@@ -8,7 +8,7 @@ Inkplate inkplate;
 __IO uint8_t *ramBuffer = (__IO uint8_t *)0xD0000000;
 
 // Handle for Master DMA for SDRAM.
-extern MDMA_HandleTypeDef hmdma_mdma_channel40_sw_0;
+extern MDMA_HandleTypeDef hmdmaMdmaChannel40Sw0;
 
 // Handle for the SDRAM FMC interface.
 extern SDRAM_HandleTypeDef hsdram1;
@@ -21,7 +21,7 @@ void setup()
 {
     // Serial debugging.
     Serial.begin(115200);
-    Serial.printf("Inkplate Motion 6 code is starting...");
+    Serial.printf("Inkplate 6 Motion code is starting...");
 
     // Initialize the library (needed for the SDRAM and MDMA).
     inkplate.begin(INKPLATE_GL16);
@@ -111,10 +111,10 @@ bool testSDRAMChunk(uint32_t _startAddress, uint32_t _endAddress, uint64_t *_wri
     _startTime = micros();
 
     // Send that data to the SDRAM with DMA!
-    HAL_MDMA_Start(&hmdma_mdma_channel40_sw_0, (uint32_t)_sourceArray, (uint32_t)_startAddress, _len, 1);
+    HAL_MDMA_Start(&hmdmaMdmaChannel40Sw0, (uint32_t)_sourceArray, (uint32_t)_startAddress, _len, 1);
 
     // Wait for transfer to complete.
-    HAL_MDMA_PollForTransfer(&hmdma_mdma_channel40_sw_0, HAL_MDMA_FULL_TRANSFER, 1000ULL);
+    HAL_MDMA_PollForTransfer(&hmdmaMdmaChannel40Sw0, HAL_MDMA_FULL_TRANSFER, 1000ULL);
 
     // Capture it!
     _endTime = micros();
@@ -132,10 +132,10 @@ bool testSDRAMChunk(uint32_t _startAddress, uint32_t _endAddress, uint64_t *_wri
     _startTime = micros();
 
     // Now, read back the data.
-    HAL_MDMA_Start(&hmdma_mdma_channel40_sw_0, (uint32_t)_startAddress, (uint32_t)_compareArray, _len, 1);
+    HAL_MDMA_Start(&hmdmaMdmaChannel40Sw0, (uint32_t)_startAddress, (uint32_t)_compareArray, _len, 1);
 
     // Wait for transfer to complete.
-    HAL_MDMA_PollForTransfer(&hmdma_mdma_channel40_sw_0, HAL_MDMA_FULL_TRANSFER, 1000ULL);
+    HAL_MDMA_PollForTransfer(&hmdmaMdmaChannel40Sw0, HAL_MDMA_FULL_TRANSFER, 1000ULL);
 
     // Capture it!
     _endTime = micros();

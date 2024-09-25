@@ -1,3 +1,17 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAt.h
+ * @brief       Main header file for the ESP32 WiFi library used
+ *              with AT commands through SPI communication. It contains all
+ *              methods for basic WiFi settings as well as hardware config
+ *              and macros.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Add headerguard do prevent multiple include.
 #ifndef __ESP32_SPI_AT_H__
 #define __ESP32_SPI_AT_H__
@@ -12,7 +26,7 @@
 #include <SPI.h>
 
 // Include SPI AT Message typedefs.
-#include "WiFiSPITypedef.h"
+#include "esp32SpiAtTypedefs.h"
 
 // Include file with all AT Commands.
 #include "esp32SpiAtAllCommands.h"
@@ -40,7 +54,7 @@
 #define INKPLATE_ESP32_HANDSHAKE_PIN PA15
 
 // Maximum networks that can be found.
-#define INKPLATE_ESP32_MAX_SCAN_AP  40
+#define INKPLATE_ESP32_MAX_SCAN_AP 40
 
 // Create class for the AT commands over SPI
 
@@ -56,9 +70,15 @@ class WiFiClass
     bool sendAtCommand(char *_atCommand, uint16_t _len = 0);
     bool getAtResponse(char *_response, uint32_t _bufferLen, unsigned long _timeout, uint16_t *_rxLen = NULL);
     bool getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsigned long _timeout, uint16_t *_rxLen = NULL);
-    bool sendAtCommandWithResponse(char *_atCommand = NULL, unsigned long _timeoutAtCommand = 0ULL, unsigned long _rxDataTimeoutAtCommand = 0ULL, char *_expectedResponseAtCmd = NULL, uint8_t _expectedResponsePosition = INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, bool _terminateOnAtResponseError = true, char *_dataPart = NULL, uint16_t _dataPartLen = 0, unsigned long _timeoutDataPart = 0ULL, char *_expectedResponseData = NULL, uint16_t *_len = NULL);
-    bool sendDataPart(char *_atCommand, char *_dataPart, uint16_t _dataPartLen, unsigned long _timeout, char *_expectedResponse);
-    bool messageFilter(bool _enable, char* _headFilter, char *_tailFilter);
+    bool sendAtCommandWithResponse(char *_atCommand = NULL, unsigned long _timeoutAtCommand = 0ULL,
+                                   unsigned long _rxDataTimeoutAtCommand = 0ULL, char *_expectedResponseAtCmd = NULL,
+                                   uint8_t _expectedResponsePosition = INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START,
+                                   bool _terminateOnAtResponseError = true, char *_dataPart = NULL,
+                                   uint16_t _dataPartLen = 0, unsigned long _timeoutDataPart = 0ULL,
+                                   char *_expectedResponseData = NULL, uint16_t *_len = NULL);
+    bool sendDataPart(char *_atCommand, char *_dataPart, uint16_t _dataPartLen, unsigned long _timeout,
+                      char *_expectedResponse);
+    bool messageFilter(bool _enable, char *_headFilter, char *_tailFilter);
     bool commandEcho(bool _en);
     bool modemPing();
     bool systemRestore();
@@ -88,6 +108,7 @@ class WiFiClass
                 IPAddress _dns1 = INADDR_NONE, IPAddress _dns2 = INADDR_NONE);
     bool waitForHandshakePin(uint32_t _timeoutValue, bool _validState = HIGH);
     bool getHandshakePinState();
+
   private:
     // ESP32 SPI Communication Protocol methods.
     bool waitForHandshakePinInt(uint32_t _timeoutValue);
