@@ -40,8 +40,8 @@ size_t inputDataFeeder(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
     // Return value.
     size_t _retValue = 0;
 
-    Serial.printf("read req, size = %d, ptrAddr = 0x%08X\r\n", _nbyte, _buff);
-    Serial.flush();
+    //Serial.printf("read req, size = %d, ptrAddr = 0x%08X\r\n", _nbyte, _buff);
+    //Serial.flush();
 
     if (_buff)
     {
@@ -68,15 +68,61 @@ size_t inputDataFeeder(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
  * 
  * @return  Returns number of bytes read (zero on error).
  */
-int onDraw(JDEC* jd, void* bitmap, JRECT* rect )
+int onDraw(JDEC* _jd, void* _bitmap, JRECT* _rect)
 {
-    Serial.printf("top = %d, botton = %d, left = %d, right = %d\r\n", rect->top, rect->bottom, rect->left, rect->right);
+    //Serial.printf("[Output feed] R=%d, L=%d, T=%d, B=%d, W=%d H=%d\r\n", _rect->right, _rect->left, _rect->top, _rect->bottom, abs(_rect->left - _rect->right), abs(_rect->top - _rect->bottom));
+    //Serial.flush();
+
+    // Session identifier (5th argument of jd_prepare function).
+    IODEV *_dev = (IODEV*)_jd->device;
+
+    // Calculate the width and height.
+    int _w = abs(_rect->right - _rect->left) + 1;
+    int _h = abs(_rect->bottom - _rect->top) + 1;
+
+    // Get the start positions.
+    int _x0 = _rect->left;
+    int _y0 = _rect->top;
+
+    // Use 8 bits for the bitmap representation.
+    uint8_t *_decodedData = (uint8_t*)(_bitmap);
+
+    // Write the pixels into the framebuffer!
+    // DMA2D could be used here?
+
+    int _size = _w * _h * 3;
+
+    // Serial.printf("W=%d, H=%d, _size=%d\r\n", _w, _h, _size);
+
+    // for (int i = 0; i < _size; i++)
+    // {
+    //     Serial.printf("%c%3d",(i % 3) == 0?'|':' ', _decodedData[i]);
+    // }
+    // Serial.println();
+
+    for (int _y = 0; _y < _h; _y++)
+    {
+        for (int _x = 0; _x < _w; _x++)
+        {
+            _rgbBuffer[(_x0 + (_x * 3)) + (1024 * (_y + _y0))] =  _decodedData[(_x * 3) + (_w * _y)];
+            _rgbBuffer[(_x0 + (_x * 3) + 1) + (1024 * (_y + _y0))] = _decodedData[((_x * 3) + 1) + (_w * _y)];
+            _rgbBuffer[(_x0 + (_x * 3) + 2) + (1024 * (_y + _y0))] = _decodedData[((_x * 3) + 2) + (_w * _y)];
+        }
+    }
+
+    // for (int i = 0; i < _size; i++)
+    // {
+    //     _rgbBuffer[i] = 0;
+    // }
+
+    return 1;
 }
 
 void setup()
 {
     // Initialize serial for debug.
     Serial.begin(115200);
+    Serial.println("Code started!");
 
     // Include Inkplate Motion Library in 4 bit mode.
     inkplate.begin(INKPLATE_GL16);
@@ -88,6 +134,9 @@ void setup()
 
     // Clear everything from the screen (just in case).
     inkplate.display();
+
+    // Clear image frame buffer.
+    memset((uint8_t*)_rgbBuffer, 0, 1024 * 758 * 3);
 
     // Initialize microSD Card.
     printInfoMessage(&inkplate, "microSD card initialization...", 20, true, false, false, false);
@@ -102,7 +151,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("gradient.jpg", O_READ);
+    File file = inkplate.sdFat.open("line.jpg", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);
@@ -146,28 +195,46 @@ void setup()
     // Check the result. Notify and halt if failed.
     if (result != JDR_OK)
     {
-        //sprintf(stringTempBuffer, "JPG Decoder prepare failed, rc = %d\r\n", result);
-        //printInfoMessage(&inkplate, stringTempBuffer, 20, false, false, true, false);
+        sprintf(stringTempBuffer, "JPG Decoder prepare failed, rc = %d\r\n", result);
+        printInfoMessage(&inkplate, stringTempBuffer, 20, false, false, true, false);
         while(1);
     }
 
-    //printInfoMessage(&inkplate, "prepare done, starting decompression", 20, true, false, true, false);
+    printInfoMessage(&inkplate, "Prepare done, starting decompression", 20, true, false, true, false);
     _sessionId.fbuf = _rgbBuffer;
     _sessionId.wfbuf = jpgDecoder.width;
     result = jd_decomp(&jpgDecoder, onDraw, 0);   /* Start to decompress with 1/1 scaling */
     if (result != JDR_OK)
     {
-        //sprintf(stringTempBuffer, "JPG Decoder decpmpression failed, rc = %d\r\n", result);
-        //printInfoMessage(&inkplate, stringTempBuffer, 20, false, false, true, false);
+        sprintf(stringTempBuffer, "JPG Decoder decpmpression failed, rc = %d\r\n", result);
+        printInfoMessage(&inkplate, stringTempBuffer, 20, false, false, true, false);
         while(1);
     }
 
-    //printInfoMessage(&inkplate, "decompression done!", 20, true, false, true, false);
+    printInfoMessage(&inkplate, "Decompression done!", 20, true, false, true, false);
+
+    delay(1000);
+
+    // for (int y = 0; y < 20; y++)
+    // {
+    //     for (int x = 0; x < 20; x++)
+    //     {
+    //         _rgbBuffer[(y * 1024) + (x * 3)] = 0;
+    //         _rgbBuffer[(y * 1024) + (x * 3) + 1] = 0;
+    //         _rgbBuffer[(y * 1024) + (x * 3) + 2] = 0;
+    //     }
+    // }
+
+    //memset((uint8_t*)_rgbBuffer, 0, 20 * 20 * 3);
+
+    // Convert it to the grayscale.
+    RGBtoGrayscale(&inkplate, 10, 10, _rgbBuffer, 1024, 758);
+
+    inkplate.display();
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
+void loop()
+{
 }
 
 void printInfoMessage(Inkplate *_inkplate, char *_msg, int _startX, bool _leaveOn, bool _continuePrint, bool _newLineBefore, bool _newLineAfter)
@@ -177,4 +244,19 @@ void printInfoMessage(Inkplate *_inkplate, char *_msg, int _startX, bool _leaveO
     inkplate.print(_msg);
     if (_newLineAfter) _inkplate->println();
     inkplate.partialUpdate(_leaveOn);
+}
+
+void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuffer, uint16_t _w, uint16_t _h)
+{
+    for (int _y = 0; _y < _h; _y++)
+    {
+        for (int _x = 0; _x < _w; _x++)
+        {
+            uint8_t _r = _rgbBuffer[(_x * 3) + (1024 * _y)];
+            uint8_t _g = _rgbBuffer[(_x * 3) + (1024 * _y) + 1];
+            uint8_t _b = _rgbBuffer[(_x * 3) + (1024 * _y) + 2];
+            uint8_t _pixel = (((2126 * _r) + (7152 * _g) + (722 * _b)) / 10000) >> 4;
+            _inkplate->drawPixel(_x + x, _y + y, _pixel);
+        }
+    }
 }
