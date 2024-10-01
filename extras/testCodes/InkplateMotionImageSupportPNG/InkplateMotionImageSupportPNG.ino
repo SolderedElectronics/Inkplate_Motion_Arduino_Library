@@ -40,9 +40,9 @@ void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t 
     if ((x > inkplate.width()) || (x < 0) || (y > inkplate.height()) || y < 0) return;
 
     // Save red, green and blue pixel into the SDRAM buffer.
-    _rgbBuffer[x + (1024 * 3 * y)] = rgba[0];
-    _rgbBuffer[x + (1024 * 3 * y) + 1] = rgba[1];
-    _rgbBuffer[x + (1024 * 3 * y) + 2] = rgba[2];
+    _rgbBuffer[(x + (1024 * y)) * 3] = rgba[0];
+    _rgbBuffer[(x + (1024 * y) + 1) * 3] = rgba[1];
+    _rgbBuffer[(x + (1024 * y) + 2) * 3] = rgba[2];
 }
 
 void setup()
@@ -74,7 +74,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("gradient.png", O_READ);
+    File file = inkplate.sdFat.open("cat.png", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);
@@ -158,12 +158,11 @@ void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuf
     {
         for (int _x = 0; _x < _w; _x++)
         {
-            uint8_t _r = _rgbBuffer[_x + (1024 * 3 * _y)];
-            uint8_t _g = _rgbBuffer[_x + (1024 * 3 * _y) + 1];
-            uint8_t _b = _rgbBuffer[_x + (1024 * 3 * _y) + 2];
+            uint8_t _r = _rgbBuffer[(_x + (_w * _y)) * 3];
+            uint8_t _g = _rgbBuffer[((_x + 1) + (_w * _y)) * 3];
+            uint8_t _b = _rgbBuffer[((_x + 2) + (_w * _y)) * 3];
             uint8_t _pixel = (((2126 * _r) + (7152 * _g) + (722 * _b)) / 10000) >> 4;
             _inkplate->drawPixel(_x + x, _y + y, _pixel);
         }
     }
 }
-
