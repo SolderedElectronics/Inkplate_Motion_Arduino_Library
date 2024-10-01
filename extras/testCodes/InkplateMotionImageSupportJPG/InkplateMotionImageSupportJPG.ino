@@ -110,11 +110,7 @@ int onDraw(JDEC* _jd, void* _bitmap, JRECT* _rect)
         }
     }
 
-    // for (int i = 0; i < _size; i++)
-    // {
-    //     _rgbBuffer[i] = 0;
-    // }
-
+    // Return 1 for success.
     return 1;
 }
 
@@ -215,21 +211,10 @@ void setup()
 
     delay(1000);
 
-    // for (int y = 0; y < 20; y++)
-    // {
-    //     for (int x = 0; x < 20; x++)
-    //     {
-    //         _rgbBuffer[(y * 1024) + (x * 3)] = 0;
-    //         _rgbBuffer[(y * 1024) + (x * 3) + 1] = 0;
-    //         _rgbBuffer[(y * 1024) + (x * 3) + 2] = 0;
-    //     }
-    // }
-
-    //memset((uint8_t*)_rgbBuffer, 0, 20 * 20 * 3);
-
     // Convert it to the grayscale.
     RGBtoGrayscale(&inkplate, 10, 10, _rgbBuffer, jpgDecoder.width, jpgDecoder.height);
 
+    // Refresh the screen.
     inkplate.display();
 }
 
