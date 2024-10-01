@@ -70,9 +70,6 @@ size_t inputDataFeeder(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
  */
 int onDraw(JDEC* _jd, void* _bitmap, JRECT* _rect)
 {
-    //Serial.printf("[Output feed] R=%d, L=%d, T=%d, B=%d, W=%d H=%d\r\n", _rect->right, _rect->left, _rect->top, _rect->bottom, abs(_rect->left - _rect->right), abs(_rect->top - _rect->bottom));
-    //Serial.flush();
-
     // Session identifier (5th argument of jd_prepare function).
     IODEV *_dev = (IODEV*)_jd->device;
 
@@ -84,30 +81,23 @@ int onDraw(JDEC* _jd, void* _bitmap, JRECT* _rect)
     int _x0 = _rect->left;
     int _y0 = _rect->top;
 
-    // Use 8 bits for the bitmap representation.
+    // Use 8 bits for the bitmap and framebuffer representation.
     uint8_t *_decodedData = (uint8_t*)(_bitmap);
+    uint8_t *_destination = (uint8_t*)_dev->fbuf;
+
+    // Check for bounds.
+    if ((_x0 > SCREEN_WIDTH) || (_y0 > SCREEN_HEIGHT)) return 1;
 
     // Write the pixels into the framebuffer!
     // DMA2D could be used here?
-
-    int _size = _w * _h * 3;
-
-    // Serial.printf("W=%d, H=%d, _size=%d\r\n", _w, _h, _size);
-
-    // for (int i = 0; i < _size; i++)
-    // {
-    //     Serial.printf("%c%3d",(i % 3) == 0?'|':' ', _decodedData[i]);
-    // }
-    // Serial.println();
-
     for (int _y = 0; _y < _h; _y++)
     {
-        for (int _x = 0; _x < _w; _x++)
-        {
-            _rgbBuffer[(_x + _x0 + (1024 * (_y + _y0))) * 3] =  _decodedData[(_x + (_w * _y)) * 3];
-            _rgbBuffer[((_x + _x0 + 1) + (1024 * (_y + _y0))) * 3] = _decodedData[((_x + 1) + (_w * _y)) * 3];
-            _rgbBuffer[((_x + _x0 + 2) + (1024 * (_y + _y0))) * 3] = _decodedData[((_x + 2) + (_w * _y)) * 3];
-        }
+        // Calculate the destination and source starting points for the current row
+        int destIndex = (_x0 + (1024 * (_y + _y0))) * 3;
+        int srcIndex = (_w * _y) * 3;
+
+        // Use memcpy to copy an entire row of _w pixels (each pixel is 3 bytes)
+        memcpy(&_destination[destIndex], &_decodedData[srcIndex], _w * 3);
     }
 
     // Return 1 for success.
@@ -147,7 +137,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("cat.jpg", O_READ);
+    File file = inkplate.sdFat.open("pcb.jpg", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);
@@ -211,8 +201,12 @@ void setup()
 
     delay(1000);
 
+    // Check for bounds one more time.
+    int imageW = min(1024, (int)(jpgDecoder.width));
+    int imageH = min(758, (int)(jpgDecoder.height));
+
     // Convert it to the grayscale.
-    RGBtoGrayscale(&inkplate, 10, 10, _rgbBuffer, jpgDecoder.width, jpgDecoder.height);
+    RGBtoGrayscale(&inkplate, 10, 10, _rgbBuffer, imageW, imageH);
 
     // Refresh the screen.
     inkplate.display();
