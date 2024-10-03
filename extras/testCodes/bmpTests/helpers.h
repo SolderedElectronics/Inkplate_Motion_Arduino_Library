@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define BMP_DECODE_MAX_MEMORY_USAGE (1024*758*3)
+
 #pragma pack(push, 1)  // Ensure byte-level packing
 typedef struct
 {
@@ -43,10 +45,20 @@ typedef struct
     bmpStartHeader header;
     bmpInfo infoHeader;
     bmpColorTable colorTable[256];
-    bool customPallete;
+    bool customPalette;
 }bmpHeader;
-
 #pragma pack(pop)  // Restore the previous packing alignment
+
+enum bmpErrors
+{
+    BMP_DECODE_NO_ERROR = 0,
+    BMP_DECODE_ERR_UNVALID_HEADER,
+    BMP_DECODE_ERR_COMPRESSION_NOT_SUPPORTED,
+    BMP_DECODE_ERR_COLOR_DEPTH_NOT_SUPPORTED,
+    BMP_DECODE_ERR_UNVALID_COLOR_PALETTE,
+    BMP_DECODE_ERR_IMAGE_OUT_OF_BORDER,
+    BMP_DECODE_ERR_NOT_ENOUGH_MEM
+};
 
 #define CONSOLE_COLOR_BLACK         0 
 #define CONSOLE_COLOR_BLUE          1 
@@ -69,8 +81,11 @@ void setConsoleColor(int color);
 bool vaildFile(FILE *file);
 bool processHeader(FILE *_file, bmpHeader *_bmpHeaderPtr);
 bool vaildBMP(bmpHeader *_header);
-bool processBmp(FILE *_file, bmpHeader *_bmpHeader);
+bool processBmp(FILE *_file, bmpHeader *_bmpHeader, void *_buffer, uint32_t _bufferSize, uint16_t _bufferWidth);
+
 void printFileInfo(bmpHeader *_header);
-void printErrorMessage(char *_msg);
+enum bmpErrors errCode();
+void printErrorMessage(const char *format, ...);
+void printRawFbData(uint8_t *_buffer, uint16_t _bufferWidth, uint16_t _height, bmpHeader *_bmpHeader);
 
 #endif

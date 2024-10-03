@@ -4,6 +4,8 @@
 #include "defines.h"
 #include "helpers.h"
 
+uint8_t _framebuffer[1024*758*3];
+
 int main(int argc, char *argv[])
 {
     // Check if the image filename is provided.
@@ -23,10 +25,11 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // Check if this is BMP file at all.
-    if (!vaildBMP(file))
+    // Check if the file is vaild BMP file.
+    if (!vaildFile(file))
     {
-        printErrorMessage("Not a vaild BMP file!");
+        printErrorMessage("File validation error!");
+        printErrorMessage("Error code %d", errCode());
         return 0;
     }
 
@@ -35,12 +38,23 @@ int main(int argc, char *argv[])
     if (!processHeader(file, &bmpFileHeader))
     {
         printErrorMessage("Header Process failed!");
+        printErrorMessage("Error code %d", errCode());
+        return 0;
+    }
+
+    // Check if this is BMP file at all.
+    if (!vaildBMP(&bmpFileHeader))
+    {
+        printErrorMessage("Not a vaild BMP file!");
+        printErrorMessage("Error code %d", errCode());
         return 0;
     }
 
     printFileInfo(&bmpFileHeader);
 
-    processBmp(file, &bmpFileHeader);
+    processBmp(file, &bmpFileHeader, _framebuffer, sizeof(_framebuffer), 1024);
+
+    printRawFbData(_framebuffer, 1024, 20, &bmpFileHeader);
 
     return 0;
 }
