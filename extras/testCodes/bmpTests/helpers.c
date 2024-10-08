@@ -9,11 +9,22 @@
 #include <math.h>
 
 static enum bmpErrors _bmpError = 0;
+static uint8_t *_framebuffer = NULL;
+static uint16_t _framebufferW = 0;
+static uint16_t _framebufferH = 0;
 
 void setConsoleColor(int color)
 {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, color);
+}
+
+void initBmpDecoder(void *_fbPtr, uint16_t _framebufferWPx, uint16_t _framebufferHPx)
+{
+    // Copy parameters locally.
+    _framebuffer = _fbPtr;
+    _framebufferW = _framebufferWPx;
+    _framebufferH = _framebufferHPx;
 }
 
 bool vaildFile(FILE *_file)
@@ -134,7 +145,7 @@ bool vaildBMP(bmpHeader *_header)
     return true;
 }
 
-bool processBmp(FILE *_file, bmpHeader *_bmpHeader, void *_buffer, uint32_t _bufferSize, uint16_t _bufferWidth)
+bool processBmp(FILE *_file, bmpHeader *_bmpHeader)
 {
     // Calculate how many bytes is one line. Note that everything is aligned to the 32 bits.
     const uint32_t _widthBits = (_bmpHeader->infoHeader.width * _bmpHeader->infoHeader.bitCount);
@@ -144,12 +155,6 @@ bool processBmp(FILE *_file, bmpHeader *_bmpHeader, void *_buffer, uint32_t _buf
     uint8_t _oneLineBuffer[_oneLineBytes];
 
     printf("line width: bits: %lu, total bytes: %lu\r\n", _widthBits, _oneLineBytes);
-
-    // Set the file pointer to the start position of the pixel data.
-    fseek(_file, _bmpHeader->header.dataOffset, SEEK_SET);
-
-    // Convert buffer to 8 bit.
-    uint8_t *_frameBuffer = (uint8_t*)(_buffer);
 
     // Check if custom color palette is used.
     if (_bmpHeader->customPalette)
@@ -174,48 +179,51 @@ bool processBmp(FILE *_file, bmpHeader *_bmpHeader, void *_buffer, uint32_t _buf
     else
     {
         // Fill row by row but note that bitmap is upside down.
-        for (int _y = _bmpHeader->infoHeader.height; _y >= 0; _y--)
+        for (uint32_t _y = 0; _y < (_bmpHeader->infoHeader.height - 1); _y++)
         {
             // Fill one line of the BMP file into the framebuffer.
+            // Do not forget to skip header and palette data.
+            fseek(_file, (_oneLineBytes * _y) + _bmpHeader->header.dataOffset, SEEK_SET);
             fread(_oneLineBuffer, 1, _oneLineBytes, _file);
-            fseek(_file, _oneLineBytes * _y, SEEK_SET);
-            //long int old_position = ftell(_file);
-            //printf("Pos: %ul\r\n");
 
+            // Flipped y axis (BMP thing).
+            uint32_t _yFlipped = _bmpHeader->infoHeader.height - _y - 1;
 
             // Storing in the temp framebuffer must be in RGB888, so conversion must be done accordingly.
             switch (_bmpHeader->infoHeader.bitCount)
             {
                 case 16:
-                    for (int _x = 0; _x < _bmpHeader->infoHeader.width; _x++)
+                    for (uint32_t _x = 0; _x < (_bmpHeader->infoHeader.width); _x++)
                     {
                         // Read two bytes.
-                        uint16_t _rawPixelData = _oneLineBuffer[_x * 2];    
+                        uint16_t _rawPixelData = (_oneLineBuffer[(_x * 2) + 1] << 8) | _oneLineBuffer[_x * 2];
+
+                        // Extract the individual color components from 565RGB.
+                        uint8_t _r = (_rawPixelData >> 11) & 0b00011111;
+                        uint8_t _g = (_rawPixelData >> 5) & 0b00111111;
+                        uint8_t _b = _rawPixelData & 0b00011111;
+                    
+                        // Upscale them into 8 bit.
+                        _r = (_r << 3) | (_r >> 2);       // Expand from 5 bits to 8 bits
+                        _g = (_g << 2) | (_g >> 4); // Expand from 6 bits to 8 bits
+                        _b = (_b << 3) | (_b >> 2);    // Expand from 5 bits to 8 bits
+                    
+                        // Combine the components into an 888RGB color
+                        uint32_t _rgb = ((_r << 16) | (_g << 8) | _b);
+
                         // Save it into framebuffer.
-                        int destIndex = _x + ((_bufferWidth * _y) * 3); 
-                        // Create RGB data from the 16 bit data (RGB565 format).
-                        // Red channel.
-                        _frameBuffer[destIndex] = _rawPixelData & 0x1F;
-                        // Green channel.
-                        _frameBuffer[destIndex + 1] = (_rawPixelData >> 5) & 0x3F;
-                        // Blue channel.
-                        _frameBuffer[destIndex + 2] = (_rawPixelData >> 11) & 0x1F;
+                        drawIntoFramebuffer(_x, _yFlipped, _rgb);
                     }
                     break;
 
                 case 24:
                 {
                     // Save it into framebuffer.
-                    int destIndex = ((_bufferWidth * _y) * 3);
-                    memcpy(_frameBuffer + destIndex, _oneLineBuffer, _bmpHeader->infoHeader.width * 3);
-
-                    // for (int i = 0; i < _bmpHeader->infoHeader.width; i++)
-                    // {
-                    //     int destIndex = (i + (1024 * _y)) * 3;
-                    //     _frameBuffer[destIndex + 2] = 0xFF;
-                    //     _frameBuffer[destIndex + 1] = 0xFF;
-                    //     _frameBuffer[destIndex] = 0x00;
-                    // }
+                    for (uint32_t _x = 0; _x < (_bmpHeader->infoHeader.width); _x++)
+                    {
+                        uint32_t _rgb = (_oneLineBuffer[(_x * 3) + 2] << 16) | (_oneLineBuffer[(_x * 3) + 1] << 8) | _oneLineBuffer[(_x * 3)];
+                        drawIntoFramebuffer(_x, _yFlipped, _rgb);
+                    }
 
                     break;
                 }
@@ -236,6 +244,19 @@ enum bmpErrors errCode()
 
     // Return error code.
     return _err;
+}
+
+void drawIntoFramebuffer(int _x, int _y, uint32_t _color)
+{
+    if ((_x >= _framebufferW) || (_x < 0) || (_y >= _framebufferH) || (_y < 0)) return;
+
+    // Calculate the framebuffer array index
+    uint32_t _fbArrayIndex = (_x + (_framebufferW * _y)) * 3;
+
+    // Write the pixel value.
+    _framebuffer[_fbArrayIndex + 2] = _color >> 16;
+    _framebuffer[_fbArrayIndex + 1] = (_color >> 8) & 0xFF;
+    _framebuffer[_fbArrayIndex] = _color & 0xFF;
 }
 
 void printFileInfo(bmpHeader *_header)
@@ -275,15 +296,51 @@ void printErrorMessage(const char *format, ...)
     setConsoleColor(CONSOLE_COLOR_WHITE);
 }
 
-void printRawFbData(uint8_t *_buffer, uint16_t _bufferWidth, uint16_t _height, bmpHeader *_bmpHeader)
+void printRawFbData(uint16_t _height, bmpHeader *_bmpHeader)
 {
     printf("\r\n\r\n");
+
+    // Use temp pointer for the framebuffer array.
+    uint8_t *_buffer = _framebuffer;
+
     for (int _y = 0; _y < _height; _y++)
     {
-        for (int _x = 0; _x < _bufferWidth; _x++)
+        for (int _x = 0; _x < _framebufferW; _x++)
         {
             printf("0x%02X%02X%02X, ", *(_buffer++), *(_buffer++), *(_buffer++));
         }
         printf("\r\n");
     }
+}
+
+bool dumpRawFbData(uint16_t _height, bmpHeader *_bmpHeader)
+{
+    // Create the file. If already file exists, overwritte it.
+    FILE *_file;
+    _file = fopen("framebufferDump.txt", "w+");
+
+    // Use temp pointer for the framebuffer array.
+    uint8_t *_buffer = _framebuffer;
+    
+    // Check if failed.
+    if (!_file)
+    {
+        // Do not go any further.
+        return false;
+    }
+
+    // Dump everything from the framebuffer into the file in HEX notation (FFFFFF ABCDEF 1234AF ...).
+    for (int _y = 0; _y < _height; _y++)
+    {
+        for (int _x = 0; _x < _framebufferW; _x++)
+        {
+            fprintf(_file, "%02X%02X%02X ", *(_buffer++), *(_buffer++), *(_buffer++));
+        }
+    }
+
+    // Close the file.
+    fclose(_file);
+
+    // Return true for succ.
+    return true;
 }

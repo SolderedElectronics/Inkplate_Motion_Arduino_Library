@@ -78,14 +78,17 @@ enum bmpErrors
 #define CONSOLE_COLOR_BRIGHT_WHITE  15
 
 void setConsoleColor(int color);
+void initBmpDecoder(void *_fbPtr, uint16_t _framebufferWPx, uint16_t _framebufferHPx);
 bool vaildFile(FILE *file);
 bool processHeader(FILE *_file, bmpHeader *_bmpHeaderPtr);
 bool vaildBMP(bmpHeader *_header);
-bool processBmp(FILE *_file, bmpHeader *_bmpHeader, void *_buffer, uint32_t _bufferSize, uint16_t _bufferWidth);
+bool processBmp(FILE *_file, bmpHeader *_bmpHeader);
+void drawIntoFramebuffer(int _x, int _y, uint32_t _color);
 
 void printFileInfo(bmpHeader *_header);
 enum bmpErrors errCode();
 void printErrorMessage(const char *format, ...);
-void printRawFbData(uint8_t *_buffer, uint16_t _bufferWidth, uint16_t _height, bmpHeader *_bmpHeader);
+void printRawFbData(uint16_t _height, bmpHeader *_bmpHeader);
+bool dumpRawFbData(uint16_t _height, bmpHeader *_bmpHeader);
 
 #endif

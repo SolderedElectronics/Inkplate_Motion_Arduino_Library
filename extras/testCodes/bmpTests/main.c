@@ -4,7 +4,11 @@
 #include "defines.h"
 #include "helpers.h"
 
-uint8_t _framebuffer[1024*758*3];
+#define FRAME_BUFFER_W      1024
+#define FRAME_BUFFER_H      758
+#define FRAME_BUFFER_BPP    3
+
+uint8_t _framebuffer[FRAME_BUFFER_W * FRAME_BUFFER_H * FRAME_BUFFER_BPP];
 
 int main(int argc, char *argv[])
 {
@@ -25,6 +29,9 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    // Initialize BMP decoder.
+    initBmpDecoder((uint8_t*)_framebuffer, FRAME_BUFFER_W, FRAME_BUFFER_H);
+
     // Check if the file is vaild BMP file.
     if (!vaildFile(file))
     {
@@ -43,18 +50,24 @@ int main(int argc, char *argv[])
     }
 
     // Check if this is BMP file at all.
-    if (!vaildBMP(&bmpFileHeader))
-    {
-        printErrorMessage("Not a vaild BMP file!");
-        printErrorMessage("Error code %d", errCode());
-        return 0;
-    }
+    // if (!vaildBMP(&bmpFileHeader))
+    // {
+    //     printErrorMessage("Not a vaild BMP file!");
+    //     printErrorMessage("Error code %d", errCode());
+    //     return 0;
+    // }
 
     printFileInfo(&bmpFileHeader);
 
-    processBmp(file, &bmpFileHeader, _framebuffer, sizeof(_framebuffer), 1024);
+    processBmp(file, &bmpFileHeader);
 
-    printRawFbData(_framebuffer, 1024, 20, &bmpFileHeader);
+    //printRawFbData(_framebuffer, 1024, 40, &bmpFileHeader);
+
+    // Try to dump framebuffer.
+    if (!dumpRawFbData(758, &bmpFileHeader))
+    {
+        printErrorMessage("Framebuffer dump failed!");
+    }
 
     return 0;
 }
