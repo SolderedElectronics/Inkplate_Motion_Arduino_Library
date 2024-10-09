@@ -40,9 +40,6 @@ size_t inputDataFeeder(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
     // Return value.
     size_t _retValue = 0;
 
-    //Serial.printf("read req, size = %d, ptrAddr = 0x%08X\r\n", _nbyte, _buff);
-    //Serial.flush();
-
     if (_buff)
     {
         _retValue = _dev->fp->readBytes(_buff, _nbyte);
@@ -74,8 +71,8 @@ int onDraw(JDEC* _jd, void* _bitmap, JRECT* _rect)
     IODEV *_dev = (IODEV*)_jd->device;
 
     // Calculate the width and height.
-    int _w = abs(_rect->right - _rect->left) + 1;
-    int _h = abs(_rect->bottom - _rect->top) + 1;
+    int _w = _rect->right - _rect->left + 1;
+    int _h = _rect->bottom - _rect->top + 1;
 
     // Get the start positions.
     int _x0 = _rect->left;
@@ -83,21 +80,24 @@ int onDraw(JDEC* _jd, void* _bitmap, JRECT* _rect)
 
     // Use 8 bits for the bitmap and framebuffer representation.
     uint8_t *_decodedData = (uint8_t*)(_bitmap);
-    uint8_t *_destination = (uint8_t*)_dev->fbuf;
-
-    // Check for bounds.
-    if ((_x0 > SCREEN_WIDTH) || (_y0 > SCREEN_HEIGHT)) return 1;
 
     // Write the pixels into the framebuffer!
     // DMA2D could be used here?
     for (int _y = 0; _y < _h; _y++)
     {
-        // Calculate the destination and source starting points for the current row
-        int destIndex = (_x0 + (1024 * (_y + _y0))) * 3;
-        int srcIndex = (_w * _y) * 3;
+        // Calculate source starting points for the current row.
+        int srcIndex = (_w * _y);
 
-        // Use memcpy to copy an entire row of _w pixels (each pixel is 3 bytes)
-        memcpy(&_destination[destIndex], &_decodedData[srcIndex], _w * 3);
+        for (int _x = 0; _x < _w; _x++)
+        {
+            // Get the RGB values.
+            uint8_t r = _decodedData[((srcIndex + _x) * 3) + 2];
+            uint8_t g = _decodedData[((srcIndex + _x) * 3) + 1];
+            uint8_t b = _decodedData[((srcIndex + _x) * 3)];
+
+            // Write the pixel into temp. framebuffer for decoded images.
+            drawIntoFramebuffer(_x + _x0, _y + _y0, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
+        }
     }
 
     // Return 1 for success.
@@ -137,7 +137,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("pcb.jpg", O_READ);
+    File file = inkplate.sdFat.open("img01.jpg", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);
@@ -187,8 +187,6 @@ void setup()
     }
 
     printInfoMessage(&inkplate, "Prepare done, starting decompression", 20, true, false, true, false);
-    _sessionId.fbuf = _rgbBuffer;
-    _sessionId.wfbuf = jpgDecoder.width;
     result = jd_decomp(&jpgDecoder, onDraw, 0);   /* Start to decompress with 1/1 scaling */
     if (result != JDR_OK)
     {
@@ -231,11 +229,33 @@ void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuf
     {
         for (int _x = 0; _x < _w; _x++)
         {
-            uint8_t _r = _rgbBuffer[(_x + (_w * _y)) * 3];
-            uint8_t _g = _rgbBuffer[((_x + 1) + (_w * _y)) * 3];
-            uint8_t _b = _rgbBuffer[((_x + 2) + (_w * _y)) * 3];
-            uint8_t _pixel = (((2126 * _r) + (7152 * _g) + (722 * _b)) / 10000) >> 4;
+            // Calculate the framebuffer array index.
+            uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
+
+            // get the individual RGB colors.
+            uint8_t _r = _rgbBuffer[_fbArrayIndex + 2];
+            uint8_t _g = _rgbBuffer[_fbArrayIndex + 1];
+            uint8_t _b = _rgbBuffer[_fbArrayIndex];
+
+            // Convert them into grayscale.
+            uint8_t _pixel = ((77 * _r) + (150 * _g) + (29 * _b)) >> 12;
+
+            // Write into epaper framebuffer.
             _inkplate->drawPixel(_x + x, _y + y, _pixel);
         }
     }
+}
+
+void drawIntoFramebuffer(int _x, int _y, uint32_t _color)
+{
+    // Check the bounds.
+    if ((_x >= inkplate.width()) || (_x < 0) || (_y >= inkplate.height()) || (_y < 0)) return;
+
+    // Calculate the framebuffer array index.
+    uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
+
+    // Write the pixel value.
+    _rgbBuffer[_fbArrayIndex + 2] = _color >> 16;
+    _rgbBuffer[_fbArrayIndex + 1] = (_color >> 8) & 0xFF;
+    _rgbBuffer[_fbArrayIndex] = _color & 0xFF;
 }

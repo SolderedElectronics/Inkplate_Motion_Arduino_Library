@@ -36,9 +36,12 @@ volatile uint8_t *_rgbBuffer = (uint8_t*)(0xD0600000);
 
 void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
 {
-    uint8_t r = 0xff; // 0 - 255
-    uint8_t g = rgba[1]; // 0 - 255
-    uint8_t b = rgba[2]; // 0 - 255
+    // Get the RGB values.
+    uint8_t r = rgba[0];
+    uint8_t g = rgba[1];
+    uint8_t b = rgba[2];
+
+    // Write the pixel into temp. framebuffer for decoded images.
     drawIntoFramebuffer(x, y, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
 }
 
@@ -71,7 +74,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("white_green_blue_pattern_image.png", O_READ);
+    File file = inkplate.sdFat.open("cat.png", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);
@@ -158,10 +161,15 @@ void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuf
             // Calculate the framebuffer array index.
             uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
 
+            // get the individual RGB colors.
             uint8_t _r = _rgbBuffer[_fbArrayIndex + 2];
             uint8_t _g = _rgbBuffer[_fbArrayIndex + 1];
             uint8_t _b = _rgbBuffer[_fbArrayIndex];
-            uint8_t _pixel = (((2126 * (uint32_t)(_r)) + (7152 * (uint32_t)(_g)) + (722 * (uint32_t)(_b))) / 10000) >> 4;
+
+            // Convert them into grayscale.
+            uint8_t _pixel = ((77 * _r) + (150 * _g) + (29 * _b)) >> 12;
+
+            // Write into epaper framebuffer.
             _inkplate->drawPixel(_x + x, _y + y, _pixel);
         }
     }
@@ -169,7 +177,8 @@ void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuf
 
 void drawIntoFramebuffer(int _x, int _y, uint32_t _color)
 {
-    if ((_x >= 1024) || (_x < 0) || (_y >= 758) || (_y < 0)) return;
+    // Check the bounds.
+    if ((_x >= inkplate.width()) || (_x < 0) || (_y >= inkplate.height()) || (_y < 0)) return;
 
     // Calculate the framebuffer array index.
     uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
