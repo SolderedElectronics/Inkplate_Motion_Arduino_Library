@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
     // Try to open the provied file.
     FILE *file;
-    file = fopen(argv[1], "r");
+    file = fopen(argv[1], "rb");
 
     if (!file)
     {
@@ -50,12 +50,12 @@ int main(int argc, char *argv[])
     }
 
     // Check if this is BMP file at all.
-    // if (!vaildBMP(&bmpFileHeader))
-    // {
-    //     printErrorMessage("Not a vaild BMP file!");
-    //     printErrorMessage("Error code %d", errCode());
-    //     return 0;
-    // }
+    if (!vaildBMP(&bmpFileHeader))
+    {
+        printErrorMessage("Not a vaild BMP file!");
+        printErrorMessage("Error code %d", errCode());
+        return 0;
+    }
 
     printFileInfo(&bmpFileHeader);
 
