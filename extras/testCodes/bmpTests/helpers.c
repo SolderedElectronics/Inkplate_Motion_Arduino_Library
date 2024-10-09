@@ -203,7 +203,7 @@ bool processBmp(FILE *_file, bmpHeader *_bmpHeader)
                         uint8_t _px = _oneLineBuffer[_completeBytes];
 
                         // Write those 8 pixels.
-                        for (int i = 7; i >= _rem; i--)
+                        for (int i = 7; i >= (7 - _rem); i--)
                         {
                             // Convert byte into color.
                             uint8_t _index = 7 - i;
@@ -323,6 +323,12 @@ bool processBmp(FILE *_file, bmpHeader *_bmpHeader)
 
                     break;
                 }
+
+                case 32:
+                {
+                    
+                }
+                break;
             }
         }
     }

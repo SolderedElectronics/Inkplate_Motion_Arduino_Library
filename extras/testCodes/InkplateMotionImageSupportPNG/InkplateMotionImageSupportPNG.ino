@@ -36,13 +36,10 @@ volatile uint8_t *_rgbBuffer = (uint8_t*)(0xD0600000);
 
 void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
 {
-    // Do not allow larger images than display size.
-    if ((x > inkplate.width()) || (x < 0) || (y > inkplate.height()) || y < 0) return;
-
-    // Save red, green and blue pixel into the SDRAM buffer.
-    _rgbBuffer[(x + (1024 * y)) * 3] = rgba[0];
-    _rgbBuffer[(x + (1024 * y) + 1) * 3] = rgba[1];
-    _rgbBuffer[(x + (1024 * y) + 2) * 3] = rgba[2];
+    uint8_t r = 0xff; // 0 - 255
+    uint8_t g = rgba[1]; // 0 - 255
+    uint8_t b = rgba[2]; // 0 - 255
+    drawIntoFramebuffer(x, y, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
 }
 
 void setup()
@@ -74,7 +71,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("cat.png", O_READ);
+    File file = inkplate.sdFat.open("white_green_blue_pattern_image.png", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);
@@ -158,11 +155,27 @@ void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuf
     {
         for (int _x = 0; _x < _w; _x++)
         {
-            uint8_t _r = _rgbBuffer[(_x + (_w * _y)) * 3];
-            uint8_t _g = _rgbBuffer[((_x + 1) + (_w * _y)) * 3];
-            uint8_t _b = _rgbBuffer[((_x + 2) + (_w * _y)) * 3];
-            uint8_t _pixel = (((2126 * _r) + (7152 * _g) + (722 * _b)) / 10000) >> 4;
+            // Calculate the framebuffer array index.
+            uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
+
+            uint8_t _r = _rgbBuffer[_fbArrayIndex + 2];
+            uint8_t _g = _rgbBuffer[_fbArrayIndex + 1];
+            uint8_t _b = _rgbBuffer[_fbArrayIndex];
+            uint8_t _pixel = (((2126 * (uint32_t)(_r)) + (7152 * (uint32_t)(_g)) + (722 * (uint32_t)(_b))) / 10000) >> 4;
             _inkplate->drawPixel(_x + x, _y + y, _pixel);
         }
     }
+}
+
+void drawIntoFramebuffer(int _x, int _y, uint32_t _color)
+{
+    if ((_x >= 1024) || (_x < 0) || (_y >= 758) || (_y < 0)) return;
+
+    // Calculate the framebuffer array index.
+    uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
+
+    // Write the pixel value.
+    _rgbBuffer[_fbArrayIndex + 2] = _color >> 16;
+    _rgbBuffer[_fbArrayIndex + 1] = (_color >> 8) & 0xFF;
+    _rgbBuffer[_fbArrayIndex] = _color & 0xFF;
 }
