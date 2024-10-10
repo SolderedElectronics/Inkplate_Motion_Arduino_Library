@@ -74,7 +74,7 @@ void setup()
     }
 
     // First, open the file.
-    File file = inkplate.sdFat.open("img01.bmp", O_READ);
+    File file = inkplate.sdFat.open("img04.bmp", O_READ);
 
     // Check for the file open success.
     printInfoMessage(&inkplate, "File open ", 20, true, false, false, false);

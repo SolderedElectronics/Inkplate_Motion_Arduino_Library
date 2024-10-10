@@ -16,7 +16,6 @@ bool bmpDecodeVaildFile(bmpDecode_t *_bmpDecodeHandler)
         return false;
     }
 
-
     // Check if this is proper BMP signature.
     if (_bmpDecodeHandler->header.header.signature != 0x4D42) // BM but in reverse.
     {
@@ -115,10 +114,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
         {
             // Fill one line of the BMP file into the framebuffer.
             // Do not forget to skip header and palette data.
-            //fseek(_file, (_oneLineBytes * _y) + _bmpHeader->header.dataOffset, SEEK_SET);
-            //size_t _retSize = fread(_oneLineBuffer, 1, _oneLineBytes, _file);
-
-            
             _bmpDecodeHandle->inputFeed(_bmpDecodeHandle, NULL, (_oneLineBytes * _y) + _bmpDecodeHandle->header.header.dataOffset);
             if (!bmpDecodeGetBytes(_bmpDecodeHandle, _oneLineBuffer, _oneLineBytes))
             {
@@ -154,7 +149,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                             uint8_t _b = _bmpDecodeHandle->header.colorTable[(_px >> _index) & 1].blue;
 
                             // Draw the image using converter RGB values.
-                            //drawIntoFramebuffer((_x * 8) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
                             _bmpDecodeHandle->output(_bmpDecodeHandle, (_x * 8) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         }
                     }
@@ -175,7 +169,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                             uint8_t _b = _bmpDecodeHandle->header.colorTable[(_px >> i) & 1].blue;
 
                             // Draw the image using converter RGB values.
-                            //drawIntoFramebuffer((_completeBytes * 8) + _index, _yFlipped, (_r << 16) | (_g << 8) | _b);
                             _bmpDecodeHandle->output(_bmpDecodeHandle, (_completeBytes * 8) + _index, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         }
                     }
@@ -203,7 +196,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                             uint8_t _b = _bmpDecodeHandle->header.colorTable[_pxSplit[i]].blue;
 
                             // Draw the image using converter RGB values.
-                            //drawIntoFramebuffer((_x * 2) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
                             _bmpDecodeHandle->output(_bmpDecodeHandle, (_x * 2) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         }
                     }
@@ -217,7 +209,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                         uint8_t _b = _bmpDecodeHandle->header.colorTable[_px].blue;
 
                         // Draw the image using converter RGB values.
-                        //drawIntoFramebuffer((_completeBytes * 2) + 1, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         _bmpDecodeHandle->output(_bmpDecodeHandle, (_completeBytes * 2) + 1, _yFlipped, (_r << 16) | (_g << 8) | _b);
                     }
                 }
@@ -232,7 +223,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                         uint8_t _b = _bmpDecodeHandle->header.colorTable[_oneLineBuffer[_x]].blue;
 
                         // Draw the image using converter RGB values.
-                        //drawIntoFramebuffer(_x, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         _bmpDecodeHandle->output(_bmpDecodeHandle, _x, _yFlipped, (_r << 16) | (_g << 8) | _b);
                     }
                   break;
@@ -246,9 +236,6 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
         {
             // Fill one line of the BMP file into the framebuffer.
             // Do not forget to skip header and palette data.
-            //fseek(_file, (_oneLineBytes * _y) + _bmpHeader->header.dataOffset, SEEK_SET);
-            // size_t _retSize = fread(_oneLineBuffer, 1, _oneLineBytes, _file);
-
             _bmpDecodeHandle->inputFeed(_bmpDecodeHandle, NULL, (_oneLineBytes * _y) + _bmpDecodeHandle->header.header.dataOffset);
             if (!bmpDecodeGetBytes(_bmpDecodeHandle, _oneLineBuffer, _oneLineBytes))
             {
@@ -293,10 +280,8 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                     for (uint32_t _x = 0; _x < (_bmpDecodeHandle->header.infoHeader.width); _x++)
                     {
                         uint32_t _rgb = (_oneLineBuffer[(_x * 3) + 2] << 16) | (_oneLineBuffer[(_x * 3) + 1] << 8) | _oneLineBuffer[(_x * 3)];
-                        //drawIntoFramebuffer(_x, _yFlipped, _rgb);
                         _bmpDecodeHandle->output(_bmpDecodeHandle, _x, _yFlipped, _rgb);
                     }
-
                     break;
                 }
 
@@ -309,6 +294,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
         }
     }
 
+    // Everything went ok? Return true.
     return true;
 }
 
@@ -334,7 +320,6 @@ bool bmpDecodeGetBytes(bmpDecode_t *_bmpDecodeHandler, void *_buffer, uint16_t _
         // Read the bytes and save the return code.
         // retValue = 0 -> Can't read the bytes.
         // retValue >0 -> Number of bytes read.
-
         uint32_t _retValue = _bmpDecodeHandler->inputFeed(_bmpDecodeHandler, _buffer, _n - _gotBytes);
         
         // Check if read has failed.

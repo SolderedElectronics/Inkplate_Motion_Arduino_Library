@@ -83,6 +83,4 @@ bool bmpDecodeGetBytes(bmpDecode_t *_bmpDecodeHandler, void *_buffer, uint16_t _
 
 enum bmpErrors bmpDecodeErrCode(bmpDecode_t *_bmpDecodeHandle);
 
-// void drawIntoFramebuffer(int _x, int _y, uint32_t _color);
-
 #endif
