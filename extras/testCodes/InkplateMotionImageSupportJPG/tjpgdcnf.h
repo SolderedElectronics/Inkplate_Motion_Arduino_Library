@@ -12,7 +12,7 @@
 /  2: Grayscale (8-bit/pix)
 */
 
-#define	JD_USE_SCALE	0
+#define	JD_USE_SCALE	1
 /* Switches output descaling feature.
 /  0: Disable
 /  1: Enable

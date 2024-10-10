@@ -5,7 +5,8 @@
 // Add Arduino main header file.
 #include <Arduino.h>
 
-#pragma pack(push, 1)  // Ensure byte-level packing
+// Ensure byte-level packing
+#pragma pack(push, 1)
 typedef struct
 {
     uint16_t signature;
@@ -44,48 +45,44 @@ typedef struct
     bmpColorTable colorTable[256];
     bool customPalette;
 }bmpHeader;
-#pragma pack(pop)  // Restore the previous packing alignment
+#pragma pack(pop)
+// Restore the previous packing alignment
 
+// Error codes for BMP decoder.
 enum bmpErrors
 {
     BMP_DECODE_NO_ERROR = 0,
-    BMP_DECODE_ERR_UNVALID_HEADER,
+    BMP_DECODE_ERR_INVALID_HEADER,
     BMP_DECODE_ERR_COMPRESSION_NOT_SUPPORTED,
     BMP_DECODE_ERR_COLOR_DEPTH_NOT_SUPPORTED,
-    BMP_DECODE_ERR_UNVALID_COLOR_PALETTE,
-    BMP_DECODE_ERR_IMAGE_OUT_OF_BORDER
+    BMP_DECODE_ERR_INVALID_COLOR_PALETTE,
+    BMP_DECODE_ERR_IMAGE_OUT_OF_BORDER,
+    BMP_DECODE_ERR_READ_FAIL
 };
 
-// BMP Decoder Class.
-class BmpDecode
+// Main BMP library struct typedef.
+typedef struct bmpDecode_t bmpDecode_t;
+struct bmpDecode_t
 {
-    public:
-        // Class constructor.
-        BmpDecode();
-
-        // Initializer.
-        void initBmpDecoder(void *_fbPtr, uint16_t _framebufferWPx, uint16_t _framebufferHPx);
-
-        bool vaildFile(FILE *file);
-
-        bool processHeader(FILE *_file, bmpHeader *_bmpHeaderPtr);
-
-        bool vaildBMP(bmpHeader *_header);
-
-        bool processBmp(FILE *_file, bmpHeader *_bmpHeader);
-
-        enum bmpErrors errCode();
-
-    private:
-        enum bmpErrors _bmpError = BMP_DECODE_NO_ERROR;
-
-        uint8_t *_framebuffer = NULL;
-
-        uint16_t _framebufferW = 0;
-
-        uint16_t _framebufferH = 0;
-
-        void drawIntoFramebuffer(int _x, int _y, uint32_t _color);
+    enum bmpErrors errorCode;
+    size_t (*inputFeed)(bmpDecode_t *_bmpDecodeHandler, void *_buffer, uint64_t _n);
+    void (*output)(bmpDecode_t *_bmpDecodeHandler, int16_t _x, int16_t _y, uint32_t _color);
+    void *sessionHandler;
+    bmpHeader header;
 };
+
+bool bmpDecodeVaildFile(bmpDecode_t *_bmpDecodeHandler);
+
+bool bmpDecodeProcessHeader(bmpDecode_t *_bmpDecodeHandler);
+
+bool bmpDecodeVaildBMP(bmpDecode_t *_bmpDecodeHandle);
+
+bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle);
+
+bool bmpDecodeGetBytes(bmpDecode_t *_bmpDecodeHandler, void *_buffer, uint16_t _n);
+
+enum bmpErrors bmpDecodeErrCode(bmpDecode_t *_bmpDecodeHandle);
+
+// void drawIntoFramebuffer(int _x, int _y, uint32_t _color);
 
 #endif
