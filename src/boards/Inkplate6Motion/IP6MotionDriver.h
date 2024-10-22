@@ -37,6 +37,9 @@
 // Include RTC library for STM32H7.
 #include "../../stm32System/STM32H7RTC.h"
 
+// Include library for image decoding.
+#include "imageDecoder.h"
+
 // Defines for EPD GPIOs
 #define EPD_DRIVER_PINS_OUTPUT  0
 #define EPD_DRIVER_PINS_H_ZI    1
@@ -164,6 +167,10 @@ class EPDDriver : public Helpers
 
         // Object for the Inkplate on-board micro SD card.
         SdFat sdFat;
+
+        // Class for image decode in Inkplate Motion library.
+        ImageDecoder image;
+        
 
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.

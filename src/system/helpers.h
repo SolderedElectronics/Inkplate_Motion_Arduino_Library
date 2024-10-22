@@ -22,6 +22,35 @@
 // values).
 #define MULTIPLE_OF_4(x) (((x - 1) | 3) + 1)
 
+// Used by the image decoder for detecting different image formats.
+enum inkplateImageDecodeFormat
+{
+    INKPLATE_IMAGE_DECODE_FORMAT_ERR = 0,
+    INKPLATE_IMAGE_DECODE_FORMAT_AUTO,
+    INKPLATE_IMAGE_DECODE_FORMAT_BMP,
+    INKPLATE_IMAGE_DECODE_FORMAT_JPG,
+    INKPLATE_IMAGE_DECODE_FORMAT_PNG,
+};
+
+// Used for selecting (manual override) of the paths of the image.
+enum inkplateImagePathType
+{
+    INKPLATE_IMAGE_DECODE_PATH_AUTO = 0,
+    INKPLATE_IMAGE_DECODE_PATH_WEB,
+    INKPLATE_IMAGW_DECODE_PATH_SD,
+};
+
+// List of possible errors while decoding the image. To-do.
+enum inkplateImageDecodeErrors
+{
+    
+};
+
+// First element = number of bytes in format signature. It's a hack, I know...
+static const uint8_t _helpersBmpSignature[3] = {2, 0x42, 0x4D};
+static const uint8_t _helpersJpgSignature[4] = {3, 0xFF, 0xD8, 0xFF};
+static const uint8_t _helpersPngSignature[9] = {8, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+
 // Fast conversion from Wavefrom to EPD data.
 /**
  * @brief   Fast conversion from Wavefrom to EPD data.
@@ -63,10 +92,13 @@ __attribute__((always_inline)) static inline uint8_t wavefromElementToEpdData(ui
 class Helpers
 {
   public:
+    Helpers();
     // Function is used to copy
     static void copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize,
                                  volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size);
-
+    enum inkplateImageDecodeFormat detectImageFormat(char *_filename, void *_bytes);
+    bool static checkHeaders(void *_dataPtr, void *_headerSignature);
+    bool static isWebPath(char *_path);
   private:
 };
 

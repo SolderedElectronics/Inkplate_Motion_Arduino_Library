@@ -1,3 +1,16 @@
+/**
+ **************************************************
+ *
+ * @file        bmpDecode.h
+ * @brief       Source file for the Windows bitmap file
+ *              decoder written in C/C++ for Inkplate
+ *              Motion Boards.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Include main header file.
 #include "bmpDecode.h"
 

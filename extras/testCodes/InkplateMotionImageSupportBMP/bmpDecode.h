@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        bmpDecode.h
+ * @brief       Header file for the Windows bitmap file
+ *              decoder written in C/C++ for Inkplate
+ *              Motion Boards.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
 // Add a header guard.
 #ifndef __BMPDECODE_H__
 #define __BMPDECODE_H__
