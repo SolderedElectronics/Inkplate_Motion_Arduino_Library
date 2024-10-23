@@ -41,7 +41,7 @@ void Inkplate::begin(uint8_t _mode)
     Serial.begin(115200);
 #endif
     // Init low level driver for EPD.
-    initDriver();
+    initDriver(this);
 
     // Start the library in selected mode. By default is 1bit mode.
     selectDisplayMode(_mode);

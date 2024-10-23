@@ -37,13 +37,17 @@ enum inkplateImagePathType
 {
     INKPLATE_IMAGE_DECODE_PATH_AUTO = 0,
     INKPLATE_IMAGE_DECODE_PATH_WEB,
-    INKPLATE_IMAGW_DECODE_PATH_SD,
+    INKPLATE_IMAGE_DECODE_PATH_SD,
 };
 
 // List of possible errors while decoding the image. To-do.
 enum inkplateImageDecodeErrors
 {
-    
+    INKPLATE_IMAGE_DECODE_ERR_OK = 0,
+    INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM,
+    INKPLATE_IMAGE_DECODE_ERR_UNKNOWN_FORMAT,
+    INKPLATE_IMAGE_DECODE_ERR_FILE_OPEN_FAIL,
+    INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR
 };
 
 // First element = number of bytes in format signature. It's a hack, I know...

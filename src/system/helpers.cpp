@@ -127,6 +127,9 @@ enum inkplateImageDecodeFormat Helpers::detectImageFormat(char *_filename, void 
 
 bool Helpers::checkHeaders(void *_dataPtr, void *_headerSignature)
 {
+    // Check for invalid input.
+    if ((_dataPtr == NULL) || (_headerSignature == NULL)) return false;
+
     // Convert void pinter into bytes.
     uint8_t *_array = (uint8_t*)_headerSignature;
 
