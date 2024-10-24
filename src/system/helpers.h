@@ -48,7 +48,11 @@ enum InkplateImageDecodeErrors
     INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM,
     INKPLATE_IMAGE_DECODE_ERR_UNKNOWN_FORMAT,
     INKPLATE_IMAGE_DECODE_ERR_FILE_OPEN_FAIL,
-    INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR
+    INKPLATE_IMAGE_DECODE_ERR_NO_MEMORY,
+    INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_FAULT,
+    INKPLATE_IMAGE_DECODE_ERR_JPG_DECODER_FAULT,
+    INKPLATE_IMAGE_DECODE_ERR_PNG_DECODER_FAULT,
+    INKPLATE_IMAGE_DECODE_ERR_BMP_HARD_FAULT,
 };
 
 // First element = number of bytes in format signature. It's a hack, I know...
@@ -101,7 +105,7 @@ class Helpers
     // Function is used to copy
     static void copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize,
                                  volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size);
-    enum InkplateImageDecodeFormat detectImageFormat(char *_filename, void *_bytes);
+    enum InkplateImageDecodeFormat static detectImageFormat(char *_filename, void *_bytes);
     bool static checkHeaders(void *_dataPtr, void *_headerSignature);
     bool static isWebPath(char *_path);
   private:

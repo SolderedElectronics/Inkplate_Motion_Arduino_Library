@@ -76,7 +76,7 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
     _inkplate = _inkplatePtr;
 
     // Initialize image decoder library.
-    image.begin(_inkplate, &sdFat, (uint8_t*)0xD0600000);
+    image.begin(_inkplate, &WiFi, (uint8_t*)0xD0600000);
 
     // Put every peripheral into low power mode.
     peripheralState(INKPLATE_PERIPHERAL_ALL_PERI, false);

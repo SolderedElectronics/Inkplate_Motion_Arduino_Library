@@ -11,8 +11,14 @@
 // Include file for the each board feature selection.
 #include "features/featureSelect.h"
 
-// Forward declaration of the Inkplate Class.
+// Include all needed image decoders.
+#include "../../libs/bmpDecode/bmpDecode.h"
+#include "../../libs/TJpgDec/tjpgd.h"
+#include "../../libs/pngle/pngle.h"
+
+// Forward declaration of the Inkplate Class and WiFiClass.
 class Inkplate;
+class WiFiClass;
 
 // Image decode framebuffer typedef.
 typedef struct
@@ -27,10 +33,10 @@ class ImageDecoder
 {
   public:
     ImageDecoder();
-    void begin(Inkplate *_inkplate, SdFat *_sdFatPtr, uint8_t *_tempFbAddress);
+    void begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress);
     bool draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO, enum InkplateImagePathType _PathType = INKPLATE_IMAGE_DECODE_PATH_AUTO);
     bool drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO);
-    bool drawFromSd(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format);
+    bool drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format);
     bool drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format);
 
     // MOVE THIS INTO IMAGE PROCESSING!
@@ -41,14 +47,18 @@ class ImageDecoder
     enum InkplateImageDecodeErrors getError();
 
   private:
-    // SD Fat library pointer to the SdFat class object.
-    SdFat *_sdFat;
-
     // Inkplate base class object pointer - needed for Inkplate::drawPixel();
-    Inkplate *_inkplatePtr;
+    Inkplate *_inkplate;
+
+    // WiFiClass pointer to the object.
+    WiFiClass *_wifi;
 
     // Framebuffer handler.
     InkplateImageDecodeFBHandler _framebufferHandler;
+
+    // Handle for each of the decoders.
+    BmpDecode_t _bmpDec;
+    JDEC _jpgDecoder;
 
     // Decoded image error log.
     enum InkplateImageDecodeErrors _DecodeError = INKPLATE_IMAGE_DECODE_NO_ERR;
