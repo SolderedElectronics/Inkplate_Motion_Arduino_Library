@@ -1,6 +1,9 @@
 // Include library header file.
 #include "imageDecoder.h"
 
+// Block usage on other boards.
+#ifdef BOARD_INKPLATE6_MOTION
+
 // Include all needed image decoders.
 #include "../../libs/bmpDecode/bmpDecode.h"
 #include "../../libs/TJpgDec/tjpgd.h"
@@ -9,62 +12,67 @@
 // Include code for all image decoder callbacks.
 #include "imageDecoderCallbacks.h"
 
+// It needs also main Inkplate Motion file to get the base class.
 #include "../../InkplateMotion.h"
 
 /**
  * @brief Construct a new Image Decoder:: Image Decoder object
  * 
- * @param _tempFbAddress 
  */
 ImageDecoder::ImageDecoder()
 {
+    // Empty for now.
 }
 
 void ImageDecoder::begin(Inkplate *_inkplate, SdFat *_sdFatPtr, uint8_t *_tempFbAddress)
 {
     // Save these addresses locally.
-    _decodedImageFb = _tempFbAddress;
+    _framebufferHandler.framebuffer = _tempFbAddress;
     _sdFat = _sdFatPtr;
     _inkplatePtr = _inkplate;
+
+    // Set the framebuffer size.
+    _framebufferHandler.fbHeight = SCREEN_HEIGHT;
+    _framebufferHandler.fbWidth = SCREEN_WIDTH;
 }
 
-bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum inkplateImageDecodeFormat _format, enum inkplateImagePathType _pathType)
+bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format, enum InkplateImagePathType _PathType)
 {
     // Check if the path detection is set to auto (it should be by default).
-    if (_pathType == INKPLATE_IMAGE_DECODE_PATH_AUTO)
+    if (_PathType == INKPLATE_IMAGE_DECODE_PATH_AUTO)
     {
         // Check if the path is web or microSD (local).
         bool _isWeb = Helpers::isWebPath((char*)_path);
 
         // If the path is truly web path, change it.
-        _pathType = _isWeb ? INKPLATE_IMAGE_DECODE_PATH_WEB : INKPLATE_IMAGE_DECODE_PATH_SD;
+        _PathType = _isWeb ? INKPLATE_IMAGE_DECODE_PATH_WEB : INKPLATE_IMAGE_DECODE_PATH_SD;
     }
 
     // Check if the file format if set to auto. If not, it's manually overriden.
     // To-Do
 
     // Use proper decoder for the image type.
-    return drawFromSd(_path, _x, _y, _invert, _dither, _format);
+    return drawFromSd(_path, _x, _y, _invert, _dither, _Format);
 }
 
-bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum inkplateImageDecodeFormat _format)
+bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
     // To-Do.
 }
 
-bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum inkplateImageDecodeFormat _format)
+bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format)
 {
     // Reset error variable.
-    _decodeError = INKPLATE_IMAGE_DECODE_ERR_OK;
+    _DecodeError = INKPLATE_IMAGE_DECODE_NO_ERR;
 
     // Image width and height parameters (known after image decode).
     int _imageW = 0;
     int _imageH = 0;
 
     // Check the input parameters.
-    if ((_path == NULL) || (_format == INKPLATE_IMAGE_DECODE_FORMAT_ERR))
+    if ((_path == NULL) || (_Format == INKPLATE_IMAGE_DECODE_FORMAT_ERR))
     {
-        _decodeError = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;
+        _DecodeError = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;
         return false;
     }
 
@@ -75,7 +83,7 @@ bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, u
     if (!_file)
     {
         // File open failed? Return false and set the error.
-        _decodeError = INKPLATE_IMAGE_DECODE_ERR_FILE_OPEN_FAIL;
+        _DecodeError = INKPLATE_IMAGE_DECODE_ERR_FILE_OPEN_FAIL;
         return false;
     }
 
@@ -83,25 +91,25 @@ bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, u
     uint32_t _fileSize = _file.size();
 
     // Check what decoder needs to be used.
-    switch (_format)
+    switch (_Format)
     {
         case INKPLATE_IMAGE_DECODE_FORMAT_BMP:
         {
             // Let's initialize BMP decoder.
-            bmpDecode_t bmpDec;
-            bmpDecoderSessionHandler sessionData;
+            BmpDecode_t bmpDec;
+            BmpDecoderSessionHandler sessionData;
             bmpDec.inputFeed = &readBytesFromSdBmp;
             bmpDec.errorCode = BMP_DECODE_NO_ERROR;
             sessionData.file = &_file;
-            sessionData.frameBuffer = _decodedImageFb;
-            bmpDec.output = &drawIntoFramebuffer;
+            sessionData.frameBufferHandler = &_framebufferHandler;
+            bmpDec.output = &writeBytesToFrameBufferBmp;
             bmpDec.sessionHandler = &sessionData;
 
             // Try to read if the file is vaild.
             if (!bmpDecodeVaildFile(&bmpDec))
             {
                 // Set error while drawing image.
-                _decodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
+                _DecodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
                 
                 // Close the file.
                 _file.close();
@@ -114,7 +122,7 @@ bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, u
             if (!bmpDecodeProcessHeader(&bmpDec))
             {
                 // Set error while drawing image.
-                _decodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
+                _DecodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
                 
                 // Close the file.
                 _file.close();
@@ -127,7 +135,7 @@ bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, u
             if (!bmpDecodeVaildBMP(&bmpDec))
             {
                 // Set error while drawing image.
-                _decodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
+                _DecodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
                 
                 // Close the file.
                 _file.close();
@@ -139,7 +147,7 @@ bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, u
             if (!bmpDecodeProcessBmp(&bmpDec))
             {
                 // Set error while drawing image.
-                _decodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
+                _DecodeError = INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_ERROR;
                 
                 // Close the file.
                 _file.close();
@@ -166,21 +174,21 @@ bool ImageDecoder::drawFromSd(const char *_path, int _x, int _y, bool _invert, u
     }
 
     // For testing only!
-    RGBtoGrayscale(_inkplatePtr, _x, _y, _decodedImageFb, _imageW, _imageH);
+    RGBtoGrayscale(_inkplatePtr, _x, _y, _framebufferHandler.framebuffer, _imageW, _imageH);
 
     // Everything went ok? Return success!
     return true;
 }
 
-bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum inkplateImageDecodeFormat _format)
+bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
     // To-Do.
 }
 
-enum inkplateImageDecodeErrors ImageDecoder::getError()
+enum InkplateImageDecodeErrors ImageDecoder::getError()
 {
     // Return last error.
-    return _decodeError;
+    return _DecodeError;
 }
 
 
@@ -207,3 +215,5 @@ void ImageDecoder::RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile ui
         }
     }
 }
+
+#endif

@@ -70,7 +70,7 @@ void Helpers::copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuff
     }
 }
 
-enum inkplateImageDecodeFormat Helpers::detectImageFormat(char *_filename, void *_bytes)
+enum InkplateImageDecodeFormat Helpers::detectImageFormat(char *_filename, void *_bytes)
 {
         // First, try to get the image format by it's extension.
     // Firstly try to find the extension itself. It is at the end of the filename.

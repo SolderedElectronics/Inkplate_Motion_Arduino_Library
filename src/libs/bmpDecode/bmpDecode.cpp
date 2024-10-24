@@ -14,8 +14,11 @@
 // Include main header file.
 #include "bmpDecode.h"
 
-bool bmpDecodeVaildFile(bmpDecode_t *_bmpDecodeHandler)
+bool bmpDecodeVaildFile(BmpDecode_t *_bmpDecodeHandler)
 {
+    // Clear the errors.
+    _bmpDecodeHandler->errorCode = BMP_DECODE_NO_ERROR;
+
     // Rewind the file at the start.
     _bmpDecodeHandler->inputFeed(_bmpDecodeHandler, NULL, 0);
 
@@ -40,7 +43,7 @@ bool bmpDecodeVaildFile(bmpDecode_t *_bmpDecodeHandler)
     return true;
 }
 
-bool bmpDecodeProcessHeader(bmpDecode_t *_bmpDecodeHandler)
+bool bmpDecodeProcessHeader(BmpDecode_t *_bmpDecodeHandler)
 {
     // Set default return value.
     bool _retValue = false;
@@ -49,7 +52,7 @@ bool bmpDecodeProcessHeader(bmpDecode_t *_bmpDecodeHandler)
     _bmpDecodeHandler->inputFeed(_bmpDecodeHandler, NULL, 0);
 
     // Read the header without the color table (maybe it does not exists).
-    const uint8_t _headerSize = sizeof(bmpStartHeader) + sizeof(bmpInfo);
+    const uint8_t _headerSize = sizeof(BmpStartHeader) + sizeof(BmpInfo);
 
     // Read it!
     if (bmpDecodeGetBytes(_bmpDecodeHandler, (uint8_t*)&(_bmpDecodeHandler->header), _headerSize))
@@ -59,7 +62,7 @@ bool bmpDecodeProcessHeader(bmpDecode_t *_bmpDecodeHandler)
         {
             // Copy the color data into the header.
             uint16_t _noOfColors = (1 << _bmpDecodeHandler->header.infoHeader.bitCount);
-            uint16_t _numberOfBytes = (1 << _bmpDecodeHandler->header.infoHeader.bitCount) * sizeof(bmpColorTable);
+            uint16_t _numberOfBytes = (1 << _bmpDecodeHandler->header.infoHeader.bitCount) * sizeof(BmpColorTable);
 
             // Check for success.
             if (bmpDecodeGetBytes(_bmpDecodeHandler, _bmpDecodeHandler->header.colorTable, _numberOfBytes))
@@ -88,7 +91,7 @@ bool bmpDecodeProcessHeader(bmpDecode_t *_bmpDecodeHandler)
     return _retValue;
 }
 
-bool bmpDecodeVaildBMP(bmpDecode_t *_bmpDecodeHandle)
+bool bmpDecodeVaildBMP(BmpDecode_t *_bmpDecodeHandle)
 {
     // Check if decoder is able to decode this file. If not return error and save error code.
     // Check for the compression. Any kind of comression is not supported.
@@ -110,7 +113,7 @@ bool bmpDecodeVaildBMP(bmpDecode_t *_bmpDecodeHandle)
     return true;
 }
 
-bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
+bool bmpDecodeProcessBmp(BmpDecode_t *_bmpDecodeHandle)
 {
     // Calculate how many bytes is one line. Note that everything is aligned to the 32 bits.
     const uint32_t _widthBits = (_bmpDecodeHandle->header.infoHeader.width * _bmpDecodeHandle->header.infoHeader.bitCount);
@@ -162,7 +165,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                             uint8_t _b = _bmpDecodeHandle->header.colorTable[(_px >> _index) & 1].blue;
 
                             // Draw the image using converter RGB values.
-                            _bmpDecodeHandle->output(_bmpDecodeHandle, (_x * 8) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
+                            _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, (_x * 8) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         }
                     }
 
@@ -182,7 +185,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                             uint8_t _b = _bmpDecodeHandle->header.colorTable[(_px >> i) & 1].blue;
 
                             // Draw the image using converter RGB values.
-                            _bmpDecodeHandle->output(_bmpDecodeHandle, (_completeBytes * 8) + _index, _yFlipped, (_r << 16) | (_g << 8) | _b);
+                            _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, (_completeBytes * 8) + _index, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         }
                     }
                 }
@@ -209,7 +212,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                             uint8_t _b = _bmpDecodeHandle->header.colorTable[_pxSplit[i]].blue;
 
                             // Draw the image using converter RGB values.
-                            _bmpDecodeHandle->output(_bmpDecodeHandle, (_x * 2) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
+                            _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, (_x * 2) + i, _yFlipped, (_r << 16) | (_g << 8) | _b);
                         }
                     }
 
@@ -222,7 +225,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                         uint8_t _b = _bmpDecodeHandle->header.colorTable[_px].blue;
 
                         // Draw the image using converter RGB values.
-                        _bmpDecodeHandle->output(_bmpDecodeHandle, (_completeBytes * 2) + 1, _yFlipped, (_r << 16) | (_g << 8) | _b);
+                        _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, (_completeBytes * 2) + 1, _yFlipped, (_r << 16) | (_g << 8) | _b);
                     }
                 }
                 break;
@@ -236,7 +239,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                         uint8_t _b = _bmpDecodeHandle->header.colorTable[_oneLineBuffer[_x]].blue;
 
                         // Draw the image using converter RGB values.
-                        _bmpDecodeHandle->output(_bmpDecodeHandle, _x, _yFlipped, (_r << 16) | (_g << 8) | _b);
+                        _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, _x, _yFlipped, (_r << 16) | (_g << 8) | _b);
                     }
                   break;
             }
@@ -245,7 +248,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
     else
     {
         // Fill row by row but note that bitmap is upside down.
-        for (uint32_t _y = 0; _y < (_bmpDecodeHandle->header.infoHeader.height - 1); _y++)
+        for (uint32_t _y = 0; _y < (_bmpDecodeHandle->header.infoHeader.height); _y++)
         {
             // Fill one line of the BMP file into the framebuffer.
             // Do not forget to skip header and palette data.
@@ -283,7 +286,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                         uint32_t _rgb = ((_r << 16) | (_g << 8) | _b);
 
                         // Save it into framebuffer.
-                        _bmpDecodeHandle->output(_bmpDecodeHandle, _x, _yFlipped, _rgb);
+                        _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, _x, _yFlipped, _rgb);
                     }
                     break;
 
@@ -293,7 +296,7 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
                     for (uint32_t _x = 0; _x < (_bmpDecodeHandle->header.infoHeader.width); _x++)
                     {
                         uint32_t _rgb = (_oneLineBuffer[(_x * 3) + 2] << 16) | (_oneLineBuffer[(_x * 3) + 1] << 8) | _oneLineBuffer[(_x * 3)];
-                        _bmpDecodeHandle->output(_bmpDecodeHandle, _x, _yFlipped, _rgb);
+                        _bmpDecodeHandle->output(_bmpDecodeHandle->sessionHandler, _x, _yFlipped, _rgb);
                     }
                     break;
                 }
@@ -311,19 +314,13 @@ bool bmpDecodeProcessBmp(bmpDecode_t *_bmpDecodeHandle)
     return true;
 }
 
-enum bmpErrors bmpDecodeErrCode(bmpDecode_t *_bmpDecodeHandle)
+enum BmpErrors bmpDecodeErrCode(BmpDecode_t *_bmpDecodeHandle)
 {
-    // Save a copy.
-    enum bmpErrors _err = _bmpDecodeHandle->errorCode;
-
-    // Clear the errors.
-    _bmpDecodeHandle->errorCode = BMP_DECODE_NO_ERROR;
-
     // Return error code.
-    return _err;
+    return _bmpDecodeHandle->errorCode;
 }
 
-bool bmpDecodeGetBytes(bmpDecode_t *_bmpDecodeHandler, void *_buffer, uint16_t _n)
+bool bmpDecodeGetBytes(BmpDecode_t *_bmpDecodeHandler, void *_buffer, uint16_t _n)
 {
     uint32_t _gotBytes = 0;
     
