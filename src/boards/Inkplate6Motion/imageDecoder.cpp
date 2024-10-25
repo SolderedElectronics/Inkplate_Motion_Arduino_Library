@@ -193,6 +193,7 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
             memset(&_jpgDecoder, 0, sizeof(JDEC));
             JdecIODev _sessionId;
             _sessionId.fp = _file;
+            _sessionId.frameBufferHandler = &_framebufferHandler;
             JRESULT _result = jd_prepare(&_jpgDecoder, readBytesFromSdJpg, _workingBuffer, _workingBufferSize, &_sessionId);
 
             // Check if JPG decoder prepare is ok. If not, return error.
@@ -235,7 +236,52 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
         }
         case INKPLATE_IMAGE_DECODE_FORMAT_PNG:
         {
-            
+            // Decode it chunk-by-chunk.
+            // Allocate new PNG decoder.
+            _newPngle = pngle_new();
+
+            // Add session handler for the framebuffer access.
+            BmpDecoderSessionHandler sessionHandler;
+            sessionHandler.frameBufferHandler = &_framebufferHandler;
+            pngle_set_session_handle(_newPngle, &sessionHandler);
+
+            // Set the callback for decoder.
+            pngle_set_draw_callback(_newPngle, myPngleOnDraw);
+
+            uint32_t total = _file->fileSize();
+            uint8_t buff[4096];
+            uint32_t pnt = 0;
+            int remain = 0;
+
+            while (pnt < total)
+            {
+                uint32_t toread = _file->available();
+                if (toread > 0)
+                {
+                    int len = _file->read(buff, min((uint32_t)2048, toread));
+                    int fed = pngle_feed(_newPngle, buff, len);
+                    if (fed < 0)
+                    {
+                        // Free up the memory.
+                        pngle_destroy(_newPngle);
+
+                        // Set error.
+                        _DecodeError = INKPLATE_IMAGE_DECODE_ERR_PNG_DECODER_FAULT;
+
+                        // Go back!
+                        return false;
+                    }
+                    remain = remain + len - fed;
+                    pnt += len;
+                }
+            }
+
+            // Get the width and height of the decoded image.
+            _imageW = pngle_get_width(_newPngle);
+            _imageH = pngle_get_height(_newPngle);
+
+            // Free up the memory after succ decode.
+            pngle_destroy(_newPngle);
             break;
         }
     }

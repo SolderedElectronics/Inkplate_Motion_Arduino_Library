@@ -7,6 +7,7 @@
 // Include decoders.
 #include "../../libs/bmpDecode/bmpDecode.h"
 #include "../../libs/TJpgDec/tjpgd.h"
+#include "../../libs/pngle/pngle.h"
 
 // Session typedef handler.
 typedef struct
@@ -144,6 +145,21 @@ int writeBytesToFrameBufferJpg(JDEC* _jd, void* _bitmap, JRECT* _rect)
     // Return 1 for success.
     return 1;
 }
+
+void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
+{
+    // Get the RGB values.
+    uint8_t r = rgba[0];
+    uint8_t g = rgba[1];
+    uint8_t b = rgba[2];
+
+    // Get the session handler.
+    BmpDecoderSessionHandler *_sessionHandle = (BmpDecoderSessionHandler*)pngle_get_session_handle(pngle);
+
+    // Write the pixel into temp. framebuffer for decoded images.
+    drawIntoFramebuffer(_sessionHandle->frameBufferHandler, x, y, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
+}
+
 #endif
 
 #endif

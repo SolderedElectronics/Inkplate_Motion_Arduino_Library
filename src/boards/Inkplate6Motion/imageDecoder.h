@@ -59,6 +59,7 @@ class ImageDecoder
     // Handle for each of the decoders.
     BmpDecode_t _bmpDec;
     JDEC _jpgDecoder;
+    pngle_t *_newPngle;
 
     // Decoded image error log.
     enum InkplateImageDecodeErrors _DecodeError = INKPLATE_IMAGE_DECODE_NO_ERR;

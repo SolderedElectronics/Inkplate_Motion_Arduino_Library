@@ -110,6 +110,9 @@ struct _pngle_t {
 	pngle_draw_callback_t draw_callback;
 	pngle_done_callback_t done_callback;
 
+	// Added by Soldered Electronics - session handle (used for framebuffer).
+	void *sessionHandler;
+
 	// misc
 	const char *error;
 	void *user_data;
@@ -184,12 +187,15 @@ void pngle_reset(pngle_t *pngle)
 	tinfl_init(&pngle->inflator);
 }
 
-pngle_t *pngle_new()
+pngle_t *pngle_new(void *_sessionHandlerPtr)
 {
 	pngle_t *pngle = (pngle_t *)PNGLE_CALLOC(1, sizeof(pngle_t), "pngle_t");
 	if (!pngle) return NULL;
 
 	pngle_reset(pngle);
+
+	// Added by Soldered Electronics.
+	pngle->sessionHandler = _sessionHandlerPtr;
 
 	return pngle;
 }
@@ -218,6 +224,18 @@ uint32_t pngle_get_height(pngle_t *pngle)
 {
 	if (!pngle) return 0;
 	return pngle->hdr.height;
+}
+
+void pngle_set_session_handle(pngle_t *pngle, void *sessionHandlePtr)
+{
+	// Set the session handler.
+	pngle->sessionHandler = sessionHandlePtr;
+}
+
+void* pngle_get_session_handle(pngle_t *pngle)
+{
+	// Return the pointer of the ssesion handler.
+	return pngle->sessionHandler;
 }
 
 pngle_ihdr_t *pngle_get_ihdr(pngle_t *pngle)

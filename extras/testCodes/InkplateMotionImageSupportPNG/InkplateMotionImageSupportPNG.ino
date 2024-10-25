@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-// Include pngle decoder library.
+// Include pngle decoder library - use modified library (modified by Soldered).
 #include "pngle.h"
 
 // Create Inkaplte Motion Class.
@@ -34,6 +34,15 @@ int _write(int file, char *ptr, int len) {
 
 volatile uint8_t *_rgbBuffer = (uint8_t*)(0xD0600000);
 
+// Session typedef handler.
+typedef struct
+{
+    File *file;
+    InkplateImageDecodeFBHandler *frameBufferHandler;
+}DecoderSessionHandler;
+
+InkplateImageDecodeFBHandler fbHandler;
+
 void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
 {
     // Get the RGB values.
@@ -41,8 +50,11 @@ void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t 
     uint8_t g = rgba[1];
     uint8_t b = rgba[2];
 
+    // Get the session handler.
+    DecoderSessionHandler *_sessionHandle = (DecoderSessionHandler*)pngle_get_session_handle(pngle);
+
     // Write the pixel into temp. framebuffer for decoded images.
-    drawIntoFramebuffer(x, y, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
+    drawIntoFramebufferForPng(_sessionHandle->frameBufferHandler, x, y, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
 }
 
 void setup()
@@ -98,6 +110,14 @@ void setup()
     // Decode it chunk-by-chunk.
     // Allocate new PNG decoder.
     pngle_t *_newPngle = pngle_new();
+
+    // Add session handler for the framebuffer access.
+    DecoderSessionHandler sessionHandler;
+    sessionHandler.frameBufferHandler = &fbHandler;
+    fbHandler.fbHeight = 758;
+    fbHandler.fbWidth = 1024;
+    fbHandler.framebuffer = _rgbBuffer;
+    pngle_set_session_handle(_newPngle, &sessionHandler);
 
     // Set the callback for decoder.
     pngle_set_draw_callback(_newPngle, myPngleOnDraw);
@@ -175,16 +195,19 @@ void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuf
     }
 }
 
-void drawIntoFramebuffer(int _x, int _y, uint32_t _color)
+void drawIntoFramebufferForPng(void *_framebufferHandlerPtr, int16_t _x, int16_t _y, uint32_t _color)
 {
-    // Check the bounds.
-    if ((_x >= inkplate.width()) || (_x < 0) || (_y >= inkplate.height()) || (_y < 0)) return;
+    // Convert to the InkplateImageDecodeFBHandler.
+    InkplateImageDecodeFBHandler *_framebufferHandler = (InkplateImageDecodeFBHandler*)_framebufferHandlerPtr;
 
-    // Calculate the framebuffer array index.
-    uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
+    // Check for bounds!
+    if ((_x >= _framebufferHandler->fbWidth) || (_x < 0) || (_y >= _framebufferHandler->fbHeight) || (_y < 0)) return;
+
+    // Calculate the framebuffer array index. Since it's RGB888 format, use multiple of three bytes.
+    uint32_t _fbArrayIndex = (_x + (_framebufferHandler->fbWidth * _y)) * 3;
 
     // Write the pixel value.
-    _rgbBuffer[_fbArrayIndex + 2] = _color >> 16;
-    _rgbBuffer[_fbArrayIndex + 1] = (_color >> 8) & 0xFF;
-    _rgbBuffer[_fbArrayIndex] = _color & 0xFF;
+    _framebufferHandler->framebuffer[_fbArrayIndex + 2] = _color >> 16;
+    _framebufferHandler->framebuffer[_fbArrayIndex + 1] = (_color >> 8) & 0xFF;
+    _framebufferHandler->framebuffer[_fbArrayIndex] = _color & 0xFF;
 }
