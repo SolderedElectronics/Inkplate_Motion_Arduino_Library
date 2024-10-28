@@ -133,8 +133,13 @@ bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t
     (*_imgW) = pngle_get_width(_pngDecoder);
     (*_imgH) = pngle_get_height(_pngDecoder);
 
+    // Check for any decode errors.
+
     // Free up the memory after succ decode.
     pngle_destroy(_pngDecoder);
+
+    // Return true for successfull image decode.
+    return true;
 }
 
 enum InkplateImageDecodeFormat inkplateImageDecodeHelpersDetectImageFormat(char *_filename, void *_bytes)

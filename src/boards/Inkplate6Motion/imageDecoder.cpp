@@ -124,13 +124,13 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
         {
             // Let's initialize BMP decoder.
             memset(&_bmpDecoder, 0, sizeof(BmpDecode_t));
-            DecoderSessionHandler sessionData;
+            DecoderSessionHandler _sessionHandler;
             _bmpDecoder.inputFeed = &readBytesFromSdBmp;
             _bmpDecoder.errorCode = BMP_DECODE_NO_ERROR;
-            sessionData.file = _file;
-            sessionData.frameBufferHandler = &_framebufferHandler;
+            _sessionHandler.file = _file;
+            _sessionHandler.frameBufferHandler = &_framebufferHandler;
             _bmpDecoder.output = &writeBytesToFrameBufferBmp;
-            _bmpDecoder.sessionHandler = &sessionData;
+            _bmpDecoder.sessionHandler = &_sessionHandler;
 
             // Call function to process BMP decoding.
             if (!inkplateImageDecodeHelpersBmp(&_bmpDecoder, &_decodeError))
@@ -145,11 +145,11 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
         {
             // Initialize the JPG decoder.
             memset(&_jpgDecoder, 0, sizeof(JDEC));
-            DecoderSessionHandler _sessionId;
-            _sessionId.file = _file;
-            _sessionId.frameBufferHandler = &_framebufferHandler;
+            DecoderSessionHandler _sessionHandler;
+            _sessionHandler.file = _file;
+            _sessionHandler.frameBufferHandler = &_framebufferHandler;
 
-            if (!inkplateImageDecodeHelpersJpg(&_jpgDecoder, &readBytesFromSdJpg, &writeBytesToFrameBufferJpg, &_decodeError, &_sessionId))
+            if (!inkplateImageDecodeHelpersJpg(&_jpgDecoder, &readBytesFromSdJpg, &writeBytesToFrameBufferJpg, &_decodeError, &_sessionHandler))
                 return false;
 
             // Check image size and constrain it.
@@ -160,38 +160,19 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
         }
         case INKPLATE_IMAGE_DECODE_FORMAT_PNG:
         {
+            // Create session handler.
+            DecoderSessionHandler _sessionHandler;
+            _sessionHandler.file = _file;
+            _sessionHandler.frameBufferHandler = &_framebufferHandler;
+
             // Decode it chunk-by-chunk.
-            // Allocate new PNG decoder.
-            _pngDecoder = pngle_new();
-
-            // Add session handler for the framebuffer access.
-            DecoderSessionHandler sessionHandler;
-            sessionHandler.frameBufferHandler = &_framebufferHandler;
-            sessionHandler.file = _file;
-            pngle_set_user_data(_pngDecoder, &sessionHandler);
-
-            // Set the callback for decoder.
-            pngle_set_draw_callback(_pngDecoder, writeBytesToFrameBufferPng);
-
-            // Do a callback for the input data feed!
-            if (!readBytesFromSdPng(_pngDecoder))
-            {
-                // Decoder failed to load image, load error status.
-                _decodeError = INKPLATE_IMAGE_DECODE_ERR_PNG_DECODER_FAULT;
-
-                // Free up the memory.
-                pngle_destroy(_pngDecoder);
-
-                // Return false as error.
+            if (!inkplateImageDecodeHelpersPng(_pngDecoder, readBytesFromSdPng, writeBytesToFrameBufferPng, &_imageW, &_imageH, &_decodeError, &_sessionHandler))
                 return false;
-            }
 
             // Check image size and constrain it.
-            _imageW = min((int)(SCREEN_WIDTH), (int)(pngle_get_width(_pngDecoder)));
-            _imageH = min((int)(SCREEN_HEIGHT), (int)(pngle_get_height(_pngDecoder)));
+            _imageW = min((int)(SCREEN_WIDTH), (int)(_imageW));
+            _imageH = min((int)(SCREEN_HEIGHT), (int)(_imageH));
 
-            // Free up the memory after succ decode.
-            pngle_destroy(_pngDecoder);
             break;
         }
     }
