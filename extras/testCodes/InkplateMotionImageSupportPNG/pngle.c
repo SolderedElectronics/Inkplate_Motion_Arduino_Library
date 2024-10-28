@@ -110,9 +110,6 @@ struct _pngle_t {
 	pngle_draw_callback_t draw_callback;
 	pngle_done_callback_t done_callback;
 
-	// Added by Soldered Electronics - session handle (used for framebuffer).
-	void *sessionHandler;
-
 	// misc
 	const char *error;
 	void *user_data;
@@ -187,15 +184,12 @@ void pngle_reset(pngle_t *pngle)
 	tinfl_init(&pngle->inflator);
 }
 
-pngle_t *pngle_new(void *_sessionHandlerPtr)
+pngle_t *pngle_new()
 {
 	pngle_t *pngle = (pngle_t *)PNGLE_CALLOC(1, sizeof(pngle_t), "pngle_t");
 	if (!pngle) return NULL;
 
 	pngle_reset(pngle);
-
-	// Added by Soldered Electronics.
-	pngle->sessionHandler = _sessionHandlerPtr;
 
 	return pngle;
 }

@@ -226,18 +226,6 @@ uint32_t pngle_get_height(pngle_t *pngle)
 	return pngle->hdr.height;
 }
 
-void pngle_set_session_handle(pngle_t *pngle, void *sessionHandlePtr)
-{
-	// Set the session handler.
-	pngle->sessionHandler = sessionHandlePtr;
-}
-
-void* pngle_get_session_handle(pngle_t *pngle)
-{
-	// Return the pointer of the ssesion handler.
-	return pngle->sessionHandler;
-}
-
 pngle_ihdr_t *pngle_get_ihdr(pngle_t *pngle)
 {
 	if (!pngle) return NULL;

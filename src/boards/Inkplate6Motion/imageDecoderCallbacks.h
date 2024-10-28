@@ -14,16 +14,9 @@ typedef struct
 {
     File *file;
     InkplateImageDecodeFBHandler *frameBufferHandler;
-}BmpDecoderSessionHandler;
+}DecoderSessionHandler;
 
-// Session identifier for input/output functions for the JPG decoder.
-typedef struct
-{
-    File *fp;
-    InkplateImageDecodeFBHandler *frameBufferHandler;
-}JdecIODev;
-
-void drawIntoFramebuffer(void *_framebufferHandlerPtr, int16_t _x, int16_t _y, uint32_t _color)
+void static drawIntoFramebuffer(void *_framebufferHandlerPtr, int16_t _x, int16_t _y, uint32_t _color)
 {
     // Convert to the InkplateImageDecodeFBHandler.
     InkplateImageDecodeFBHandler *_framebufferHandler = (InkplateImageDecodeFBHandler*)_framebufferHandlerPtr;
@@ -41,10 +34,10 @@ void drawIntoFramebuffer(void *_framebufferHandlerPtr, int16_t _x, int16_t _y, u
 }
 
 // Decoder dependant callbacks.
-size_t readBytesFromSdBmp(BmpDecode_t *_bmpDecodeHandler, void *_buffer, uint64_t _n)
+size_t static readBytesFromSdBmp(BmpDecode_t *_bmpDecodeHandler, void *_buffer, uint64_t _n)
 {
     // Get the session typedef from the bmpDecoder handler.
-    BmpDecoderSessionHandler *_session = (BmpDecoderSessionHandler*)_bmpDecodeHandler->sessionHandler;
+    DecoderSessionHandler *_session = (DecoderSessionHandler*)_bmpDecodeHandler->sessionHandler;
 
     // Try to read requested number of bytes. If buffer is null, use file seek.
     // Return value.
@@ -63,20 +56,20 @@ size_t readBytesFromSdBmp(BmpDecode_t *_bmpDecodeHandler, void *_buffer, uint64_
     return _retValue;
 }
 
-void writeBytesToFrameBufferBmp(void *_sessionHandlerPtr, int16_t _x, int16_t _y, uint32_t _color)
+void static writeBytesToFrameBufferBmp(void *_sessionHandlerPtr, int16_t _x, int16_t _y, uint32_t _color)
 {
-    // Decode _sessionHandler buffer into BmpDecoderSessionHandler.
-    BmpDecoderSessionHandler *_sessionHandler = (BmpDecoderSessionHandler*)_sessionHandlerPtr;
+    // Decode _sessionHandler buffer into DecoderSessionHandler.
+    DecoderSessionHandler *_sessionHandler = (DecoderSessionHandler*)_sessionHandlerPtr;
 
     // Draw pixel into the frame buffer.
     drawIntoFramebuffer(_sessionHandler->frameBufferHandler, _x, _y, _color);
 }
 
 
-size_t readBytesFromSdJpg(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
+size_t static readBytesFromSdJpg(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
 {
     // Session identifier (5th argument of jd_prepare function).
-    JdecIODev *_dev = (JdecIODev*)_jd->device;
+    DecoderSessionHandler *_sessionHandle = (DecoderSessionHandler*)_jd->device;
 
     // Return value.
     size_t _retValue = 0;
@@ -84,11 +77,11 @@ size_t readBytesFromSdJpg(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
     // If buffer pointer is null, just set new file position.
     if (_buff)
     {
-        _retValue = _dev->fp->readBytes(_buff, _nbyte);
+        _retValue = _sessionHandle->file->readBytes(_buff, _nbyte);
     }
     else
     {
-        _retValue = _dev->fp->seekCur(_nbyte)?_nbyte:0;
+        _retValue = _sessionHandle->file->seekCur(_nbyte)?_nbyte:0;
     }
 
     // Return the result.
@@ -107,10 +100,10 @@ size_t readBytesFromSdJpg(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
  * 
  * @return  Returns number of bytes read (zero on error).
  */
-int writeBytesToFrameBufferJpg(JDEC* _jd, void* _bitmap, JRECT* _rect)
+int static writeBytesToFrameBufferJpg(JDEC* _jd, void* _bitmap, JRECT* _rect)
 {
     // Session identifier (5th argument of jd_prepare function).
-    JdecIODev *_dev = (JdecIODev*)_jd->device;
+    DecoderSessionHandler *_sessionHandle = (DecoderSessionHandler*)_jd->device;
 
     // Calculate the width and height.
     int _w = _rect->right - _rect->left + 1;
@@ -138,7 +131,7 @@ int writeBytesToFrameBufferJpg(JDEC* _jd, void* _bitmap, JRECT* _rect)
             uint8_t b = _decodedData[((srcIndex + _x) * 3)];
 
             // Write the pixel into temp. framebuffer for decoded images.
-            drawIntoFramebuffer(_dev->frameBufferHandler, _x + _x0, _y + _y0, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
+            drawIntoFramebuffer(_sessionHandle->frameBufferHandler, _x + _x0, _y + _y0, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
         }
     }
 
@@ -146,18 +139,50 @@ int writeBytesToFrameBufferJpg(JDEC* _jd, void* _bitmap, JRECT* _rect)
     return 1;
 }
 
-void myPngleOnDraw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
+bool static readBytesFromSdPng(pngle_t *_pngle)
+{
+    // Get the session handler.
+    DecoderSessionHandler *_sessionHandle = (DecoderSessionHandler*)pngle_get_user_data(_pngle);
+    File *_file = _sessionHandle->file;
+
+    uint32_t total = _file->fileSize();
+    uint8_t buff[4096];
+    uint32_t pnt = 0;
+    int remain = 0;
+
+    while (pnt < total)
+    {
+        uint32_t toread = _file->available();
+        if (toread > 0)
+        {
+            int len = _file->read(buff, min((uint32_t)2048, toread));
+            int fed = pngle_feed(_pngle, buff, len);
+            if (fed < 0)
+            {
+                // Go back!
+                return false;
+            }
+            remain = remain + len - fed;
+            pnt += len;
+        }
+    }
+
+    // If you got there, PNG is loaded successfully, return true for success.
+    return true;
+}
+
+void static writeBytesToFrameBufferPng(pngle_t *_pngle, uint32_t _x, uint32_t _y, uint32_t _w, uint32_t _h, uint8_t _rgba[4])
 {
     // Get the RGB values.
-    uint8_t r = rgba[0];
-    uint8_t g = rgba[1];
-    uint8_t b = rgba[2];
+    uint8_t _r = _rgba[0];
+    uint8_t _g = _rgba[1];
+    uint8_t _b = _rgba[2];
 
     // Get the session handler.
-    BmpDecoderSessionHandler *_sessionHandle = (BmpDecoderSessionHandler*)pngle_get_session_handle(pngle);
+    DecoderSessionHandler *_sessionHandle = (DecoderSessionHandler*)pngle_get_user_data(_pngle);
 
     // Write the pixel into temp. framebuffer for decoded images.
-    drawIntoFramebuffer(_sessionHandle->frameBufferHandler, x, y, ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b));
+    drawIntoFramebuffer(_sessionHandle->frameBufferHandler, _x, _y, ((uint32_t)(_r) << 16) | ((uint32_t)(_g) << 8) | (uint32_t)(_b));
 }
 
 #endif

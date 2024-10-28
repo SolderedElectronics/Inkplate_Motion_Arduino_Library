@@ -6,15 +6,10 @@
 #ifdef BOARD_INKPLATE6_MOTION
 
 // Include heplers.
-#include "../../system/helpers.h"
+#include "../../system/inkplateImageDecoderHelpers.h"
 
 // Include file for the each board feature selection.
 #include "features/featureSelect.h"
-
-// Include all needed image decoders.
-#include "../../libs/bmpDecode/bmpDecode.h"
-#include "../../libs/TJpgDec/tjpgd.h"
-#include "../../libs/pngle/pngle.h"
 
 // Forward declaration of the Inkplate Class and WiFiClass.
 class Inkplate;
@@ -34,10 +29,10 @@ class ImageDecoder
   public:
     ImageDecoder();
     void begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress);
-    bool draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO, enum InkplateImagePathType _PathType = INKPLATE_IMAGE_DECODE_PATH_AUTO);
-    bool drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO);
-    bool drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format);
-    bool drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _Format);
+    bool draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO, enum InkplateImagePathType _pathType = INKPLATE_IMAGE_DECODE_PATH_AUTO);
+    bool drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
+    bool drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
+    bool drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
 
     // MOVE THIS INTO IMAGE PROCESSING!
     void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuffer, uint16_t _w, uint16_t _h);
@@ -57,12 +52,12 @@ class ImageDecoder
     InkplateImageDecodeFBHandler _framebufferHandler;
 
     // Handle for each of the decoders.
-    BmpDecode_t _bmpDec;
+    BmpDecode_t _bmpDecoder;
     JDEC _jpgDecoder;
-    pngle_t *_newPngle;
+    pngle_t *_pngDecoder;
 
     // Decoded image error log.
-    enum InkplateImageDecodeErrors _DecodeError = INKPLATE_IMAGE_DECODE_NO_ERR;
+    enum InkplateImageDecodeErrors _decodeError = INKPLATE_IMAGE_DECODE_NO_ERR;
 };
 
 #endif

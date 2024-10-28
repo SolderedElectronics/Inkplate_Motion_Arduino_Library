@@ -51,10 +51,6 @@ int pngle_feed(pngle_t *pngle, const void *buf, size_t len); // returns -1: On e
 uint32_t pngle_get_width(pngle_t *pngle);
 uint32_t pngle_get_height(pngle_t *pngle);
 
-// Added by Soldered Electronics.
-void pngle_set_session_handle(pngle_t *pngle, void *sessionHandlePtr);
-void* pngle_get_session_handle(pngle_t *pngle);
-
 void pngle_set_init_callback(pngle_t *png, pngle_init_callback_t callback);
 void pngle_set_draw_callback(pngle_t *png, pngle_draw_callback_t callback);
 void pngle_set_done_callback(pngle_t *png, pngle_done_callback_t callback);

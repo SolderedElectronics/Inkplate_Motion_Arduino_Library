@@ -22,44 +22,6 @@
 // values).
 #define MULTIPLE_OF_4(x) (((x - 1) | 3) + 1)
 
-// Used by the image decoder for detecting different image formats.
-enum InkplateImageDecodeFormat
-{
-    INKPLATE_IMAGE_DECODE_FORMAT_ERR = 0,
-    INKPLATE_IMAGE_DECODE_FORMAT_AUTO,
-    INKPLATE_IMAGE_DECODE_FORMAT_BMP,
-    INKPLATE_IMAGE_DECODE_FORMAT_JPG,
-    INKPLATE_IMAGE_DECODE_FORMAT_PNG,
-};
-
-// Used for selecting (manual override) of the paths of the image.
-enum InkplateImagePathType
-{
-    INKPLATE_IMAGE_DECODE_PATH_AUTO = 0,
-    INKPLATE_IMAGE_DECODE_PATH_WEB,
-    INKPLATE_IMAGE_DECODE_PATH_SD,
-};
-
-// List of possible errors while decoding the image. Can be added if needed.
-// NOTE: do not add error from each decoder here since the have their own methods.
-enum InkplateImageDecodeErrors
-{
-    INKPLATE_IMAGE_DECODE_NO_ERR = 0,
-    INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM,
-    INKPLATE_IMAGE_DECODE_ERR_UNKNOWN_FORMAT,
-    INKPLATE_IMAGE_DECODE_ERR_FILE_OPEN_FAIL,
-    INKPLATE_IMAGE_DECODE_ERR_NO_MEMORY,
-    INKPLATE_IMAGE_DECODE_ERR_BMP_DECODER_FAULT,
-    INKPLATE_IMAGE_DECODE_ERR_JPG_DECODER_FAULT,
-    INKPLATE_IMAGE_DECODE_ERR_PNG_DECODER_FAULT,
-    INKPLATE_IMAGE_DECODE_ERR_BMP_HARD_FAULT,
-};
-
-// First element = number of bytes in format signature. It's a hack, I know...
-static const uint8_t _helpersBmpSignature[3] = {2, 0x42, 0x4D};
-static const uint8_t _helpersJpgSignature[4] = {3, 0xFF, 0xD8, 0xFF};
-static const uint8_t _helpersPngSignature[9] = {8, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
-
 // Fast conversion from Wavefrom to EPD data.
 /**
  * @brief   Fast conversion from Wavefrom to EPD data.
@@ -105,9 +67,6 @@ class Helpers
     // Function is used to copy
     static void copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize,
                                  volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size);
-    enum InkplateImageDecodeFormat static detectImageFormat(char *_filename, void *_bytes);
-    bool static checkHeaders(void *_dataPtr, void *_headerSignature);
-    bool static isWebPath(char *_path);
   private:
 };
 
