@@ -19,6 +19,13 @@ ImageDecoder::ImageDecoder()
     // Empty for now.
 }
 
+/**
+ * @brief   
+ * 
+ * @param   _inkplatePtr 
+ * @param   _wifiPtr 
+ * @param   _tempFbAddress 
+ */
 void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress)
 {
     // Save these addresses locally.
@@ -31,6 +38,19 @@ void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_
     _framebufferHandler.fbWidth = SCREEN_WIDTH;
 }
 
+/**
+ * @brief 
+ * 
+ * @param _path 
+ * @param _x 
+ * @param _y 
+ * @param _invert 
+ * @param _dither 
+ * @param _format 
+ * @param _pathType 
+ * @return true 
+ * @return false 
+ */
 bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format, enum InkplateImagePathType _pathType)
 {
     // Check if the path detection is set to auto (it should be by default).
@@ -93,11 +113,122 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
     return false;
 }
 
+/**
+ * @brief 
+ * 
+ * @param _buffer 
+ * @param _x 
+ * @param _y 
+ * @param _invert 
+ * @param _dither 
+ * @param _format 
+ * @return true 
+ * @return false 
+ */
 bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
-    // To-Do.
+    // Watch-out! Some decoders have some issues while reading directly from the SDRAM. I'm not sure why...
+    // Clear all errors.
+    _decodeError = INKPLATE_IMAGE_DECODE_NO_ERR;
+
+    // Image width and height parameters (known after image decode).
+    int _imageW = 0;
+    int _imageH = 0;
+    
+    // Check for the null pointer.
+    if (_buffer == NULL)
+    {
+        // Set error flag.
+        _decodeError = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;
+
+        // Go back!
+        return false;
+    }
+
+    // Set the decoder.
+    // Code is similar as for the microSD card, but uses different callbacks and sessionHandlers.
+    switch (_format)
+    {
+        case INKPLATE_IMAGE_DECODE_FORMAT_BMP:
+        {
+            // Let's initialize BMP decoder.
+            memset(&_bmpDecoder, 0, sizeof(BmpDecode_t));
+            InkplateDecoderSessionHandler _sessionHandler;
+            _bmpDecoder.inputFeed = &readBytesFromBufferBmp;
+            _bmpDecoder.errorCode = BMP_DECODE_NO_ERROR;
+            _sessionHandler.fileBuffer = (uint8_t*)_buffer;
+            _sessionHandler.frameBufferHandler = &_framebufferHandler;
+            _bmpDecoder.output = &writeBytesToFrameBufferBmp;
+            _bmpDecoder.sessionHandler = &_sessionHandler;
+
+            // Call function to process BMP decoding.
+            if (!inkplateImageDecodeHelpersBmp(&_bmpDecoder, &_decodeError))
+                return false;
+
+            // Check image size and constrain it.
+            _imageW = min((int)(SCREEN_WIDTH), (int)(_bmpDecoder.header.infoHeader.width));
+            _imageH = min((int)(SCREEN_HEIGHT), (int)(_bmpDecoder.header.infoHeader.height));
+            break;
+        }
+
+        case INKPLATE_IMAGE_DECODE_FORMAT_JPG:
+        {
+            // Initialize the JPG decoder.
+            memset(&_jpgDecoder, 0, sizeof(JDEC));
+            InkplateDecoderSessionHandler _sessionHandler;
+            _sessionHandler.fileBuffer = (uint8_t*)(_buffer);
+            _sessionHandler.frameBufferHandler = &_framebufferHandler;
+
+            if (!inkplateImageDecodeHelpersJpg(&_jpgDecoder, &readBytesFromBufferJpg, &writeBytesToFrameBufferJpg, &_decodeError, &_sessionHandler))
+                return false;
+
+            // Check image size and constrain it.
+            _imageW = min((int)(SCREEN_WIDTH), (int)(_jpgDecoder.width));
+            _imageH = min((int)(SCREEN_HEIGHT), (int)(_jpgDecoder.height));
+            break;
+        }
+
+        case INKPLATE_IMAGE_DECODE_FORMAT_PNG:
+        {
+            // Create session handler.
+            InkplateDecoderSessionHandler _sessionHandler;
+            _sessionHandler.fileBuffer = (uint8_t*)(_buffer);
+            _sessionHandler.frameBufferHandler = &_framebufferHandler;
+
+            // Decode it chunk-by-chunk.
+            if (!inkplateImageDecodeHelpersPng(_pngDecoder, &readBytesFromBufferPng, &writeBytesToFrameBufferPng, &_imageW, &_imageH, &_decodeError, &_sessionHandler))
+                return false;
+
+            // Check image size and constrain it.
+            _imageW = min((int)(SCREEN_WIDTH), (int)(_imageW));
+            _imageH = min((int)(SCREEN_HEIGHT), (int)(_imageH));
+            break;
+        }
+
+        default:
+        {
+            // Somehow no format specified, return error!
+            _decodeError = INKPLATE_IMAGE_DECODE_ERR_UNKNOWN_FORMAT;
+            return false;
+        }
+    }
+
+    // Decoded ok? Return true!
+    return true;
 }
 
+/**
+ * @brief   
+ * 
+ * @param _file 
+ * @param _x 
+ * @param _y 
+ * @param _invert 
+ * @param _dither 
+ * @param _format 
+ * @return true 
+ * @return false 
+ */
 bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
     // Reset error variable.
@@ -124,7 +255,7 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
         {
             // Let's initialize BMP decoder.
             memset(&_bmpDecoder, 0, sizeof(BmpDecode_t));
-            DecoderSessionHandler _sessionHandler;
+            InkplateDecoderSessionHandler _sessionHandler;
             _bmpDecoder.inputFeed = &readBytesFromSdBmp;
             _bmpDecoder.errorCode = BMP_DECODE_NO_ERROR;
             _sessionHandler.file = _file;
@@ -145,7 +276,7 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
         {
             // Initialize the JPG decoder.
             memset(&_jpgDecoder, 0, sizeof(JDEC));
-            DecoderSessionHandler _sessionHandler;
+            InkplateDecoderSessionHandler _sessionHandler;
             _sessionHandler.file = _file;
             _sessionHandler.frameBufferHandler = &_framebufferHandler;
 
@@ -155,13 +286,12 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
             // Check image size and constrain it.
             _imageW = min((int)(SCREEN_WIDTH), (int)(_jpgDecoder.width));
             _imageH = min((int)(SCREEN_HEIGHT), (int)(_jpgDecoder.height));
-
             break;
         }
         case INKPLATE_IMAGE_DECODE_FORMAT_PNG:
         {
             // Create session handler.
-            DecoderSessionHandler _sessionHandler;
+            InkplateDecoderSessionHandler _sessionHandler;
             _sessionHandler.file = _file;
             _sessionHandler.frameBufferHandler = &_framebufferHandler;
 
@@ -172,8 +302,16 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
             // Check image size and constrain it.
             _imageW = min((int)(SCREEN_WIDTH), (int)(_imageW));
             _imageH = min((int)(SCREEN_HEIGHT), (int)(_imageH));
-
             break;
+        }
+
+        default:
+        {
+            // Set error flag.
+            _decodeError = INKPLATE_IMAGE_DECODE_ERR_UNKNOWN_FORMAT;
+
+            // Return false for fail.
+            return false;
         }
     }
 
@@ -184,11 +322,28 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
     return true;
 }
 
+/**
+ * @brief 
+ * 
+ * @param _path 
+ * @param _x 
+ * @param _y 
+ * @param _invert 
+ * @param _dither 
+ * @param _format 
+ * @return true 
+ * @return false 
+ */
 bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
     // To-Do.
 }
 
+/**
+ * @brief 
+ * 
+ * @return enum InkplateImageDecodeErrors 
+ */
 enum InkplateImageDecodeErrors ImageDecoder::getError()
 {
     // Return last error.

@@ -1,6 +1,18 @@
 // Include main header file.
 #include "inkplateImageDecoderHelpers.h"
 
+/**
+ * @brief   Core function for decoding BMP image. It's should be iniversal for all Inkplate
+ *          boards.
+ * 
+ * @param   BmpDecodeHandle *_bmpDecoder
+ *          
+ * @param   InkplateImageDecodeErrors *_decodeError
+ *          
+ * @return  bool
+ *          true - 
+ *          false - 
+ */
 bool inkplateImageDecodeHelpersBmp(BmpDecodeHandle *_bmpDecoder, InkplateImageDecodeErrors *_decodeError)
 {
     // Try to read if the file is vaild.
@@ -46,6 +58,23 @@ bool inkplateImageDecodeHelpersBmp(BmpDecodeHandle *_bmpDecoder, InkplateImageDe
     return true;
 }
 
+/**
+ * @brief   
+ * 
+ * @param   JDEC *_jpgDecoder
+ *          
+ * @param   size_t (*_inFunc)(JDEC *, uint8_t *, size_t)
+ *          
+ * @param   int (*_outFunc)(JDEC *, void *, JRECT *)
+ *          
+ * @param   InkplateImageDecodeErrors *_decodeError
+ *          
+ * @param   void *_sessionHandler
+ *          
+ * @return  bool
+ *          true - 
+ *          false -  
+ */
 bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, uint8_t *, size_t), int (*_outFunc)(JDEC *, void *, JRECT *), InkplateImageDecodeErrors *_decodeError, void *_sessionHandler)
 {
     // Allocate the memory for the JPG decoder.
@@ -104,6 +133,19 @@ bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, 
     return true;
 }
 
+/**
+ * @brief   
+ * 
+ * @param   _pngDecoder 
+ * @param   _inFunc 
+ * @param   _outFunc 
+ * @param   _imgW 
+ * @param   _imgH 
+ * @param   _decodeError 
+ * @param   _sessionHandler 
+ * @return  true 
+ * @return false 
+ */
 bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t *_pngle), void (*_outFunc)(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4]), int *_imgW, int *_imgH, InkplateImageDecodeErrors *_decodeError, void *_sessionHandler)
 {
     // Decode it chunk-by-chunk.
@@ -133,8 +175,6 @@ bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t
     (*_imgW) = pngle_get_width(_pngDecoder);
     (*_imgH) = pngle_get_height(_pngDecoder);
 
-    // Check for any decode errors.
-
     // Free up the memory after succ decode.
     pngle_destroy(_pngDecoder);
 
@@ -142,6 +182,13 @@ bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t
     return true;
 }
 
+/**
+ * @brief 
+ * 
+ * @param _filename 
+ * @param _bytes 
+ * @return enum InkplateImageDecodeFormat 
+ */
 enum InkplateImageDecodeFormat inkplateImageDecodeHelpersDetectImageFormat(char *_filename, void *_bytes)
 {
     // First, try to get the image format by it's extension.
@@ -197,6 +244,14 @@ enum InkplateImageDecodeFormat inkplateImageDecodeHelpersDetectImageFormat(char 
     return INKPLATE_IMAGE_DECODE_FORMAT_ERR;
 }
 
+/**
+ * @brief 
+ * 
+ * @param _dataPtr 
+ * @param _headerSignature 
+ * @return true 
+ * @return false 
+ */
 bool inkplateImageDecodeHelpersCheckHeaders(void *_dataPtr, void *_headerSignature)
 {
     // Check for invalid input.
@@ -219,6 +274,13 @@ bool inkplateImageDecodeHelpersCheckHeaders(void *_dataPtr, void *_headerSignatu
     return true;
 }
 
+/**
+ * @brief 
+ * 
+ * @param _path 
+ * @return true 
+ * @return false 
+ */
 bool inkplateImageDecodeHelpersIsWebPath(char *_path)
 {
     // Copy first 20 letters of the path locally.
