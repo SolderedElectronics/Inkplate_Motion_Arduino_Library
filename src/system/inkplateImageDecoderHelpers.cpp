@@ -66,6 +66,7 @@ bool inkplateImageDecodeHelpersBmp(BmpDecodeHandle *_bmpDecoder, InkplateImageDe
         return false;
     }
 
+    // Process pixels!
     if (!bmpDecodeProcessBmp(_bmpDecoder))
     {
         // Set error while drawing image.
@@ -109,7 +110,7 @@ bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, 
     }
 
     // Check for the callbacks and other input parameters.
-    if ((_inFunc == NULL) || (_outFunc) || (_sessionHandler == NULL))
+    if ((_inFunc == NULL) || (_outFunc == NULL) || (_sessionHandler == NULL))
     {
         // Set the error.
         (*_decodeError) = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;
@@ -200,7 +201,7 @@ bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, 
 bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t *_pngle), void (*_outFunc)(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4]), int *_imgW, int *_imgH, InkplateImageDecodeErrors *_decodeError, void *_sessionHandler)
 {
     // Check for the wrong input parameters.
-    if ((_pngDecoder == NULL) || (_decodeError == NULL))
+    if (_decodeError == NULL)
     {
         // Since we can't be sure what is missing, it could be _decodeError, we can't
         // save the decoder error.
@@ -208,7 +209,7 @@ bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t
     }
 
     // Check for the callbacks and other input parameters.
-    if ((_inFunc == NULL) || (_outFunc) || (_sessionHandler == NULL))
+    if ((_inFunc == NULL) || (_outFunc == NULL) || (_sessionHandler == NULL))
     {
         // Set the error.
         (*_decodeError) = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;

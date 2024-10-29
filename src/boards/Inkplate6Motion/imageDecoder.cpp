@@ -160,7 +160,7 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
  *          true - Image loaded in the ePaper framebuffer succ.
  *          false - Image load failed. Check ImageDecoder::getError() for the reason.
  */
-bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
+bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
     // Watch-out! Some decoders have some issues while reading directly from the SDRAM. I'm not sure why...
     // Clear all errors.
@@ -193,6 +193,8 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, u
             _bmpDecoder.errorCode = BMP_DECODE_NO_ERROR;
             _sessionHandler.fileBuffer = (uint8_t*)_buffer;
             _sessionHandler.frameBufferHandler = &_framebufferHandler;
+            _sessionHandler.bufferOffset = 0;
+            _sessionHandler.fileBufferSize = _size;
             _bmpDecoder.output = &writeBytesToFrameBufferBmp;
             _bmpDecoder.sessionHandler = &_sessionHandler;
 
@@ -211,8 +213,10 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, u
             // Initialize the JPG decoder.
             memset(&_jpgDecoder, 0, sizeof(JDEC));
             InkplateDecoderSessionHandler _sessionHandler;
-            _sessionHandler.fileBuffer = (uint8_t*)(_buffer);
+            _sessionHandler.fileBuffer = (uint8_t*)_buffer;
             _sessionHandler.frameBufferHandler = &_framebufferHandler;
+            _sessionHandler.bufferOffset = 0;
+            _sessionHandler.fileBufferSize = _size;
 
             if (!inkplateImageDecodeHelpersJpg(&_jpgDecoder, &readBytesFromBufferJpg, &writeBytesToFrameBufferJpg, &_decodeError, &_sessionHandler))
                 return false;
@@ -227,8 +231,10 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, u
         {
             // Create session handler.
             InkplateDecoderSessionHandler _sessionHandler;
-            _sessionHandler.fileBuffer = (uint8_t*)(_buffer);
+            _sessionHandler.fileBuffer = (uint8_t*)_buffer;
             _sessionHandler.frameBufferHandler = &_framebufferHandler;
+            _sessionHandler.bufferOffset = 0;
+            _sessionHandler.fileBufferSize = _size;
 
             // Decode it chunk-by-chunk.
             if (!inkplateImageDecodeHelpersPng(_pngDecoder, &readBytesFromBufferPng, &writeBytesToFrameBufferPng, &_imageW, &_imageH, &_decodeError, &_sessionHandler))
@@ -247,6 +253,8 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, u
             return false;
         }
     }
+
+    RGBtoGrayscale(_inkplate, _x, _y, _framebufferHandler.framebuffer, _imageW, _imageH);
 
     // Decoded ok? Return true!
     return true;

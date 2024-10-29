@@ -237,32 +237,31 @@ bool static readBytesFromSdPng(pngle_t *_pngle)
     File *_file = _sessionHandle->file;
 
     // Get the file size.
-    uint32_t total = _file->fileSize();
+    uint32_t _total = _file->fileSize();
 
-    // 4k buffer for the image chunk load.
-    uint8_t buff[4096];
+    // 2k buffer for the image chunk load.
+    uint8_t _buff[2048];
+
     // Buffer and feed helper variables.
-    uint32_t pnt = 0;
-    int remain = 0;
+    uint32_t _pnt = 0;
 
     // Feed the decoder until there is no more to load.
-    while (pnt < total)
+    while (_pnt < _total)
     {
-        uint32_t toread = _file->available();
-        if (toread > 0)
+        uint32_t _toread = _file->available();
+        if (_toread > 0)
         {
-            int len = _file->read(buff, min((uint32_t)2048, toread));
-            int fed = pngle_feed(_pngle, buff, len);
+            int _len = _file->read(_buff, min((uint32_t)2048, _toread));
+            int _fed = pngle_feed(_pngle, _buff, _len);
 
-            if (fed < 0)
+            if (_fed < 0)
             {
                 // Ooops, this is not good, go back return false for fail.
                 return false;
             }
 
             // Otherwise, keep reading and feeding the decoder.
-            remain = remain + len - fed;
-            pnt += len;
+            _pnt += _len;
         }
     }
 
@@ -321,6 +320,32 @@ size_t static readBytesFromBufferBmp(BmpDecode_t *_bmpDecodeHandler, void *_buff
     // Get the session handler.
     InkplateDecoderSessionHandler *_session = (InkplateDecoderSessionHandler*)_bmpDecodeHandler->sessionHandler;
 
+    // Try to read requested number of bytes. If buffer is null, use file seek.
+    // Return value.
+    size_t _retValue = 0;
+
+    if (_buffer)
+    {
+        // Check for the end of the file.
+        _retValue = (_session->bufferOffset + _n) <= _session->fileBufferSize?_n:_session->fileBufferSize - _session->bufferOffset + _n;
+
+        // Copy them! DMA could be used here, but I need to find a way how to get MDMAHandle from the main Inkplate Board code.
+        memcpy(_buffer, (uint8_t*)_session->fileBuffer + _session->bufferOffset, _retValue);
+
+        // Advance the offset.
+        _session->bufferOffset += _retValue;
+    }
+    else
+    {
+        // Check for the end of the file.
+        _retValue = _n <= _session->fileBufferSize?_n:0;
+
+        // Advance the offset.
+        _session->bufferOffset = _n;
+    }
+
+    // Return the result.
+    return _retValue;
 }
 
 /**
@@ -328,19 +353,47 @@ size_t static readBytesFromBufferBmp(BmpDecode_t *_bmpDecodeHandler, void *_buff
  * 
  * @param   JDEC *_jpgDecoder
  *          JPG Decoder specific handler. Must not be null!
- * @param   void *_buffer
+ * @param   uint8_t *_buffer
  *          Buffer where to store bytes read from the microSD card. If null, seek
  *          will be execuder by the offset defined in _n.
- * @param   uint64_t _n
+ * @param   size_t _n
  *          Number of bytes read from the microSD card (if _buffer != null), file position
  *          offset of _buffer == null.
  * @return  size_t
  *          Number of bytes succesfully read from the microSD card (if _buffer != null),
  *          0 or 1 for the seek position (_buffer == null).
  */
-size_t static readBytesFromBufferJpg(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
+size_t static readBytesFromBufferJpg(JDEC* _jpgDecoder, uint8_t* _buffer, size_t _n)
 {
+    // Get the session handler.
+    InkplateDecoderSessionHandler *_sessionHandle = (InkplateDecoderSessionHandler*)_jpgDecoder->device;
 
+    // Try to read requested number of bytes. If buffer is null, use file seek.
+    // Return value.
+    size_t _retValue = 0;
+
+    if (_buffer)
+    {
+        // Check for the end of the file.
+        _retValue = (_sessionHandle->fileBufferSize >= (_sessionHandle->bufferOffset + _n))?_n:_sessionHandle->fileBufferSize - _sessionHandle->bufferOffset;
+
+        // Copy them! DMA could be used here, but I need to find a way how to get MDMAHandle from the main Inkplate Board code.
+        memcpy(_buffer, (uint8_t*)_sessionHandle->fileBuffer + _sessionHandle->bufferOffset, _retValue);
+
+        // Advance the offset.
+        _sessionHandle->bufferOffset += _retValue;
+    }
+    else
+    {
+        // Check for the end of the file.
+        _retValue = (_n <= _sessionHandle->fileBufferSize)?_n:0;
+
+        // Advance the offset.
+        _sessionHandle->bufferOffset += _n;
+    }
+
+    // Return the result.
+    return _retValue;
 }
 
 /**
@@ -354,7 +407,38 @@ size_t static readBytesFromBufferJpg(JDEC* _jd, uint8_t* _buff, size_t _nbyte)
  */
 bool static readBytesFromBufferPng(pngle_t *_pngle)
 {
+    // Get the session handler.
+    InkplateDecoderSessionHandler *_sessionHandle = (InkplateDecoderSessionHandler*)pngle_get_user_data(_pngle);
 
+    // Feed the decoder until there is no more to load.
+    while (_sessionHandle->fileBufferSize > _sessionHandle->bufferOffset)
+    {
+        // Calculate how many bytes are still available.
+        uint32_t _toread = _sessionHandle->fileBufferSize - _sessionHandle->bufferOffset;
+
+        // It there is still bytes to read, read them!
+        if (_toread > 0)
+        {
+            // Constrain chunk ot only 2k or less.
+            int _len = (_sessionHandle->fileBufferSize >= (_sessionHandle->bufferOffset + 2048))?2048:_sessionHandle->fileBufferSize - _sessionHandle->bufferOffset;
+
+            // Feed the decoder!
+            int _fed = pngle_feed(_pngle, (uint8_t*)(_sessionHandle->fileBuffer + _sessionHandle->bufferOffset), _len);
+
+            // Advance the index.
+            _sessionHandle->bufferOffset += _len;
+
+            // Check for errors in decoder.
+            if (_fed < 0)
+            {
+                // Ooops, this is not good, go back return false for fail.
+                return false;
+            }
+        }
+    }
+
+    // If you got there, PNG is loaded successfully, return true for success.
+    return true;
 }
 #endif
 

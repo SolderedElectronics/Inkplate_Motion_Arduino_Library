@@ -97,6 +97,8 @@ bool bmpDecodeVaildBMP(BmpDecode_t *_bmpDecodeHandle)
     // Check for the compression. Any kind of comression is not supported.
     if (_bmpDecodeHandle->header.infoHeader.compression != 0 && _bmpDecodeHandle->header.infoHeader.compression != 3)
     {
+        Serial.printf("Compression: %d\r\n", _bmpDecodeHandle->header.infoHeader.compression);
+        Serial.flush();
         _bmpDecodeHandle->errorCode = BMP_DECODE_ERR_COMPRESSION_NOT_SUPPORTED;
         return false;
     }
@@ -105,6 +107,8 @@ bool bmpDecodeVaildBMP(BmpDecode_t *_bmpDecodeHandle)
     if (!((_bmpDecodeHandle->header.infoHeader.bitCount == 1) || (_bmpDecodeHandle->header.infoHeader.bitCount == 4) || (_bmpDecodeHandle->header.infoHeader.bitCount == 8) || (_bmpDecodeHandle->header.infoHeader.bitCount == 16) || (_bmpDecodeHandle->header.infoHeader.bitCount == 24)))
     {
         // Save the error.
+        Serial.printf("Color depth: %d\r\n", _bmpDecodeHandle->header.infoHeader.bitCount);
+        Serial.flush();
         _bmpDecodeHandle->errorCode = BMP_DECODE_ERR_COLOR_DEPTH_NOT_SUPPORTED;
         return false;
     }

@@ -44,7 +44,7 @@ class ImageDecoder
     ImageDecoder();
     void begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress);
     bool draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO, enum InkplateImagePathType _pathType = INKPLATE_IMAGE_DECODE_PATH_AUTO);
-    bool drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
+    bool drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
     bool drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
     bool drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
 
