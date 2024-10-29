@@ -1,3 +1,17 @@
+/**
+ **************************************************
+ *
+ * @file        imageDecoder.cpp
+ * @brief       Board specific image decoder source file for 
+ *              ImageDecoder class. Used by the main class
+ *              for image decoding from the microSD card
+ *              or from the web.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Include library header file.
 #include "imageDecoder.h"
 
@@ -11,7 +25,7 @@
 #include "../../InkplateMotion.h"
 
 /**
- * @brief Construct a new Image Decoder:: Image Decoder object
+ * @brief Construct a new Image Decoder::Image Decoder object
  * 
  */
 ImageDecoder::ImageDecoder()
@@ -20,11 +34,15 @@ ImageDecoder::ImageDecoder()
 }
 
 /**
- * @brief   
+ * @brief   Initializer for the Inkplate Image decoder class.
  * 
- * @param   _inkplatePtr 
- * @param   _wifiPtr 
- * @param   _tempFbAddress 
+ * @param   Inkplate *_inkplatePtr
+ *          Pointer for the main Inkplate object (used for drawPixel() method).
+ * @param   WiFiClass *_wifiPtr
+ *          Pointer for the WiFi Class object.
+ * @param   uint8_t *_tempFbAddress
+ *          SDRAM address for temp. storing decoded image.
+ *          
  */
 void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress)
 {
@@ -39,17 +57,26 @@ void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_
 }
 
 /**
- * @brief 
+ * @brief   Loads the image from the microSD card or from the web, decodes it and stores decoded image
+ *          in the main epaper framebuffer.
  * 
- * @param _path 
- * @param _x 
- * @param _y 
- * @param _invert 
- * @param _dither 
- * @param _format 
- * @param _pathType 
- * @return true 
- * @return false 
+ * @param   const char *_path
+ *          Path and filename to the image. Can be link from the web or path to the image on the microSD card.
+ * @param   int _x
+ *          X position of the image in the ePaper framebuffer.
+ * @param   int _y
+ *          Y position of the image in the ePaper framebuffer.
+ * @param   bool _invert
+ *          true - colors are inverted.
+ * @param   uint8_t _dither
+ *          Disable or enable dithering on the image as well as choosing dither kernel.
+ * @param   enum InkplateImageDecodeFormat _format
+ *          Force specific image format (if automatic detecton of the image format fails).
+ * @param   enum InkplateImagePathType _pathType 
+ *          Force specific path where image is stored (web or microSD).
+ * @return  bool
+ *          true - Image loaded in the ePaper framebuffer succ.
+ *          false - Image load failed. Check ImageDecoder::getError() for the reason.
  */
 bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format, enum InkplateImagePathType _pathType)
 {
@@ -114,16 +141,24 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
 }
 
 /**
- * @brief 
+ * @brief   Loads image stored in SDRAM/SRAM/FLASH as image format (not RAW bitmap data ready for the
+ *          framebuffer).
  * 
- * @param _buffer 
- * @param _x 
- * @param _y 
- * @param _invert 
- * @param _dither 
- * @param _format 
- * @return true 
- * @return false 
+ * @param   void *buffer
+ *          
+ * @param   int _x
+ *          X position of the image in the ePaper framebuffer.
+ * @param   int _y
+ *          Y position of the image in the ePaper framebuffer.
+ * @param   bool _invert
+ *          true - colors are inverted.
+ * @param   uint8_t _dither
+ *          Disable or enable dithering on the image as well as choosing dither kernel.
+ * @param   enum InkplateImageDecodeFormat _format
+ *          Force specific image format (if automatic detecton of the image format fails).
+ * @return  bool
+ *          true - Image loaded in the ePaper framebuffer succ.
+ *          false - Image load failed. Check ImageDecoder::getError() for the reason.
  */
 bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
@@ -218,16 +253,23 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, int _x, int _y, bool _invert, u
 }
 
 /**
- * @brief   
+ * @brief   Loads and decodes image from the microSD. This is usually called from ImageDecoder::draw().
  * 
- * @param _file 
- * @param _x 
- * @param _y 
- * @param _invert 
- * @param _dither 
- * @param _format 
- * @return true 
- * @return false 
+ * @param   File * _file
+ *          Pointer to the SdFat file object. File must be opened!
+ * @param   int _x
+ *          X position of the image in the epaper framebuffer.
+ * @param   int _y
+ *          Y position of the image in the epaper framebuffer.
+ * @param   bool _invert
+ *          true - Colors are inverted.
+ * @param   uint8_t _dither
+ *          Disable or enable dithering on the image as well as choosing dither kernel.
+ * @param   enum InkplateImageDecodeFormat _format
+ *          Force specific image format (if automatic detecton of the image format fails).
+ * @return  bool
+ *          true - Image loaded and decoded succ.
+ *          false -  Image load/decode failed. Check ImageDecoder::getError() for reason.
  */
 bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format)
 {
@@ -340,9 +382,13 @@ bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, 
 }
 
 /**
- * @brief 
+ * @brief   Returns error while decoding image (with ImageDecoder::draw()).
+ *          If no error, it will return INKPLATE_IMAGE_DECODE_NO_ERR.
+ *          All errors can be found in system/inkplateImageDecoderHelpers.h.
+ *          All errors are cleared in ImageDecoder::draw() before decode and load
+ *          process.
  * 
- * @return enum InkplateImageDecodeErrors 
+ * @return  enum InkplateImageDecodeErrors
  */
 enum InkplateImageDecodeErrors ImageDecoder::getError()
 {

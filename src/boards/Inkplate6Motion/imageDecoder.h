@@ -1,3 +1,17 @@
+/**
+ **************************************************
+ *
+ * @file        imageDecoder.h
+ * @brief       Board specific image decoder header file for 
+ *              ImageDecoder class. Used by the main class
+ *              for image decoding from the microSD card
+ *              or from the web.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Add header guard.
 #ifndef __INKPLATE_MOTION_IMAGE_DECODE_H__
 #define __INKPLATE_MOTION_IMAGE_DECODE_H__

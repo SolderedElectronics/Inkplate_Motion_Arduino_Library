@@ -1,3 +1,17 @@
+/**
+ **************************************************
+ *
+ * @file        inkplateImageDecoderHelpers.h
+ * @brief       Header file for the image decoder helper
+ *              functions. These functions are common for all boards.
+ *              There are also typedefs used by the ImageDecoder which
+ *              is specific for each board.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 #ifndef __INKPLATE_MOTION_IMAGE_DECODE_PROCESS_H__
 #define __INKPLATE_MOTION_IMAGE_DECODE_PROCESS_H__
 

@@ -1,3 +1,19 @@
+/**
+ **************************************************
+ *
+ * @file        imageDecoderCallbacks.cpp
+ * @brief       Board specific header file with all callbacks
+ *              for each image decoder and each method of feeding
+ *              the data into the decoder. Also consists of
+ *              board specific session decoder for passing input
+ *              and output parameters into the decoder callback like
+ *              framebuffer pointer, file pointer etc.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 #ifndef __INKPLATE_MOTION_IMAGE_DECODER_CALLBACKS_H__
 #define __INKPLATE_MOTION_IMAGE_DECODER_CALLBACKS_H__
 

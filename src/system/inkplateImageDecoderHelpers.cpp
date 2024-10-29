@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        inkplateImageDecoderHelpers.cpp
+ * @brief       Source file for the image decoder helper
+ *              functions. These functions are common for all boards.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Include main header file.
 #include "inkplateImageDecoderHelpers.h"
 
@@ -6,15 +18,24 @@
  *          boards.
  * 
  * @param   BmpDecodeHandle *_bmpDecoder
+ *          Pointer to the BMP decoder handle.
  *          
  * @param   InkplateImageDecodeErrors *_decodeError
- *          
+ *          Handler for the ImageDecoder class errors.
  * @return  bool
- *          true - 
- *          false - 
+ *          true - Image decode succ. Decoded image is stored in temp. framebuffer for decoded image.
+ *          false - Image decode failed.
  */
 bool inkplateImageDecodeHelpersBmp(BmpDecodeHandle *_bmpDecoder, InkplateImageDecodeErrors *_decodeError)
 {
+    // Check for the wrong input parameters.
+    if ((_bmpDecoder == NULL) || (_decodeError == NULL))
+    {
+        // Since we can't be sure what is missing, it could be _decodeError, we can't
+        // save the decoder error.
+        return false;
+    }
+
     // Try to read if the file is vaild.
     if (!bmpDecodeVaildFile(_bmpDecoder))
     {
@@ -54,29 +75,49 @@ bool inkplateImageDecodeHelpersBmp(BmpDecodeHandle *_bmpDecoder, InkplateImageDe
         return false;
     }
 
-    // If decode process is ok, return true for success.
+    // If decode process was ok, return true for success.
     return true;
 }
 
 /**
- * @brief   
+ * @brief   Core function for decoding JPG image. It's should be iniversal for all Inkplate
+ *          boards.
  * 
  * @param   JDEC *_jpgDecoder
- *          
+ *          Pointer to the JPG Decoder handler.
  * @param   size_t (*_inFunc)(JDEC *, uint8_t *, size_t)
- *          
+ *          Input callback function for loading the data into the JPG decoder.
  * @param   int (*_outFunc)(JDEC *, void *, JRECT *)
- *          
+ *          Output callback function for drawing pixel of decoded image into the framebuffer.
  * @param   InkplateImageDecodeErrors *_decodeError
- *          
+ *          Pointer to the decoder error handler of the ImageDecoder class.
  * @param   void *_sessionHandler
- *          
+ *          Session handler - Callback specific struct/typedef to access file, framebuffer, other classes etc from
+ *          the callback itself.
  * @return  bool
- *          true - 
- *          false -  
+ *          true - JPG image decoded succ.
+ *          false -  JPG image decode failed.
  */
 bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, uint8_t *, size_t), int (*_outFunc)(JDEC *, void *, JRECT *), InkplateImageDecodeErrors *_decodeError, void *_sessionHandler)
 {
+    // Check for the wrong input parameters.
+    if ((_jpgDecoder == NULL) || (_decodeError == NULL))
+    {
+        // Since we can't be sure what is missing, it could be _decodeError, we can't
+        // save the decoder error.
+        return false;
+    }
+
+    // Check for the callbacks and other input parameters.
+    if ((_inFunc == NULL) || (_outFunc) || (_sessionHandler == NULL))
+    {
+        // Set the error.
+        (*_decodeError) = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;
+
+        // Return false for fail.
+        return false;
+    }
+
     // Allocate the memory for the JPG decoder.
     const size_t _workingBufferSize = 4096;
     void *_workingBuffer;
@@ -129,25 +170,53 @@ bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, 
     // Free up the memory.
     free(_workingBuffer);
 
-    // If decode process is ok, return true for success.
+    // If decode process was ok, return true for success.
     return true;
 }
 
 /**
- * @brief   
+ * @brief   Core function for decoding BMP image. It's should be iniversal for all Inkplate
+ *          boards.
  * 
- * @param   _pngDecoder 
- * @param   _inFunc 
- * @param   _outFunc 
- * @param   _imgW 
- * @param   _imgH 
- * @param   _decodeError 
- * @param   _sessionHandler 
- * @return  true 
- * @return false 
+ * @param   pngle_t *_pngDecoder
+ *          Pointer to the PNG Decoder handler.
+ * @param   bool (*_inFunc)(pngle_t *_pngle)
+ *          Input callback function for loading the data into the PNG decoder.
+ * @param   void (*_outFunc)(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
+ *          Output callback function for drawing pixel of decoded image into the framebuffer.
+ * @param   _imgW
+ *          Pointer to the variable to store image width.
+ * @param   _imgH
+ *          Pointer to the variable to store image height.
+ * @param   _decodeError
+ *          Pointer to the decoder error handler of the ImageDecoder class.
+ * @param   _sessionHandler
+ *          Session handler - Callback specific struct/typedef to access file, framebuffer, other classes etc from
+ *          the callback itself.
+ * @return  bool
+ *          true - Image decoded succ.
+ *          false - Image decode failed.
  */
 bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t *_pngle), void (*_outFunc)(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4]), int *_imgW, int *_imgH, InkplateImageDecodeErrors *_decodeError, void *_sessionHandler)
 {
+    // Check for the wrong input parameters.
+    if ((_pngDecoder == NULL) || (_decodeError == NULL))
+    {
+        // Since we can't be sure what is missing, it could be _decodeError, we can't
+        // save the decoder error.
+        return false;
+    }
+
+    // Check for the callbacks and other input parameters.
+    if ((_inFunc == NULL) || (_outFunc) || (_sessionHandler == NULL))
+    {
+        // Set the error.
+        (*_decodeError) = INKPLATE_IMAGE_DECODE_ERR_BAD_PARAM;
+
+        // Return false for fail.
+        return false;
+    }
+    
     // Decode it chunk-by-chunk.
     // Allocate new PNG decoder.
     _pngDecoder = pngle_new();
@@ -183,74 +252,91 @@ bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t
 }
 
 /**
- * @brief 
+ * @brief   Function used for detecting image format (BMP, JPG or PNG) by
+ *          using an extension or file format signature.
  * 
- * @param _filename 
- * @param _bytes 
- * @return enum InkplateImageDecodeFormat 
+ * @param   char *_filename
+ *          Pointer to the image filename or path.
+ *          
+ * @param   void *_bytes
+ *          Pointer to the 10 byte sample of the file. Must be from the start
+ *          of the file 
+ *          
+ * @return  enum InkplateImageDecodeFormat
  */
 enum InkplateImageDecodeFormat inkplateImageDecodeHelpersDetectImageFormat(char *_filename, void *_bytes)
 {
     // First, try to get the image format by it's extension.
     // Firstly try to find the extension itself. It is at the end of the filename.
-    // So, first get the lenght of the filename.
-    int _filenameLen = strlen(_filename);
+    // So, first get the lenght of the filename. But check if this needs to be skipped.
+    if (_filename != NULL)
+    {
+        int _filenameLen = strlen(_filename);
 
-    // Now extract last three letters.
-    char _extension[5];
-    for (int i = 0; i < 4; i++)
-    {
-        _extension[i] = _filename[_filenameLen - 4 + i];
-    }
-    // Add nul-terminating char.
-    _extension[4] = '\0';
-    
-    // Convert it to uppercase.
-    for (int i = 0; i < strlen(_extension); i++)
-    {
-        _extension[i] = toupper(_extension[i]);
-    }
-    
-    if (strstr(_extension, ".BMP"))
-    {
-        return INKPLATE_IMAGE_DECODE_FORMAT_BMP;
-    }
-    else if (strstr(_extension, ".JPG"))
-    {
-        printf("File is jpg\r\n");
-        return INKPLATE_IMAGE_DECODE_FORMAT_JPG;
-    }
-    else if (strstr(_extension, ".PNG"))
-    {
-        printf("File is png\r\n");
-        return INKPLATE_IMAGE_DECODE_FORMAT_PNG;
-    }
+        // Now extract last three letters.
+        char _extension[5];
+        for (int i = 0; i < 4; i++)
+        {
+            _extension[i] = _filename[_filenameLen - 4 + i];
+        }
+        // Add nul-terminating char.
+        _extension[4] = '\0';
 
-    // If extension method failed, try with reading format signature inside the header.
-    if (inkplateImageDecodeHelpersCheckHeaders((uint8_t*)_bytes, (uint8_t*)_helpersBmpSignature))
-    {
-        return INKPLATE_IMAGE_DECODE_FORMAT_BMP;
-    }
-    else if (inkplateImageDecodeHelpersCheckHeaders((uint8_t*)_bytes, (uint8_t*)_helpersJpgSignature))
-    {
-        return INKPLATE_IMAGE_DECODE_FORMAT_JPG;
-    }
-    else if (inkplateImageDecodeHelpersCheckHeaders((uint8_t*)_bytes, (uint8_t*)_helpersPngSignature))
-    {
-        return INKPLATE_IMAGE_DECODE_FORMAT_PNG;
+        // Convert it to uppercase.
+        for (int i = 0; i < strlen(_extension); i++)
+        {
+            _extension[i] = toupper(_extension[i]);
+        }
+
+        if (strstr(_extension, ".BMP"))
+        {
+            return INKPLATE_IMAGE_DECODE_FORMAT_BMP;
+        }
+        else if (strstr(_extension, ".JPG"))
+        {
+            return INKPLATE_IMAGE_DECODE_FORMAT_JPG;
+        }
+        else if (strstr(_extension, ".PNG"))
+        {
+            return INKPLATE_IMAGE_DECODE_FORMAT_PNG;
+        }
     }
 
-    // If this also failed, then this may not be a vaild image format.
+    // First check if the file format signature needs to be skipped.
+    if (_bytes != NULL)
+    {
+        // If extension method failed, try with reading format signature inside the header.
+        if (inkplateImageDecodeHelpersCheckHeaders((uint8_t*)_bytes, (uint8_t*)_helpersBmpSignature))
+        {
+            return INKPLATE_IMAGE_DECODE_FORMAT_BMP;
+        }
+        else if (inkplateImageDecodeHelpersCheckHeaders((uint8_t*)_bytes, (uint8_t*)_helpersJpgSignature))
+        {
+            return INKPLATE_IMAGE_DECODE_FORMAT_JPG;
+        }
+        else if (inkplateImageDecodeHelpersCheckHeaders((uint8_t*)_bytes, (uint8_t*)_helpersPngSignature))
+        {
+            return INKPLATE_IMAGE_DECODE_FORMAT_PNG;
+        }
+    }
+
+    // If this also failed, then this may not be a vaild image format or both of the
+    // pointers are NULL for some reason.
     return INKPLATE_IMAGE_DECODE_FORMAT_ERR;
 }
 
 /**
- * @brief 
+ * @brief   Function compares header against known file format
+ *          signature. On first match it returns detected file format.
  * 
- * @param _dataPtr 
- * @param _headerSignature 
- * @return true 
- * @return false 
+ * @param   void *_dataPtr
+ *          Sample of the unknown file format (header, first 10 bytes).
+ * @param   void *_headerSignature
+ *          Array of the current selected file format signature. First element in this
+ *          array sets how long the signature is.
+ * @return  bool
+ *          true - Set signature has match.
+ *          false - No match, try next one.
  */
 bool inkplateImageDecodeHelpersCheckHeaders(void *_dataPtr, void *_headerSignature)
 {
@@ -275,11 +361,13 @@ bool inkplateImageDecodeHelpersCheckHeaders(void *_dataPtr, void *_headerSignatu
 }
 
 /**
- * @brief 
+ * @brief   Check if the path is actually web path instead of microSD path.
  * 
- * @param _path 
- * @return true 
- * @return false 
+ * @param   char *_path
+ *          Pointer to the filename or path.
+ * @return  bool
+ *          true - Path is web location.
+ *          false - Path is local (microSD card).
  */
 bool inkplateImageDecodeHelpersIsWebPath(char *_path)
 {
@@ -308,7 +396,7 @@ bool inkplateImageDecodeHelpersIsWebPath(char *_path)
         return true;
     }
     
-    // More checks can be added, but also can use manual override.
+    // More checks can be added, but also manual override can be used instead.
     
     // If nothing has been found, return false.
     return false;
