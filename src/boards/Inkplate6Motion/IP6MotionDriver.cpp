@@ -53,7 +53,7 @@ EPDDriver::EPDDriver()
  *          0 = Initialization has faild, check debug messages for more info.
  *          1 = Initialization ok. 
  */
-int EPDDriver::initDriver()
+int EPDDriver::initDriver(Inkplate *_inkplatePtr)
 {
     INKPLATE_DEBUG_MGS("EPD Driver init started");
 
@@ -71,6 +71,12 @@ int EPDDriver::initDriver()
     shtc3.begin();
     lsm6ds3.begin();
     apds9960.init();
+
+    // Copy Inkplate object pointer locally.
+    _inkplate = _inkplatePtr;
+
+    // Initialize image decoder library.
+    image.begin(_inkplate, &WiFi, (uint8_t*)0xD0600000);
 
     // Put every peripheral into low power mode.
     peripheralState(INKPLATE_PERIPHERAL_ALL_PERI, false);

@@ -44,18 +44,6 @@
 class Inkplate : public Adafruit_GFX, public InkplateBoardClass
 {
   public:
-    struct bitmapHeader
-    {
-        uint16_t signature;
-        uint32_t fileSize;
-        uint32_t startRAW;
-        uint32_t dibHeaderSize;
-        uint32_t width;
-        uint32_t height;
-        uint16_t color;
-        uint32_t compression;
-    };
-
     Inkplate();
     void begin(uint8_t _mode = INKPLATE_1BW);
     void drawPixel(int16_t x, int16_t y, uint16_t color);

@@ -37,12 +37,18 @@
 // Include RTC library for STM32H7.
 #include "../../stm32System/STM32H7RTC.h"
 
+// Include library for image decoding.
+#include "imageDecoder.h"
+
 // Defines for EPD GPIOs
 #define EPD_DRIVER_PINS_OUTPUT  0
 #define EPD_DRIVER_PINS_H_ZI    1
 
 // FMC address for sending data to the EPD.
 #define EPD_FMC_ADDR    0x68000000
+
+// Inplate Motion base class.
+class Inkplate;
 
 // STM32 SPI for Inkplate System Stuff (WiFi & microSD).
 static SPIClass _systemSpi(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO, INKPLATE_MICROSD_SPI_SCK);
@@ -115,7 +121,7 @@ class EPDDriver : public Helpers
 {
     public:
         EPDDriver();
-        int initDriver();
+        int initDriver(Inkplate *_inkplatePtr);
         void cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases);
         void clearDisplay();
         void partialUpdate(uint8_t _leaveOn = 0);
@@ -164,6 +170,13 @@ class EPDDriver : public Helpers
 
         // Object for the Inkplate on-board micro SD card.
         SdFat sdFat;
+
+        // Inkplate Motion object, needed for drawPixel.
+        Inkplate *_inkplate;
+
+        // Class for image decode in Inkplate Motion library.
+        ImageDecoder image;
+        
 
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.
