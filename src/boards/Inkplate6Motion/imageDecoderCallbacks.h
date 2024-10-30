@@ -422,8 +422,12 @@ bool static readBytesFromBufferPng(pngle_t *_pngle)
             // Constrain chunk ot only 2k or less.
             int _len = (_sessionHandle->fileBufferSize >= (_sessionHandle->bufferOffset + 2048))?2048:_sessionHandle->fileBufferSize - _sessionHandle->bufferOffset;
 
+            // Copying to a local buffer fixes issues with PNG's from web
+            uint8_t _internalBuffer[2048];
+            memcpy(_internalBuffer, (uint8_t*)(_sessionHandle->fileBuffer + _sessionHandle->bufferOffset), _len);
+
             // Feed the decoder!
-            int _fed = pngle_feed(_pngle, (uint8_t*)(_sessionHandle->fileBuffer + _sessionHandle->bufferOffset), _len);
+            int _fed = pngle_feed(_pngle, _internalBuffer, _len);
 
             // Advance the index.
             _sessionHandle->bufferOffset += _len;
