@@ -404,3 +404,51 @@ int WiFiClient::cleanHttpGetResponse(char *_response, uint16_t *_cleanedSize)
 
     return 1;
 }
+
+/**
+ * @brief   Download a file over HTTP/HTTPS and save it into the given buffer
+ *
+ * @param   const char* _url
+ *          URL of the file to be downloaded
+ * @param   volatile uint8_t* _downloadedFile
+ *          Pointer to the volatile memory buffer where the file will be stored
+ * @param   uint32_t _maxFileSize
+ *          Maximum allowable size for the downloaded file
+ * @return  uint32_t
+ *          The size of the downloaded file in bytes, or 0 if an error occurred
+ */
+uint32_t WiFiClient::downloadFile(const char *_url, volatile uint8_t *_downloadedFile, uint32_t _maxFileSize)
+{
+    // Begin HTTP with the given URL
+    if (!begin(_url))
+        return 0;
+
+    // Now make a GET request
+    if (!GET())
+        return 0;
+
+    // Check if file size exceeds buffer size
+    if (_fileSize > _maxFileSize)
+        return 0;
+
+    uint32_t totalDownloaded = 0;
+
+    // Let's now copy the file to the download file buffer
+    while (available())
+    {
+        if (available() > 0)
+        {
+            char myBuffer[2000];
+            int n = read(myBuffer, sizeof(myBuffer));
+
+            if (totalDownloaded + n > _maxFileSize)
+                return 0;
+
+            // Copy the chunk to _downloadedFile, casting to non-volatile for memcpy
+            memcpy((uint8_t *)_downloadedFile + totalDownloaded, myBuffer, n);
+            totalDownloaded += n;
+        }
+    }
+
+    return totalDownloaded;
+}

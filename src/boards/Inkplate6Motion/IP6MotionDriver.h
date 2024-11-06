@@ -192,6 +192,9 @@ class EPDDriver : public Helpers
         // "Scratchpad memory" used for calculations (partial update for example). 2MB in size (2097152 bytes).
         volatile uint8_t *_scratchpadMemory = (uint8_t *)0xD0400000;
 
+        // Buffer for downloading files from the web. 4MB in size (4194304 bytes).
+        volatile uint8_t *_downloadFileMemory = (uint8_t *)0xD0800000;
+
     private:
         // Sets EPD control GPIO pins to the output or High-Z state.
         void epdGpioState(uint8_t _state);
