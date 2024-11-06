@@ -21,6 +21,12 @@ void setup()
     // Send hello message.
     Serial.println("Inkplate Motion Code Started!");
 
+    // Initialize Inkplate library.
+    inkplate.begin();
+
+    // First enable the WiFi peripheral.
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_WIFI, true);
+
     // Power up the WiFi module.
     if (!WiFi.init())
     {
