@@ -3,13 +3,15 @@
 
 #include <InkplateMotion.h>
 
-class InkplateTest {
-public:
+class InkplateTest
+{
+  public:
     // Initialization function
-    void init(Inkplate *inkplateObj, const int EEPROMoffset, const char *wifiSSID, const char *wifiPASS, const uint8_t easyCDeviceAddress);
+    void init(Inkplate *inkplateObj, const int EEPROMoffset, const char *wifiSSID, const char *wifiPASS,
+              const uint8_t easyCDeviceAddress);
 
     // Set Vcom function
-    bool setVcom(double vCom);
+    bool setVcom();
 
     // Individual test functions
     bool tpsTest();
@@ -27,14 +29,15 @@ public:
     // Test all functions in series
     bool testDevice();
 
-private:
+  private:
     Inkplate *inkplateObj;
     int EEPROMoffset;
     const char *wifiSSID;
     const char *wifiPASS;
     uint8_t easyCDeviceAddress;
     bool sdramTestInternal(uint32_t _startAddress, uint32_t _endAddress, uint16_t _chunkSize);
-    bool sdramChunkTestInternal(uint32_t _startAddress, uint32_t _endAddress, uint64_t *_writeSpeed, uint64_t *_readSpeed, uint16_t *_failIndex);
+    bool sdramChunkTestInternal(uint32_t _startAddress, uint32_t _endAddress, uint64_t *_writeSpeed,
+                                uint64_t *_readSpeed, uint16_t *_failIndex);
 };
 
 #endif // INKPLATETEST_H

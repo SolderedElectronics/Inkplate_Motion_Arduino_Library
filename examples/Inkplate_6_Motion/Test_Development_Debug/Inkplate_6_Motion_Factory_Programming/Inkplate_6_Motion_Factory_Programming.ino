@@ -103,6 +103,19 @@ void setup()
             ;
     }
     Serial.println("SDRAM OK!");
+
+    // Now, if TEST_ONLY is NOT set, we need to enter VCOM
+#ifndef TEST_ONLY
+    Serial.println("Setting VCOM...");
+    if (!testClass.setVcom())
+    {
+        // Fatal error, don't continue the test - just inform the user via Serial
+        Serial.println("Critical error: VCOM set failed!");
+        Serial.println("Test stopping!");
+        while (true)
+            ;
+    }
+#endif
 }
 
 void loop()

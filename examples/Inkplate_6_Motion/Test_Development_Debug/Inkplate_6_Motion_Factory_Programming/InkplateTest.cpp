@@ -19,9 +19,74 @@ void InkplateTest::init(Inkplate *inkplateObj, const int EEPROMoffset, const cha
     this->easyCDeviceAddress = easyCDeviceAddress;
 }
 
-bool InkplateTest::setVcom(double vCom)
+bool InkplateTest::setVcom()
 {
-    return true;
+    // Set function local variables
+    double vcom = 1.1;
+    char serialBuffer[50];
+    unsigned long serialTimeout;
+
+    // Let's wait for the user input
+    while (true)
+    {
+        // Prompt user
+        Serial.println("\nPlease write the VCOM voltage from e-paper panel!");
+        Serial.println("Don't forget to use the negative (-) sign!");
+        Serial.println("Use dot as the decimal point.");
+        Serial.println("For example, '-1.23' for VCOM -1.23V.");
+        Serial.println("Don't forget to use CRLF as the line ending!");
+        Serial.println("Default Inkplate 6MOTION VCOM is -2.35V.");
+        Serial.println();
+        Serial.print(">>>"); // This bit is important as it signals the upload script to send VCOM
+
+        int i = 0;
+        // Let's read the input
+        while (true)
+        {
+            if (Serial.available())
+            {
+                char c = Serial.read();
+                if (c == '\n' || c == '\r') // Stop reading on newline or carriage return
+                    break;
+
+                if (i < 49) // Avoid buffer overflow
+                    serialBuffer[i++] = c;
+            }
+        }
+        // Input read
+        serialBuffer[i] = '\0'; // Null-terminate the string
+
+        Serial.print("\nReceived: ");
+        Serial.println(serialBuffer);
+
+        // Let's do strtod conversion and check the output
+        char *endPtr;
+        vcom = strtod(serialBuffer, &endPtr);
+        // If endPtr points to the same address as serialBuffer, no conversion happened
+        // If there's additional non-numeric data after the number, it's also invalid
+        if (endPtr == serialBuffer || *endPtr != '\0')
+        {
+            Serial.println("Invalid input!\n");
+            continue;
+        }
+
+        // Now check if VCOM is within reasonable values
+        if (vcom <= -6.0 || vcom >= 0.3)
+        {
+            Serial.println("VCOM out of range!\n");
+            continue;
+        }
+
+        Serial.println("VCOM OK!");
+        Serial.print("Parsed VCOM value: ");
+        Serial.println(vcom);
+
+        // Great, now let's write it to memory and return
+        inkplateObj->pmic.setVCOM(vcom);
+        return true;
+    }
+
+    return false; // This will never be reached
 }
 
 bool InkplateTest::tpsTest()
