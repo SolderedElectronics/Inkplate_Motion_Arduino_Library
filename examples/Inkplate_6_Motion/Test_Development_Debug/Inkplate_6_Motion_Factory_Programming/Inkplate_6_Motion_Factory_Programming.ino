@@ -35,18 +35,20 @@
 
 // Test parameters which may be changed if required:
 
-// Uncomment this line to skip the VCOM step and just start doing hardware tests
-// #define TEST_ONLY
+// Uncomment this line to skip the VCOM step and just start doing tests
+#define SKIP_VCOM
 
 // If you want to write new VCOM voltage and perform change this number to something else
 const int EEPROMoffset = 0;
 
 // WiFi credentials for testing
-const char *wifiSSID = {"Soldered-testingPurposes"};
-const char *wifiPASS = {"Testing443"};
+char *wifiSSID = {"Soldered"};
+char *wifiPASS = {"dasduino"};
 
 // The easyC (I2C) follower address which will be checked
 const uint8_t easyCDeviceAddress = 0x30;
+
+// More detailed test parameters are available to edit in InkplateTest.cpp!
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -73,6 +75,7 @@ void setup()
     // Init Inkplate class in 1-bit mode
     // This is required as a first step, to power everything up
     inkplate.begin(INKPLATE_1BW);
+    delay(50); // Wait a bit
 
     // Init Inkplate test class (this just gives it pointer to the Inkplate object and params)
     testClass.init(&inkplate, EEPROMoffset, wifiSSID, wifiPASS, easyCDeviceAddress);
@@ -104,8 +107,8 @@ void setup()
     }
     Serial.println("SDRAM OK!");
 
-    // Now, if TEST_ONLY is NOT set, we need to enter VCOM
-#ifndef TEST_ONLY
+    // Now, if SKIP_VCOM is NOT set, we need to enter VCOM
+#ifndef SKIP_VCOM
     Serial.println("Setting VCOM...");
     if (!testClass.setVcom())
     {
@@ -116,6 +119,18 @@ void setup()
             ;
     }
 #endif
+
+    // Now test everything else
+    if (!testClass.testDevice())
+    {
+        // Fatal error, don't continue the test - just inform the user via Serial
+        Serial.println("Critical error: one of the tests failed!");
+        Serial.println("Test stopping!");
+        // Also call display function to display the error
+        // TODO
+        while (true)
+            ;
+    }
 }
 
 void loop()

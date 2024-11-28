@@ -690,7 +690,7 @@ double EPDDriver::readBattery()
     digitalWrite(INKPLATE_BATT_MEASURE_EN, HIGH);
 
     // Wait a little bit.
-    delay(1);
+    delay(15);
 
     // Get an voltage measurement from ADC.
     uint16_t _adcRaw = analogRead(INKPLATE_BATT_MEASURE);
