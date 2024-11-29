@@ -19,11 +19,11 @@ void ioExpanderISR()
 {
     apds9960isrFlag = true;
 }
-// LSM6DS3 gets tested by taking raw readings of the accelerometer
+// LSM6DS3 gets tested by taking float readings of the accelerometer
 // and computing an acceleration vector magnitude
-// Usually this value is around 1020, some tolerance is added
-static long accelVectorLowOK = 900;
-static long accelVectorHighOK = 1200;
+// Usually this value is around 0.5, some tolerance is added
+static float accelVectorLowOK = 0.35;
+static float accelVectorHighOK = 0.65;
 // SHTC3 test parameters margins
 // These are pretty large margins due to how the sensor operates
 static const float degCLowOK = 10.0;
@@ -292,7 +292,7 @@ bool InkplateTest::microSdTest()
 
 bool InkplateTest::apds9960Test()
 {
-    printCurrentTestName("APDS9960 Gesture sensor (MAKE GESTURE!)");
+    printCurrentTestName("APDS9960 Gesture sensor (MAKE GESTURE - 10sec timeout!)");
     bool result = true;
     // Let's init APDS9960 like in the example
     // This will test interrupts as well
@@ -348,7 +348,16 @@ bool InkplateTest::lsm6ds3Test()
 {
     printCurrentTestName("LSM6DS3 Gyroscope");
     bool result = true;
-    inkplateObj->lsm6ds3.begin();
+    // Init and check
+    status_t initResult = inkplateObj->lsm6ds3.begin();
+    Serial.println(initResult);
+    if (initResult != IMU_SUCCESS)
+    {
+        // Can't init!
+        result = false;
+        printCurrentTestResult(result);
+        return result;
+    }
     // Read values from the gyro/accelerometer
     float accelX = inkplateObj->lsm6ds3.readFloatAccelX();
     float accelY = inkplateObj->lsm6ds3.readFloatAccelY();
@@ -356,6 +365,9 @@ bool InkplateTest::lsm6ds3Test()
 
     // Let's check accelerometer vector magnitude magnitude to see if the device is functioning
     float accelMagnitude = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ);
+    Serial.println(accelMagnitude);                     // Should print 0.49 or 0.5
+    Serial.println(accelMagnitude < accelVectorLowOK);  // Should print 0
+    Serial.println(accelMagnitude > accelVectorHighOK); // Should print 0
     if (accelMagnitude < accelVectorLowOK || accelMagnitude > accelVectorHighOK)
     {
         // Out of bounds
