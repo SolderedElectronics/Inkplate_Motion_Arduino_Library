@@ -86,6 +86,13 @@
 #define INKPLATE_MICROSD_SPI_CS   PB3
 #define INKPLATE_MICROSD_PWR_EN   IO_PIN_B1
 
+// User pushbuttons
+#define INKPLATE_USER1 PG6
+#define INKPLATE_USER2 PA0
+
+// Wake button
+#define INKPLATE_WAKE PC13
+
 #endif
 
 #endif

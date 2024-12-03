@@ -348,6 +348,9 @@ bool InkplateTest::lsm6ds3Test()
 {
     printCurrentTestName("LSM6DS3 Gyroscope");
     bool result = true;
+    // Power on
+    inkplateObj->peripheralState(INKPLATE_PERIPHERAL_LSM6DS3, true);
+    delay(100); // Wait a bit to power on
     // Init and check
     status_t initResult = inkplateObj->lsm6ds3.begin();
     Serial.println(initResult);
@@ -355,9 +358,9 @@ bool InkplateTest::lsm6ds3Test()
     {
         // Can't init!
         result = false;
-        printCurrentTestResult(result);
-        return result;
+        Serial.println("result is false in one");
     }
+    delay(10);
     // Read values from the gyro/accelerometer
     float accelX = inkplateObj->lsm6ds3.readFloatAccelX();
     float accelY = inkplateObj->lsm6ds3.readFloatAccelY();
@@ -365,6 +368,7 @@ bool InkplateTest::lsm6ds3Test()
 
     // Let's check accelerometer vector magnitude magnitude to see if the device is functioning
     float accelMagnitude = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ);
+    Serial.println("accelMagnitude");                   // Should
     Serial.println(accelMagnitude);                     // Should print 0.49 or 0.5
     Serial.println(accelMagnitude < accelVectorLowOK);  // Should print 0
     Serial.println(accelMagnitude > accelVectorHighOK); // Should print 0
@@ -373,8 +377,11 @@ bool InkplateTest::lsm6ds3Test()
         // Out of bounds
         // Something's wrong!
         result = false;
+        Serial.println("result is false in two");
     }
 
+    // Power off
+    inkplateObj->peripheralState(INKPLATE_PERIPHERAL_LSM6DS3, false);
     printCurrentTestResult(result);
     return result;
 }

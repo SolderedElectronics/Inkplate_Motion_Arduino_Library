@@ -50,8 +50,11 @@ void setup()
     // Set the text color to black also.
     inkplate.setTextColor(BLACK);
 
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_LSM6DS3, true);
+    delay(100);
+
     // Try to init the acccelerometer.
-    inkplate.lsm6ds3.begin();
+    Serial.println(inkplate.lsm6ds3.begin());
 }
 
 void loop()

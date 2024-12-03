@@ -107,7 +107,7 @@ status_t LSM6DS3Core::beginCore(void)
 	//Check the ID register to determine if the operation was a success.
 	uint8_t readCheck;
 	readRegister(&readCheck, LSM6DS3_ACC_GYRO_WHO_AM_I_REG);
-	if( readCheck != 0x69 )
+	if(!(readCheck == 0x69 || readCheck == 0x6C))
 	{
 		returnError = IMU_HW_ERROR;
 	}
@@ -573,7 +573,6 @@ status_t LSM6DS3::begin(SensorSettings* pSettingsYouWanted)
 	//Return WHO AM I reg  //Not no mo!
 	uint8_t result;
 	readRegister(&result, LSM6DS3_ACC_GYRO_WHO_AM_I_REG);
-
 	return returnError;
 }
 

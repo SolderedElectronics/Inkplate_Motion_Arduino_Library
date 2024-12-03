@@ -33,6 +33,10 @@
 #define INKPLATE_1BW  0
 #define INKPLATE_GL16 1
 
+// Simpler wordings for epaper modes
+#define INKPLATE_BLACKWHITE 0
+#define INKPLATE_GRAYSCALE  1
+
 // Different defines used forthe Inkplate Wavefrom typedef (see below).
 #define INKPLATE_WF_1BIT           0
 #define INKPLATE_WF_4BIT           1
