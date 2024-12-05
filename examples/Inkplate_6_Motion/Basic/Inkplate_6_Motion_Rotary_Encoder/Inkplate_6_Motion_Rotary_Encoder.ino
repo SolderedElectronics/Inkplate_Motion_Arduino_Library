@@ -13,16 +13,17 @@ const float DEG2RAD = PI / 180.0f;
 
 void setup()
 {
+    Serial.begin(115200);
     // Initialize Inkplate Motion library.
     inkplate.begin();
 
     // Enable power to the rotary encoder.
-    inkplate.peripheral(INKPLATE_ROTARY_ENCODER_PERIPH, true);
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_ROTARY_ENCODER, true);
     // Initialize rotery encoder.
     inkplate.rotaryEncoder.begin();
 
     // Enble power to the WS addressable LED.
-    inkplate.peripheral(INKPLATE_WS_LED_PERIPH, true);
+    inkplate.peripheralState(INKPLATE_PERIPHERAL_WS_LED, true);
     // Initialize WS addressable LED library.
     inkplate.led.begin();
     // Set LED color to purple.

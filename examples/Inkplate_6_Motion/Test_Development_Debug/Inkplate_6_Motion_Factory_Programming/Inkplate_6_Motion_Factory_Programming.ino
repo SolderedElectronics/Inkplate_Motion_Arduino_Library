@@ -2,53 +2,42 @@
  **************************************************
  * @file        Inkplate_6_Motion_Factory_Programming.ino
  *
- * @brief       File for testing all features and initial programming of Inkplate 6 MOTION
+ * @brief       File for initial testing and displaying the onboarding seqeuence of Inkplate 6 MOTION
  *
- * @note        !WARNING! VCOM can only be set 100 times, so keep usage to a minimum.
- *              !WARNING! Use at your own risk.
+ * @note        This sketch will test part of the features which need to be tested when Inkplate 6 MOTION
+ * is assembled and in it's enclosure.
  *
- *              Below this header comment are test parameters which may be changed if required.
- *
- *              VCOM has to be set in memory and should always be -2.35V for 6MOTION panels.
- *              It is entered via Serial at baud 115200 with a - sign in from and a decimal point.
- *              So, for example, write "-2.35" with NL+CR when prompted to enter VCOM.
- *
- *              Tests will also be done, to pass all tests:
+ *              To pass all tests:
  *              - Edit the WiFi information below
- *              - Connect a follower device via EasyC on address 0x30 (or change the address below).
- *                In the InkplateEasyCTester folder, you can find the code for uploading to Dasduino Core
- *                or Dasduino ConnectPlus to convert Dasduino to an I2C follower device for testing an easyC connector
- *                if you don't have a device with address 0x30.
- *              - Insert a formatted microSD card (doesn't have to be empty)
- *              - Connect a Li-Ion Inkplate-compatible battery
  *              - Follow all the test's instructions
  *
- *              After all tests have passed the device will showcase the Inkplate 6MOTION onboarding image sequence.
+ *              The other tests are done in Inkplate_6_Motion_VCOM_Set.ino
+ *
+ *              After all tests have passed the device will showcase the Inkplate 6MOTION onboarding image sequence
  *
  *License v3.0: https://www.gnu.org/licenses/lgpl-3.0.en.html Please review the
  *LICENSE file included with this example. If you have any questions about
  *licensing, please visit https://soldered.com/contact/ Distributed as-is; no
  *warranty is given.
  *
- * @authors     Soldered
+ * @authors     Robert @ Soldered
  ***************************************************/
 
 // Test parameters which may be changed if required:
 
-// Uncomment this line to skip the VCOM step and just start doing tests
-#define SKIP_VCOM
-
-// If you want to write new VCOM voltage and perform change this number to something else
-const int EEPROMoffset = 0;
+// If you want to test the device again change this
+// Can't be 0 as this is the default EEPROMoffset for VCOM writing
+int testsDoneEepromValue = 22; // Change this number if you want to repeat tests
+int testsDoneEepromOffset = 8; // Where in EEPROM this symbollic value is written
 
 // WiFi credentials for testing
 char *wifiSSID = {"Soldered"};
 char *wifiPASS = {"dasduino"};
 
-// The easyC (I2C) follower address which will be checked
-const uint8_t easyCDeviceAddress = 0x30;
+// The qwiic (I2C) follower address which will be checked
+const uint8_t qwiicTestAddress = 0x30;
 
-// More detailed test parameters are available to edit in InkplateTest.cpp!
+// More detailed test parameters are available to edit in InkplateTest.cpp
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -57,82 +46,156 @@ const uint8_t easyCDeviceAddress = 0x30;
 #error "Wrong board selection for this example, please select Inkplate 6MOTION in the boards menu."
 #endif
 
-// Include Inkplate Motion library for STM32H743 MCU.
+// Include Inkplate Motion library for STM32H743 MCU
 #include <InkplateMotion.h>
 
+// Include Inkplate test class header file
 #include "InkplateTest.h"
+
+// Include slideshow slides
+#include "slides/onboarding_00_min.h"
+#include "slides/onboarding_01_min.h"
+#include "slides/onboarding_02_min.h"
+#include "slides/onboarding_03_min.h"
+#include "slides/onboarding_04_min.h"
+#include "slides/onboarding_05_min.h"
+#include "slides/onboarding_06_min.h"
+#include "slides/onboarding_07_min.h"
+#include "slides/onboarding_initial_min.h"
 
 // Sketch varaibles
 Inkplate inkplate;      // Create an Inkplate Motion object.
-double vcomVoltage;     // The entered voltage to use for VCOM
 InkplateTest testClass; // The class which does all the testing
+
+// This is the onboarding image sequence
+// Declare an array of pointers to the arrays
+void *onboardingSlides[9] = {
+    (void *)onboarding_initial_min, (void *)onboarding_00_min, (void *)onboarding_01_min,
+    (void *)onboarding_02_min,      (void *)onboarding_03_min, (void *)onboarding_04_min,
+    (void *)onboarding_05_min,      (void *)onboarding_06_min, (void *)onboarding_07_min,
+};
+// Also know the sizes
+size_t slideSizes[9] = {
+    sizeof(onboarding_initial_min), sizeof(onboarding_00_min), sizeof(onboarding_01_min),
+    sizeof(onboarding_02_min),      sizeof(onboarding_03_min), sizeof(onboarding_04_min),
+    sizeof(onboarding_05_min),      sizeof(onboarding_06_min), sizeof(onboarding_07_min),
+};
+
+// Count the slides with this variable
+static int slideCounter = 0;
 
 void setup()
 {
     // Init Serial for communication
     Serial.begin(115200);
 
+    // Set pin mode for buttons
+    pinMode(INKPLATE_USER1, INPUT_PULLUP);
+    pinMode(INKPLATE_USER2, INPUT_PULLUP);
+
     // Init Inkplate class in 1-bit mode
-    // This is required as a first step, to power everything up
     inkplate.begin(INKPLATE_1BW);
-    delay(50); // Wait a bit
 
     // Init Inkplate test class (this just gives it pointer to the Inkplate object and params)
-    testClass.init(&inkplate, EEPROMoffset, wifiSSID, wifiPASS, easyCDeviceAddress);
+    testClass.init(&inkplate, testsDoneEepromOffset, wifiSSID, wifiPASS, qwiicTestAddress);
 
-    // Write to Serial
-    Serial.println("Inkplate 6MOTION test begin!");
-
-    // Let's now manually test the TPS651851 e-Paper power controller
-    Serial.println("Testing communication with TPS651851...");
-    if (!testClass.tpsTest())
+    // Check if tests have been completed with this offset
+    if (!testClass.areTestsDone(testsDoneEepromOffset, testsDoneEepromValue))
     {
-        // Fatal error, don't continue the test - just inform the user via Serial
-        Serial.println("Critical error: communication with TPS651851 failed!");
-        Serial.println("Test stopping!");
-        while (true)
-            ;
-    }
-    Serial.println("TPS651851 OK!");
+        // If tests are NOT done yet...
+        // Perform tests in enclosure
+        if (!testClass.testInEnclosure())
+        {
+            // Fatal error happened, don't continue the test - just inform the user via Serial
+            // Test result should also display on the e-Paper so this is just a precaution
+            Serial.println("Critical error: one of the tests failed!");
+            Serial.println("Test stopping!");
+            // Go to infinite loop
+            while (true)
+                ;
+        }
 
-    // Let's now manually test the SDRAM
-    Serial.println("Testing SDRAM...");
-    if (!testClass.sdramTest())
-    {
-        // Fatal error, don't continue the test - just inform the user via Serial
-        Serial.println("Critical error: SDRAM test failed!");
-        Serial.println("Test stopping!");
-        while (true)
-            ;
-    }
-    Serial.println("SDRAM OK!");
+        // e-Paper power supply test, VCOM set, and some other tests are done in Inkplate_6_Motion_VCOM_Set.ino
 
-    // Now, if SKIP_VCOM is NOT set, we need to enter VCOM
-#ifndef SKIP_VCOM
-    Serial.println("Setting VCOM...");
-    if (!testClass.setVcom())
-    {
-        // Fatal error, don't continue the test - just inform the user via Serial
-        Serial.println("Critical error: VCOM set failed!");
-        Serial.println("Test stopping!");
-        while (true)
-            ;
+        // We're here - tests are done, mark it in memory
+        testClass.writeEepromValue(testsDoneEepromOffset, testsDoneEepromValue);
     }
-#endif
-
-    // Now test everything else
-    if (!testClass.testDevice())
-    {
-        // Fatal error, don't continue the test - just inform the user via Serial
-        Serial.println("Critical error: one of the tests failed!");
-        Serial.println("Test stopping!");
-        // Also call display function to display the error
-        // TODO
-        while (true)
-            ;
-    }
+    // Show first slide
+    displaySlide(slideCounter);
 }
 
 void loop()
 {
+    // Loop essentially controls the slideshow
+
+    // USER2 button goes to previous slide
+    if (!digitalRead(INKPLATE_USER2))
+    {
+        slideCounter--;
+        if (slideCounter < 0)
+            slideCounter = 8;
+
+        // Show the slide
+        displaySlide(slideCounter);
+
+        // Slight debounce
+        delay(5);
+    }
+
+    // USER1 button goes to next slide
+    if (!digitalRead(INKPLATE_USER1))
+    {
+        slideCounter++;
+        if (slideCounter > 8)
+            slideCounter = 0;
+
+        // Show the slide
+        displaySlide(slideCounter);
+
+        // Slight debounce
+        delay(5);
+    }
+}
+
+
+// Show a slide in the onboarding sequence
+void displaySlide(int _slideIndex)
+{
+    // Check for range
+    if (_slideIndex >= 10 || _slideIndex < 0)
+        return;
+
+    // Slides 2 and 4 are in bw mode
+    if (_slideIndex == 2)
+    {
+        // Set mode to BW
+        inkplate.selectDisplayMode(INKPLATE_BLACKWHITE);
+        // Draw the image from memory
+        // These are not JPG's but bitmaps
+        inkplate.drawBitmap(0, 0, onboarding_01_min, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        inkplate.display(); // Do full refresh with bw slides
+    }
+    else if (_slideIndex == 4)
+    {
+        // Set mode to BW
+        inkplate.selectDisplayMode(INKPLATE_BLACKWHITE);
+        // Draw the image from memory
+        inkplate.drawBitmap(0, 0, onboarding_03_min, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        inkplate.display(); // Do full refresh with bw slides
+    }
+    else
+    {
+        // Other slides are in grayscale
+        // Set mode to Grayscale
+        inkplate.selectDisplayMode(INKPLATE_GRAYSCALE);
+        // Draw the image from a jpg file
+        inkplate.image.drawFromBuffer(onboardingSlides[_slideIndex], slideSizes[_slideIndex], 0, 0, 0, 0,
+                                      INKPLATE_IMAGE_DECODE_FORMAT_JPG);
+        if (_slideIndex == 0 || _slideIndex == 3 || _slideIndex == 5)
+            // Do full refreshes after slides 2 and 4 and on the first slide
+            inkplate.display();
+        else
+            // On other slides do partial update
+            inkplate.partialUpdate();
+    }
 }

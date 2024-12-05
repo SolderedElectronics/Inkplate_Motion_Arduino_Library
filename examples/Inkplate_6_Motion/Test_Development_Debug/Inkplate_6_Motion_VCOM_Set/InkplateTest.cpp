@@ -816,11 +816,14 @@ void InkplateTest::checkScreenBorder()
     inkplateObj->drawRect(inkplateObj->width() - _smallRectSize, 0, _smallRectSize, _smallRectSize, BLACK);
     inkplateObj->drawRect(0, inkplateObj->height() - _smallRectSize, _smallRectSize, _smallRectSize, BLACK);
     inkplateObj->drawRect(inkplateObj->width() - _smallRectSize, inkplateObj->height() - _smallRectSize, _smallRectSize,
-                     _smallRectSize, BLACK);
+                          _smallRectSize, BLACK);
 
     // Send image to the screen
     inkplateObj->partialUpdate();
 
     // Wait a little bit
     delay(2000);
+    
+    // This is always correct as it's a visual check
+    printCurrentTestResult(true);
 }
