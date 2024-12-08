@@ -17,7 +17,7 @@
  *licensing, please visit https://soldered.com/contact/ Distributed as-is; no
  *warranty is given.
  *
- * @authors     Soldered
+ * @authors     Robert @ Soldered
  ***************************************************/
 
 // Test parameters which may be changed if required:
@@ -90,6 +90,7 @@ void setup()
     }
     Serial.println("SDRAM OK!");
 
+    // When prompted, enter VCOM via Serial with CRLF
     Serial.println("Setting VCOM...");
     if (!testClass.setVcom())
     {
@@ -112,13 +113,15 @@ void setup()
             ;
     }
 
-    // Inform the user
-    Serial.println("TESTS COMPLETE - DEVICE OK!");
+    // Inform the user that tests are complete
+    inkplate.println(" ");
+    inkplate.println("TESTS  COMPLETE!");
+    inkplate.display();
 }
 
 void loop()
 {
-    // Do nothing!
+    // Do nothing
     while (true)
         ;
 }

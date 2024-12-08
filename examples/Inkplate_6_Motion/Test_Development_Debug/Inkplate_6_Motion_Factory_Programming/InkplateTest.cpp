@@ -8,8 +8,8 @@
 static const double minVcomInputOK = -5.0;
 static const double maxVcomInputOK = -0.5;
 // Battery voltage
-static const double minBatteryVoltageOK = 2.9;
-static const double maxBatteryVoltageOK = 4.8;
+static const double minBatteryVoltageOK = 3.2;
+static const double maxBatteryVoltageOK = 4.5;
 // WiFi timeout
 static const int wifiTimeoutSeconds = 10;
 // APDS9960 timeout
@@ -56,10 +56,8 @@ void InkplateTest::init(Inkplate *inkplateObj, const int EEPROMoffset, char *wif
 
 bool InkplateTest::setVcom()
 {
-    // TODO ADD SKIP
-
     // Set function local variables
-    double vcom = 1.1;
+    double vcom = -1.1; // Default value, won't be used
     char serialBuffer[50];
     unsigned long serialTimeout;
 
@@ -103,6 +101,8 @@ bool InkplateTest::setVcom()
         // Let's do strtod conversion and check the output
         char *endPtr;
         vcom = strtod(serialBuffer, &endPtr);
+        Serial.print("Parsed VCOM: ");
+        Serial.println(vcom);
         // If endPtr points to the same address as serialBuffer, no conversion happened
         // If there's additional non-numeric data after the number, it's also invalid
         if (endPtr == serialBuffer || *endPtr != '\0')
@@ -118,12 +118,33 @@ bool InkplateTest::setVcom()
             continue;
         }
 
-        Serial.println("VCOM OK!");
-
-        // Great, now let's write it to memory and return
-        inkplateObj->pmic.setVCOM(vcom);
+        Serial.println("VCOM in range OK!");
+        // Now program VCOM, try several times
+        bool vcomProgramResult = inkplateObj->pmic.programVCOM((float)vcom);
+        if (!vcomProgramResult)
+        {
+            Serial.println("VCOM NOT set - error!");
+            return false;
+        }
         Serial.println("VCOM set!");
-        return true;
+
+        // Check if VCOM written is OK
+        Serial.print("Getting VCOM: ");
+        delay(100);
+        double getVcom = inkplateObj->pmic.getVCOM();
+        Serial.println(getVcom);
+        if (abs(getVcom - vcom) <= 0.2)
+        {
+            Serial.println("VCOM read back correctly!");
+            inkplateObj->epdPSU(false);
+            return true;
+        }
+        else
+        {
+            Serial.println("VCOM read back incorrectly!");
+            inkplateObj->epdPSU(false);
+            return false;
+        }
     }
 
     return false; // This will never be reached
@@ -131,25 +152,29 @@ bool InkplateTest::setVcom()
 
 bool InkplateTest::tpsTest()
 {
+    bool result = false;
+
     // Turn on TPS651851
-    inkplateObj->epdPSU(1);
+    int powerOnResult = inkplateObj->epdPSU(1);
+    // This result variable also checks readPowerGood flag
+    if (powerOnResult != 1)
+    {
+        // Something's wrong!
+        // Couldn't power on!
+        return result;
+    }
 
     delay(10); // Wait a bit
 
-    // Check if we can communicate with it - this is the test
-    bool result = inkplateObj->pmic.begin();
-
-    // Turn it back off
-    inkplateObj->epdPSU(0);
-
-    delay(10); // Wait a bit
+    // Check if we can communicate with it and return that
+    result = inkplateObj->pmic.begin();
 
     return result;
 }
 
 bool InkplateTest::sdramTest()
 {
-    // Call the internal function (which is gotten from Inkplate_6_Motion_SDRAM_Test.ino example)
+    // Call the internal function (which was taken from Inkplate_6_Motion_SDRAM_Test.ino example)
     return sdramTestInternal((uint64_t)ramBuffer, (uint64_t)(ramBuffer) + (32 * 1024 * 1024), 32768);
 }
 
@@ -283,9 +308,22 @@ bool InkplateTest::rtcTest()
     inkplateObj->rtc.getTime(&h, &m, &s, &ss, NULL, NULL);
     inkplateObj->rtc.getDate(&d, &mn, &y, &wk);
 
+    uint8_t oldSeconds = s;
+
     // Compare the set and retrieved values
     // Don't compare seconds as second might have passed in the meantime
     bool result = (h == hours) && (m == minutes) && (d == day) && (mn == month) && (y == year) && (wk == weekday);
+
+    // Now compare if at least a second has passed
+    delay(1000);
+    inkplateObj->rtc.getTime(&h, &m, &s, &ss, NULL, NULL);
+    uint8_t newSeconds = s;
+
+    if ((newSeconds - oldSeconds) >= 1)
+        result = true;
+    else
+        result = false;
+
     printCurrentTestResult(result);
     return result;
 }
@@ -457,39 +495,41 @@ bool InkplateTest::rotaryEncTest()
 {
     bool result = false;
     // Turn on the peripheral
-    printCurrentTestName("Rotary encoder (SPIN - 10sec timeout!)");
+    printCurrentTestName("Rotary encoder (Visual check & Spin - 5sec timeout!)");
     inkplateObj->peripheralState(INKPLATE_PERIPHERAL_ROTARY_ENCODER, true);
     // Initialize rotary encoder.
     inkplateObj->rotaryEncoder.begin();
+    // Remember cursor for later
+    int x = inkplateObj->getCursorX();
+    int y = inkplateObj->getCursorY();
 
     delay(5);
     // Get the current position of the rotary encoder.
     int firstValue = (int)inkplateObj->rotaryEncoder.readAngle();
+    // Set current angle as zero
+    inkplateObj->rotaryEncoder.setOffset(firstValue);
     unsigned long startTime = millis();
-    while (millis() - startTime < 10000)
+    while (millis() - startTime < 5000)
     {
         // Get the current rotary encoder value
         int currentValue = (int)inkplateObj->rotaryEncoder.readAngle();
-        Serial.println(abs(currentValue - firstValue));
-        // Threshold is 180 degrees to update the position of the line on the screen
-        if (abs(currentValue - firstValue) >= 2000)
-        {
-            // Update the result
-            result = true;
-        }
-
-        // If result is true, exit early
-        if (result)
-        {
-            break;
-        }
-
-        delay(200); // Small delay to prevent busy-waiting
+        int difference = abs(currentValue - firstValue);
+        // Print the new value in the same place
+        inkplateObj->setCursor(900, 320);
+        inkplateObj->fillRect(880, 300, 500, 500, 0);
+        inkplateObj->print(difference);
+        inkplateObj->partialUpdate(true);
+        delay(150); // Small delay
     }
 
     // Turn off
     inkplateObj->peripheralState(INKPLATE_PERIPHERAL_ROTARY_ENCODER, false);
-    delay(50);
+    // Bring back the cursor
+    inkplateObj->setCursor(x, y);
+    // Remove numerical print
+    inkplateObj->fillRect(880, 300, 500, 500, 0);
+    result = true; // This test will always pass as some Inkplates aren't tested in enclosure
+    // It's intended to be a visual check
     printCurrentTestResult(result);
     return result;
 }
@@ -562,6 +602,8 @@ bool InkplateTest::buttonPressTest()
 
 bool InkplateTest::testOnJig()
 {
+    // Do tests of screen updates
+    displayUpdateTest();
     // Print several newlines on the display
     // This will be displayed with the alignment check in the background
     inkplateObj->println("");
@@ -587,6 +629,8 @@ bool InkplateTest::testInEnclosure()
     if (!wifiTest())
         return false;
     if (!rtcTest())
+        return false;
+    if (!wsLedTest())
         return false;
     if (!apds9960Test())
         return false;
@@ -805,8 +849,8 @@ void InkplateTest::checkScreenBorder()
 {
     printCurrentTestName("Check screen borders! (visual check)");
 
-    // Size of small rectangles in the corners of the screen (minimum is 3, maximum is 7)
-    int _smallRectSize = 6;
+    // Size of small rectangles in the corners of the screen
+    int _smallRectSize = 11;
 
     // Draw a black rectangle from edge to edge of the screen
     inkplateObj->drawRect(0, 0, inkplateObj->width(), inkplateObj->height(), BLACK);
@@ -816,11 +860,52 @@ void InkplateTest::checkScreenBorder()
     inkplateObj->drawRect(inkplateObj->width() - _smallRectSize, 0, _smallRectSize, _smallRectSize, BLACK);
     inkplateObj->drawRect(0, inkplateObj->height() - _smallRectSize, _smallRectSize, _smallRectSize, BLACK);
     inkplateObj->drawRect(inkplateObj->width() - _smallRectSize, inkplateObj->height() - _smallRectSize, _smallRectSize,
-                     _smallRectSize, BLACK);
+                          _smallRectSize, BLACK);
 
     // Send image to the screen
     inkplateObj->partialUpdate();
 
     // Wait a little bit
     delay(2000);
+    // This is a visual  check, so it always passes
+    printCurrentTestResult(true);
+}
+
+bool InkplateTest::wsLedTest()
+{
+    // This test will always succeed - it's a visual check
+    printCurrentTestName("WS2812 RGB LED's - Visual check");
+    bool result = true;
+    // Enable LEDs and init
+    inkplateObj->peripheralState(INKPLATE_PERIPHERAL_WS_LED, true);
+    delay(5);
+    inkplateObj->led.begin();
+    delay(5);
+    // Set medium brightness
+    inkplateObj->led.setBrightness(100);
+
+    // Cycle some colors
+    inkplateObj->led.setPixelColor(0, 150, 0, 0);
+    inkplateObj->led.setPixelColor(1, 150, 0, 0);
+    inkplateObj->led.show();
+    delay(700);
+    inkplateObj->led.setPixelColor(0, 0, 150, 0);
+    inkplateObj->led.setPixelColor(1, 0, 150, 0);
+    inkplateObj->led.show();
+    delay(700);
+    inkplateObj->led.setPixelColor(0, 0, 0, 150);
+    inkplateObj->led.setPixelColor(1, 0, 0, 150);
+    inkplateObj->led.show();
+    delay(700);
+    inkplateObj->led.setPixelColor(0, 150, 150, 150);
+    inkplateObj->led.setPixelColor(1, 150, 150, 150);
+    inkplateObj->led.show();
+    delay(700);
+
+
+    // Disable LEDs
+    inkplateObj->peripheralState(INKPLATE_PERIPHERAL_WS_LED, false);
+
+    printCurrentTestResult(result);
+    return result;
 }

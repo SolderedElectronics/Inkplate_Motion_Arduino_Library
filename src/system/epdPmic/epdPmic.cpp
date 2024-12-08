@@ -103,9 +103,9 @@ double EpdPmic::getVCOM()
 
     // Get the register values.
     readRegister(TPS651851_VCOM1, _vcomRegs, 2);
-
+    
     // Convert integer value into volts.
-    _vcomVolts = (_vcomRegs[0] | ((_vcomRegs[1] & 1) << 8)) / 100.0;
+    _vcomVolts = (_vcomRegs[1] | ((_vcomRegs[0] & 1) << 8)) / 100.0;
 
     // Return the value and add "-" sign.
     return (_vcomVolts * (-1));
@@ -216,10 +216,10 @@ bool EpdPmic::programVCOM(double _vcom)
 
         // Wait a little bit before new status reading.
         delay(5);
-    } while (((unsigned long)(millis() - _eepromWriteTimeout) <= 1000ULL) & !(_intStatusFlags & 1));
+    } while (((unsigned long)(millis() - _eepromWriteTimeout) <= 1000ULL) & !(_intStatusFlags & 0x0100));
 
     // Check for EREPROM programming success (timeout did not occured).
-    if (_intStatusFlags & 1)
+    if (_intStatusFlags & 0x0100)
     {
         return true;
     }

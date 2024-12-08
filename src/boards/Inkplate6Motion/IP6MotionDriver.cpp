@@ -1007,7 +1007,7 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             lsm6ds3.begin(&lsm6ds3.settings);
         }
         */
-        Serial.println("Gyro enable");
+        Serial.println("TODO: Gyroscope deep slep/enable via new driver");
     }
 
 

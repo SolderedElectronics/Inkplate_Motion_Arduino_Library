@@ -27,6 +27,7 @@ class InkplateTest
     bool rotaryEncTest();
     bool buttonPressTest();
     bool qwiicTest();
+    bool wsLedTest();
 
     // Test all functions in series
     bool testOnJig();

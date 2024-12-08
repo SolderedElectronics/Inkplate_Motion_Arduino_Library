@@ -27,12 +27,12 @@
 
 // If you want to test the device again change this
 // Can't be 0 as this is the default EEPROMoffset for VCOM writing
-int testsDoneEepromValue = 22; // Change this number if you want to repeat tests
+int testsDoneEepromValue = 20; // Change this number if you want to repeat tests
 int testsDoneEepromOffset = 8; // Where in EEPROM this symbollic value is written
 
 // WiFi credentials for testing
-char *wifiSSID = {"Soldered"};
-char *wifiPASS = {"dasduino"};
+char *wifiSSID = {"Soldered-testingPurposes"};
+char *wifiPASS = {"Testing443"};
 
 // The qwiic (I2C) follower address which will be checked
 const uint8_t qwiicTestAddress = 0x30;
@@ -62,6 +62,7 @@ const uint8_t qwiicTestAddress = 0x30;
 #include "slides/onboarding_06_min.h"
 #include "slides/onboarding_07_min.h"
 #include "slides/onboarding_initial_min.h"
+#include "slides/solderedLogoSmall.h"
 
 // Sketch varaibles
 Inkplate inkplate;      // Create an Inkplate Motion object.
@@ -181,7 +182,20 @@ void displaySlide(int _slideIndex)
         inkplate.selectDisplayMode(INKPLATE_BLACKWHITE);
         // Draw the image from memory
         inkplate.drawBitmap(0, 0, onboarding_03_min, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
-        inkplate.display(); // Do full refresh with bw slides
+        inkplate.display();
+        // This slide displays the animation
+        // This function returns true if USER1  was pressed
+        // It returns false if USER2  was pressed
+        if (partialUpdateAnimation())
+        {
+            _slideIndex++;
+            return;
+        }
+        else
+        {
+            _slideIndex--;
+            return;
+        }
     }
     else
     {
@@ -197,5 +211,79 @@ void displaySlide(int _slideIndex)
         else
             // On other slides do partial update
             inkplate.partialUpdate();
+    }
+}
+
+// Returns true if going to next slide, false if going to previous slide
+bool partialUpdateAnimation()
+{
+    // To count the number of updates
+    int numUpdates = 0;
+    // Can be pretty liberal with the number of partial updates as the affected screen area is always moving
+    int maxPartialUpdates = 100;
+
+    // Some basic coordinations and dimensions of the animation
+    int x = 18;
+    int y = 212;
+    int dx = 10; // Change in x direction
+    int dy = 10; // Change in y direction
+    int width = 979;
+    int height = 519;
+
+    // The logo which gets bounced around is also in slide_03.h
+    int logoWidth = 92;
+    int logoHeight = 121;
+
+    while (true)
+    {
+        // Clear the previous position
+        inkplate.fillRect(18 + 3, 212 + 3, width, height, WHITE);
+
+        // Update the position of the logo
+        x += dx;
+        y += dy;
+
+        // Check for button press to exit the function
+        // A bit hacky but this is done multiple times during this while loop to increase responsiveness
+        if (digitalRead(INKPLATE_USER1) == LOW)
+            return true;
+        if (digitalRead(INKPLATE_USER2) == LOW)
+            return false;
+
+        // Check for collisions with the edges and reverse direction if necessary
+        if (x <= 18 || x + logoWidth >= 18 + width)
+        {
+            dx = -dx;
+        }
+        if (y <= 212 || y + logoHeight >= 212 + height)
+        {
+            dy = -dy;
+        }
+
+        if (digitalRead(INKPLATE_USER1) == LOW)
+            return true;
+        if (digitalRead(INKPLATE_USER2) == LOW)
+            return false;
+
+        // Draw the logo at the new position
+        inkplate.drawBitmap(x, y, solderedLogoSmall, logoWidth, logoHeight, BLACK);
+        inkplate.partialUpdate(true);
+        numUpdates++;
+
+        if (digitalRead(INKPLATE_USER1) == LOW)
+            return true;
+        if (digitalRead(INKPLATE_USER2) == LOW)
+            return false;
+
+        if (numUpdates >= maxPartialUpdates)
+        {
+            numUpdates = 0;
+            inkplate.display();
+        }
+
+        if (digitalRead(INKPLATE_USER1) == LOW)
+            return true;
+        if (digitalRead(INKPLATE_USER2) == LOW)
+            return false;
     }
 }
