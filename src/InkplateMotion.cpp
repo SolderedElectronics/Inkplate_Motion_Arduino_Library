@@ -84,6 +84,7 @@ void Inkplate::drawPixel(int16_t x0, int16_t y0, uint16_t color)
     {
         int x = x0 / 8;
         int xSub = x0 % 8;
+        color &= 1;
 
         uint8_t temp = *(_pendingScreenFB + (SCREEN_WIDTH / 8 * y0) + x);
         *(_pendingScreenFB + (SCREEN_WIDTH / 8 * y0) + x) =

@@ -452,6 +452,7 @@ enum InkplateImageDecodeErrors ImageDecoder::getError()
 void ImageDecoder::RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuffer, uint16_t _w,
                                   uint16_t _h)
 {
+    unsigned long time1 = micros();
     for (int _y = 0; _y < _h; _y++)
     {
         for (int _x = 0; _x < _w; _x++)
@@ -465,12 +466,16 @@ void ImageDecoder::RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile ui
             uint8_t _b = _rgbBuffer[_fbArrayIndex];
 
             // Convert them into grayscale.
-            uint8_t _pixel = ((77 * _r) + (150 * _g) + (29 * _b)) >> 12;
+            uint8_t _pixel = ((77 * _r) + (150 * _g) + (29 * _b)) >> 8;
 
             // Write into epaper framebuffer.
-            _inkplate->drawPixel(_x + x, _y + y, _pixel);
+            //_inkplate->drawPixel(_x + x, _y + y, _pixel);
+            _framebufferHandler.framebuffer[(_x + (_framebufferHandler.fbWidth * _y))] = _pixel;
         }
     }
+    unsigned long time2 = micros();
+
+    Serial.printf("Time grayscale: %lu\r\n", time2 - time1);
 }
 
 #endif
