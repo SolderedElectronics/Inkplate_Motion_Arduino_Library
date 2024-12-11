@@ -75,7 +75,7 @@ void setup()
     // }
     // time2 = millis();
     time1 = micros();
-    imgProcess.processImage((uint8_t*)(0xD0600000), 50, 100, 1024, 379, true, false, STUCKI_KERNEL, STUCKI_KERNEL_SIZE, 4);
+    imgProcess.processImage((uint8_t*)(0xD0600000), 50, 100, 1024, 379, true, false, FS_KERNEL, FS_KERNEL_SIZE, 4);
     time2 = micros();
     Serial.printf("Dithering time: %lu\r\n", time2 - time1);
     inkplate.display();

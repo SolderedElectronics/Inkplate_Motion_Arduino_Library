@@ -31,6 +31,7 @@ class ImageProcessing
         uint16_t _displayW = 0;
         int16_t *_errorBuffer = NULL;
         int16_t *_nextErrorBuffer = NULL;
+        int16_t *_afterNextErrorBuffer = NULL;
         uint8_t *_bufferedRowsArray = NULL;
         uint8_t *_bufferRows[3];
 };

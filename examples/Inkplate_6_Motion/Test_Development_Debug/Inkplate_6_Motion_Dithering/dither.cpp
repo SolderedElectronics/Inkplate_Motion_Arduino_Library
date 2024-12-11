@@ -3,6 +3,19 @@
 
 #include "InkplateMotion.h"
 
+/* TODO LIST:
+ * - Use 8 bit mode
+ * - Optimise the code - procesing under 200ms would be great
+ * - Use DMA for SDRAM buffering.
+ * - Force function for dithering to output data on the current row that is not used anymore
+ *   after dither has been done.
+ * - Do a general overview and checks
+ * - Do a DoxyGen
+ * - Test on different modes - modes should be automatically selected.
+ * - Check allocations in the begin!
+ * - Check if code can be more readable.
+*/
+
 /**
  * @brief Construct a new Image Processing object
  * 
@@ -34,11 +47,12 @@ bool ImageProcessing::begin(Inkplate *_inkplate, uint16_t _displayWidth)
     _displayW = _displayWidth;
 
     // Calculate the size of the error buffers.
-    _errorBufferSize = (_displayW * sizeof(uint16_t)) + 10;
+    _errorBufferSize = (_displayW + 10) * sizeof(uint16_t);
 
     // Allocate the memory for all buffers.
     _errorBuffer = (int16_t*)malloc(_errorBufferSize);
     _nextErrorBuffer = (int16_t*)malloc(_errorBufferSize);
+    _afterNextErrorBuffer = (int16_t*)malloc(_errorBufferSize);
 
     // Max width = two times the screen width. Since is RGB = 24bits or 3 bytes, multiply by three.
     // Also three rows are buffered due Stucki dither, so multiply by three.
@@ -145,69 +159,86 @@ void ImageProcessing::invertColorsRow(uint8_t *_imageBuffer, uint16_t _imageWidt
     }
 }
 
-void ImageProcessing::ditherImageRow(uint8_t *_currentRow, uint8_t *_nextRow, uint8_t *_rowAfterNext, int16_t _y, uint16_t width, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, uint8_t _bitDepth)
+void ImageProcessing::ditherImageRow(uint8_t *_currentRow, uint8_t *_nextRow, uint8_t *_afterNextRow, int16_t _y, uint16_t _width, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, uint8_t _bitDepth)
 {
-    // Initialize next error buffer.
-    memset(_nextErrorBuffer, 0, _errorBufferSize);
+    // Precompute constants based on bit depth.
+    int16_t _quantErrorFactor = (_bitDepth == 1) ? 255 : 255 / 15;
 
-    for (uint16_t _x = 0; _x < width; _x++)
+    for (uint16_t _x = 0; _x < _width; _x++)
     {
-        // Adjust pixel value with propagated error
+        // Adjust pixel value with propagated error.
         int16_t _oldPixel = _currentRow[_x] + _errorBuffer[_x + 1];
 
         // Clamp to valid 8-bit range.
-        if (_oldPixel < 0) _oldPixel = 0;
-        if (_oldPixel > 255) _oldPixel = 255;
+        _oldPixel = (_oldPixel < 0) ? 0 : (_oldPixel > 255) ? 255 : _oldPixel;
 
-        // Check the bit depth.
-        uint8_t _newPixel = 0;
+        uint8_t _newPixel;
         if (_bitDepth == 1)
         {
-            // 1-bit output: threshold to black or white
+            // 1-bit output: threshold to black or white.
             _newPixel = (_oldPixel >= 128) ? 255 : 0;
         }
         else if (_bitDepth == 4)
         {
-            // 4-bit output: quantize to 0-15
+            // 4-bit output: quantize to 0-15.
             _newPixel = (_oldPixel * 15 + 127) / 255;
         }
+        else
+        {
+            // Unsupported bit depth.
+            _newPixel = 0;
+        }
 
-        // Output the pixel
-        _inkplatePtr->drawPixel(_x, _y, _newPixel); // Adjusted for x and y coordinates
-        _currentRow[_x] = _newPixel;
+        // Output the pixel.
+        _inkplatePtr->drawPixel(_x, _y, _newPixel);
 
-        // Reverse quantization to calculate error
-        int16_t quant_error = (_bitDepth == 1)
+        // Reverse quantization to calculate error.
+        int16_t _quantError = (_bitDepth == 1)
                                   ? _oldPixel - ((_newPixel == 255) ? 255 : 0)
                                   : _oldPixel - (_newPixel * 255 / 15);
 
-        // Propagate error using the kernel
-        for (size_t i = 0; i < _ditherKernelParametersSize; i++)
+        // Propagate error using the kernel.
+        for (size_t _i = 0; _i < _ditherKernelParametersSize; _i++)
         {
-            int16_t _newX = _x + _ditherKernelParameters[i].x_offset;
-            if (_newX >= 0 && _newX < width)
+            int16_t _newX = _x + _ditherKernelParameters[_i].x_offset;
+            int16_t _newY = _ditherKernelParameters[_i].y_offset; // y_offset applies to current row.
+
+            if (_newX >= 0 && _newX < _width)
             {
-                if (_ditherKernelParameters[i].y_offset == 0)
+                int16_t *_targetBuffer = nullptr;
+
+                // Determine which buffer to propagate error to (same row, next row, or after next row).
+                if (_newY == 0)
                 {
-                    // Same row
-                    _errorBuffer[_newX + 1] += (quant_error * _ditherKernelParameters[i].weight) / 16;
+                    _targetBuffer = _errorBuffer; // Same row
                 }
-                else if (_ditherKernelParameters[i].y_offset == 1 && _nextRow)
+                else if (_newY == 1 && _nextRow)
                 {
-                    // Next row
-                    _nextRow[_newX] += (quant_error * _ditherKernelParameters[i].weight) / 16;
+                    _targetBuffer = _nextErrorBuffer; // Next row
                 }
-                else if (_ditherKernelParameters[i].y_offset == 2 && _rowAfterNext)
+                else if (_newY == 2 && _afterNextRow)
                 {
-                    // Row after next
-                    _rowAfterNext[_newX] += (quant_error * _ditherKernelParameters[i].weight) / 16;
+                    _targetBuffer = _afterNextErrorBuffer; // After-next row
+                }
+
+                // Propagate error to the appropriate buffer if valid.
+                if (_targetBuffer)
+                {
+                    _targetBuffer[_newX + 1] += (_quantError * _ditherKernelParameters[_i].weight) / 16;
                 }
             }
         }
     }
 
-    // Update the error buffer for the next row
-    memcpy(_errorBuffer, _nextErrorBuffer, _errorBufferSize);
+    // Swap error buffers for the next iteration.
+    int16_t *_temp = _errorBuffer;
+    _errorBuffer = _nextErrorBuffer;
+    _nextErrorBuffer = _afterNextErrorBuffer;
+    _afterNextErrorBuffer = _temp;
+
+    // Clear the next and after-next error buffers.
+    memset(_nextErrorBuffer, 0, _errorBufferSize);
+    memset(_afterNextErrorBuffer, 0, _errorBufferSize);
 }
 
 void ImageProcessing::writePixels(int16_t _x0, int16_t _y0, uint8_t *_imageBuffer, uint16_t _imageWidth)
@@ -220,8 +251,10 @@ void ImageProcessing::writePixels(int16_t _x0, int16_t _y0, uint8_t *_imageBuffe
 
 void ImageProcessing::moveBuffers(uint8_t **_currentRow, uint8_t **_nextRow, uint8_t **_rowAfterNext)
 {
+    uint8_t *_temp = *_currentRow;
     *_currentRow = *_nextRow;
     *_nextRow = *_rowAfterNext;
+    *_rowAfterNext = _temp;
 }
 
 void ImageProcessing::freeResources()
