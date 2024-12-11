@@ -1,7 +1,11 @@
 #include "InkplateMotion.h"
 #include "ditherKernels.h"
+#include "newWaveform.h"
+#include "dither.h"
 
 Inkplate inkplate;
+
+ImageProcessing imgProcess;
 
 void setup()
 {
@@ -12,7 +16,22 @@ void setup()
     // Initialize Inkplate Motion library in 4 bit mode.
     //inkplate.begin(INKPLATE_1BW);
     inkplate.begin(INKPLATE_GL16);
+
+    imgProcess.begin(&inkplate, SCREEN_WIDTH);
     
+    // Load the new wavefrom!
+    if (!inkplate.loadWaveform(custom4BitWavefrom))
+    {
+        Serial.println("Wavefrom load failed, halting");
+
+        while (1)
+            ;
+    }
+    else
+    {
+        Serial.println("New wavefrom loaded!");
+    }
+
     // Clear the screen.
     inkplate.display();
 
@@ -32,29 +51,32 @@ void setup()
     // Dispaly the image on the screen.
     unsigned long time1 = micros();
     //inkplate.image.draw("gradient_dithered.png", 0, 0);
-    //inkplate.image.draw("gradient.png", 0, 0);
+    inkplate.image.draw("gradient.png", 0, 0);
     //inkplate.image.draw("rainbow.jpg", 0, 0);
     //inkplate.image.draw("img1.jpg", 0, 0);
     //inkplate.image.draw("pexels-lauma-augstkalne-322733111-28681534.jpg", 0, 0);
     //inkplate.image.draw("pexels-njeromin-29233611.jpg", 0, 0);
     //inkplate.image.draw("pexels-helen1-29238664.jpg", 0, 0);
     //inkplate.image.draw("cat.jpg", 0, 0);
-    inkplate.image.draw("mountain.jpg", 0, 0);
+    //inkplate.image.draw("mountain.jpg", 0, 0);
     //inkplate.image.draw("road.jpg", 0, 0);
     unsigned long time2 = micros();
     Serial.printf("DrawImage time: %lu\r\n", time2 - time1);
 
     // Now do a dither!
-    time1 = millis();
-    if (inkplate.getDisplayMode() == INKPLATE_1BW)
-    {
-        dither_with_kernel((uint8_t*)(0xD0600000), 1024, 758, FS_KERNEL, FS_KERNEL_SIZE, 2, 1, false);
-    }
-    else
-    {
-        dither_with_kernel((uint8_t*)(0xD0600000), 1024, 758, FS_KERNEL, FS_KERNEL_SIZE, 2, 4, false);
-    }
-    time2 = millis();
+    // time1 = millis();
+    // if (inkplate.getDisplayMode() == INKPLATE_1BW)
+    // {
+    //     dither_with_kernel((uint8_t*)(0xD0600000), 1024, 758, FS_KERNEL, FS_KERNEL_SIZE, 2, 1, false);
+    // }
+    // else
+    // {
+    //     dither_with_kernel((uint8_t*)(0xD0600000), 1024, 758, SIERRA_KERNEL, SIERRA_KERNEL_SIZE, 2, 4, false);
+    // }
+    // time2 = millis();
+    time1 = micros();
+    imgProcess.processImage((uint8_t*)(0xD0600000), 50, 100, 1024, 379, true, false, STUCKI_KERNEL, STUCKI_KERNEL_SIZE, 4);
+    time2 = micros();
     Serial.printf("Dithering time: %lu\r\n", time2 - time1);
     inkplate.display();
 }

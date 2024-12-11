@@ -1,3 +1,7 @@
+// Header guard.
+#ifndef __DITHER_KERNELS_H__
+#define __DITHER_KERNELS_H__
+
 // Dithering Kernel
 typedef struct {
     int8_t x_offset;  // X offset from the current pixel
@@ -48,3 +52,5 @@ const KernelElement BURKES_KERNEL[] = {
 #define SIERRA_LITE_KERNEL_SIZE (sizeof(SIERRA_LITE_KERNEL) / sizeof(SIERRA_LITE_KERNEL[0]))
 #define ATKINSON_KERNEL_SIZE (sizeof(ATKINSON_KERNEL) / sizeof(ATKINSON_KERNEL[0]))
 #define BURKES_KERNEL_SIZE (sizeof(BURKES_KERNEL) / sizeof(BURKES_KERNEL[0]))
+
+#endif
