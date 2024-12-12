@@ -27,13 +27,20 @@ class ImageProcessing
         void moveBuffers(uint8_t **_currentRow, uint8_t **_nextRow, uint8_t **_rowAfterNext);
 
         Inkplate *_inkplatePtr = NULL;
-        int _errorBufferSize = 0;
         uint16_t _displayW = 0;
+
+        // Error buffers related.
+        int _errorBufferSize = 0;
         int16_t *_errorBuffer = NULL;
         int16_t *_nextErrorBuffer = NULL;
         int16_t *_afterNextErrorBuffer = NULL;
+        
+        // Pixel buffers.
         uint8_t *_bufferedRowsArray = NULL;
         uint8_t *_bufferRows[3];
+
+        // Buffer for precalculate d weight factors.
+        int16_t *_ditherWeightFactors;
 };
 
 #endif
