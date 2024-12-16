@@ -58,10 +58,11 @@ void setup()
 
     // Init Inkplate class in 1-bit mode
     inkplate.begin(INKPLATE_1BW);
-    delay(50); // Wait a bit
+    delay(800); // Wait a bit longer
 
     // Init Inkplate test class (this just gives it pointer to the Inkplate object and params)
     testClass.init(&inkplate, vcomEepromOffset, wifiSSID, wifiPASS, easyCDeviceAddress);
+
 
     // Write to Serial
     Serial.println("Inkplate 6MOTION test begin!");
@@ -101,6 +102,21 @@ void setup()
             ;
     }
 
+    // Wait for WAKE button press to start testing
+    inkplate.setTextColor(1);
+    inkplate.setTextSize(3);
+    inkplate.setCursor(200, 300);
+    inkplate.println("PRESS WAKE BUTTON TO BEGIN TESTS");
+    inkplate.display();
+
+    pinMode(INKPLATE_WAKE, INPUT_PULLUP);
+    while (digitalRead(INKPLATE_WAKE) != LOW)
+    {
+        delay(1);
+    }
+    // Clear display!
+    inkplate.clearDisplay();
+
     Serial.println("Doing basic tests...");
     if (!testClass.testOnJig())
     {
@@ -113,15 +129,15 @@ void setup()
             ;
     }
 
-    // Inform the user that tests are complete
+    // Inform the user that tests are complete and signal to continue tests
     inkplate.println(" ");
-    inkplate.println("TESTS  COMPLETE!");
+    inkplate.println("      TESTS  COMPLETE!");
+    inkplate.println("      Press programming button to continue!");
     inkplate.display();
 }
 
 void loop()
 {
-    // Do nothing
-    while (true)
-        ;
+    Serial.println("Continue");
+    delay(1000);
 }
