@@ -4,15 +4,14 @@
 #include "InkplateMotion.h"
 
 /* TODO LIST:
- * - Use 8 bit mode [Done]
+ * - [Done] Use 8 bit mode
  * - Optimise the code - procesing under 200ms would be great
  * - Use DMA for SDRAM buffering.
- * - [Done] Force function for dithering to output data on the current row that is not used anymore
- *   after dither has been done.
+ * - [Done] Force function for dithering to output data on the current row that is not used anymore after dither has been done.
  * - Do a general overview and checks
  * - Do a DoxyGen
  * - Test on different modes - modes should be automatically selected.
- * - Check allocations in the begin!
+ * - [Done] Check allocations in the begin!
  * - Check if code can be more readable.
 */
 
@@ -59,7 +58,7 @@ bool ImageProcessing::begin(Inkplate *_inkplate, uint16_t _displayWidth)
     _bufferedRowsArray = (uint8_t*)malloc(_displayW * sizeof(uint8_t) * 3 * 3);
 
     // Check for allocation.
-    if ((_errorBuffer == NULL) || (_nextErrorBuffer == NULL) || (_bufferedRowsArray == NULL))
+    if ((_errorBuffer == NULL) || (_nextErrorBuffer == NULL) || (_afterNextErrorBuffer == NULL) || (_bufferedRowsArray == NULL))
     {
         // Dang! Allocation has failed, abort everything!
         freeResources();
@@ -72,60 +71,33 @@ bool ImageProcessing::begin(Inkplate *_inkplate, uint16_t _displayWidth)
     return true;
 }
 
-void ImageProcessing::processImage(uint8_t *_imageFramebuffer, int16_t _x0, int16_t _y0, uint16_t _w, uint16_t _h, bool _ditheringEnabled, bool _colorInversion, const KernelElement *_ditherKernel, size_t _kernelDescriptorSize, uint8_t _outputBitDepth)
+void ImageProcessing::processImage(uint8_t *_imageBuffer, int16_t _x0, int16_t _y0, uint16_t _width, uint16_t _height, bool _ditheringEnabled, bool _colorInversion, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, uint8_t _bitDepth)
 {
     // Check for the input parameters.
-    if ((_imageFramebuffer == NULL) || (_w == 0) || (_h == 0)) return;
+    if ((_imageBuffer == NULL) || (_width == 0) || (_height == 0)) return;
 
     // Constrain width of the image to the width of the screen.
-    if (_w > _displayW) _w = _displayW;
+    if (_width > _displayW) _width = _displayW;
 
-    // Initialize dither buffers.
-    memset(_errorBuffer, 0, _errorBufferSize);
-    memset(_nextErrorBuffer, 0, _errorBufferSize);
-    memset(_afterNextErrorBuffer, 0, _errorBufferSize);
-
-    // Set the pointer array for easier access.
-    _bufferRows[0] = _bufferedRowsArray;
-    _bufferRows[1] = _bufferedRowsArray + (_displayW * sizeof(uint8_t) * 3);
-    _bufferRows[2] = _bufferedRowsArray + (_displayW * sizeof(uint8_t) * 3 * 2);
-
-    // Feed the data!
-    // Copy one line into SRAM since it's faster to process image from SRAM than from SDRAM.
-    for (int i = 0; i < 3; i++)
-    {
-        memcpy(_bufferRows[i], _imageFramebuffer + ((1024 * i) * 3), _w * 3);
-        this->toGrayscaleRow(_bufferRows[i], _w, 54, 183, 19);
-        if (_colorInversion) this->invertColorsRow(_bufferRows[i], _w);
-    }
-
-    // Precompute weight factors for the dithering kernel.
-    if ((_ditheringEnabled) && (_ditherKernel) && (_kernelDescriptorSize > 0))
-    {
-        _ditherWeightFactors = (int16_t*)malloc(sizeof(int16_t) * _kernelDescriptorSize);
-        if (_ditherWeightFactors == NULL) return;
-        for (size_t i = 0; i < _kernelDescriptorSize; i++)
-        {
-            _ditherWeightFactors[i] = _ditherKernel[i].weight;
-        }
-    }
+    // Prepare buffers for image processing.
+    this->prepare(_imageBuffer, _width, _ditheringEnabled, _colorInversion, _ditherKernelParameters, _ditherKernelParametersSize);
 
     // Process line-by-line since it's buffered and accessing SDRAM byte-by-byte is slow.
-    for (int _y = 0; _y < _h; _y++)
+    for (int _y = 0; _y < _height; _y++)
     {
         // Do the dither if needed.
-        if ((_ditheringEnabled) && (_ditherKernel) && (_kernelDescriptorSize > 0))
+        if ((_ditheringEnabled) && (_ditherKernelParameters) && (_ditherKernelParametersSize > 0))
         {
            // Update the buffers. Since there is a support for Stucki Dither that uses 3 rows, all of them needs to be updated.
-           this->ditherImageRow(_bufferRows[0], _bufferRows[1], _bufferRows[2], _y, _w, _ditherKernel, _kernelDescriptorSize, _outputBitDepth);
+           this->ditherImageRow(_bufferRows[0], _bufferRows[1], _bufferRows[2], _y, _width, _ditherKernelParameters, _ditherKernelParametersSize, _bitDepth);
         }
 
         // Push the pixels to the epaper main framebuffer.
-        this->writePixels(_x0, _y + _y0, _bufferRows[0], _w);
+        this->writePixels(_x0, _y + _y0, _bufferRows[0], _width);
 
         // Update the buffers!
         this->moveBuffers(&_bufferRows[0], &_bufferRows[1], &_bufferRows[2]);
-        memcpy(_bufferRows[2], _imageFramebuffer + ((1024 * (_y + 3)) * 3), _w * 3);
+        memcpy(_bufferRows[2], _imageBuffer + ((1024 * (_y + 3)) * 3), _width * 3);
 
         // Conversion to the grayscale must be done, cannot be disabled!
         // Use BT.709 standard for RGB to grayscale conversion.
@@ -133,10 +105,10 @@ void ImageProcessing::processImage(uint8_t *_imageFramebuffer, int16_t _x0, int1
         // G = 0.7152 => 0.7152 * 256 = 183.0912 = 183
         // B = 0.0722 => 0.0722 * 256 = 18.4832 = 19
         // Tune if needed.
-        this->toGrayscaleRow(_bufferRows[2], _w, 54, 183, 19);
+        this->toGrayscaleRow(_bufferRows[2], _width, 54, 183, 19);
 
         // Do the inversion if needed.
-        if (_colorInversion) this->invertColorsRow(_bufferRows[2], _w);
+        if (_colorInversion) this->invertColorsRow(_bufferRows[2], _width);
     }
 
     // Free allocated memory for dither weight factors.
@@ -172,7 +144,7 @@ void ImageProcessing::invertColorsRow(uint8_t *_imageBuffer, uint16_t _imageWidt
  * @brief Optimize Error Propagation in Dithering
  *        Precompute error distribution weights and reduce unnecessary branching.
  */
-void ImageProcessing::ditherImageRow(uint8_t *_currentRow, uint8_t *_nextRow, uint8_t *_afterNextRow, int16_t _y, uint16_t _width, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, uint8_t _bitDepth)
+void ImageProcessing::ditherImageRow(uint8_t *_currentRow, uint8_t *_nextRow, uint8_t *_rowAfterNext, int16_t _y0, uint16_t _width, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, uint8_t _bitDepth)
 {
     // Precompute constants based on bit depth.
     int16_t _quantErrorFactor = (_bitDepth == 1) ? 255 : 255 >> 4; // Divide by 16
@@ -229,7 +201,7 @@ void ImageProcessing::ditherImageRow(uint8_t *_currentRow, uint8_t *_nextRow, ui
                 {
                     _targetBuffer = _nextErrorBuffer; // Next row
                 }
-                else if (_newY == 2 && _afterNextRow)
+                else if (_newY == 2 && _rowAfterNext)
                 {
                     _targetBuffer = _afterNextErrorBuffer; // After-next row
                 }
@@ -272,7 +244,54 @@ void ImageProcessing::moveBuffers(uint8_t **_currentRow, uint8_t **_nextRow, uin
 
 void ImageProcessing::freeResources()
 {
+    // Free error buffers.
     if (_nextErrorBuffer) free(_nextErrorBuffer);
     if (_errorBuffer) free(_errorBuffer);
+    if (_afterNextErrorBuffer) free(_afterNextErrorBuffer);
+
+    // Free row buffer.
     if (_bufferedRowsArray) free(_bufferedRowsArray);
+
+    // Free precalculated Weight factors.
+    if (_ditherWeightFactors) free(_ditherWeightFactors);
+
+    // Set every pointer to NULL.    
+    _errorBuffer = NULL;
+    _nextErrorBuffer = NULL;
+    _afterNextErrorBuffer = NULL;
+    _bufferedRowsArray = NULL;
+    _ditherWeightFactors = NULL;
+}
+
+void ImageProcessing::prepare(uint8_t *_imageFramebuffer, uint16_t _w,  bool _ditheringEnabled, bool _colorInversion,  const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize)
+{
+    // Initialize dither buffers.
+    memset(_errorBuffer, 0, _errorBufferSize);
+    memset(_nextErrorBuffer, 0, _errorBufferSize);
+    memset(_afterNextErrorBuffer, 0, _errorBufferSize);
+
+    // Set the pointer array for easier access.
+    _bufferRows[0] = _bufferedRowsArray;
+    _bufferRows[1] = _bufferedRowsArray + (_displayW * sizeof(uint8_t) * 3);
+    _bufferRows[2] = _bufferedRowsArray + (_displayW * sizeof(uint8_t) * 3 * 2);
+
+    // Feed the data!
+    // Copy one line into SRAM since it's faster to process image from SRAM than from SDRAM.
+    for (int i = 0; i < 3; i++)
+    {
+        memcpy(_bufferRows[i], _imageFramebuffer + ((1024 * i) * 3), _w * 3);
+        this->toGrayscaleRow(_bufferRows[i], _w, 54, 183, 19);
+        if (_colorInversion) this->invertColorsRow(_bufferRows[i], _w);
+    }
+
+    // Precompute weight factors for the dithering kernel.
+    if ((_ditheringEnabled) && (_ditherKernelParameters) && (_ditherKernelParametersSize > 0))
+    {
+        _ditherWeightFactors = (int16_t*)malloc(sizeof(int16_t) * _ditherKernelParametersSize);
+        if (_ditherWeightFactors == NULL) return;
+        for (size_t i = 0; i < _ditherKernelParametersSize; i++)
+        {
+            _ditherWeightFactors[i] = _ditherKernelParameters[i].weight;
+        }
+    }
 }

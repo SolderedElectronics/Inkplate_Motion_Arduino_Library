@@ -53,7 +53,7 @@ void setup()
     //inkplate.image.draw("gradient_dithered.png", 0, 0);
     //inkplate.image.draw("gradient.png", 0, 0);
     //inkplate.image.draw("rainbow.jpg", 0, 0);
-    //inkplate.image.draw("img1.jpg", 0, 0);
+    inkplate.image.draw("img1.jpg", 0, 0);
     //inkplate.image.draw("pexels-lauma-augstkalne-322733111-28681534.jpg", 0, 0);
     //inkplate.image.draw("pexels-njeromin-29233611.jpg", 0, 0);
     //inkplate.image.draw("pexels-helen1-29238664.jpg", 0, 0);
@@ -61,14 +61,14 @@ void setup()
     //inkplate.image.draw("mountain.jpg", 0, 0);
     //inkplate.image.draw("road.jpg", 0, 0);
     //inkplate.image.draw("20241212_124918.jpg", 0, 0);
-    inkplate.image.draw("pexels-cottonbro-6862363.jpg", 0, 0);
+    //inkplate.image.draw("pexels-cottonbro-6862363.jpg", 0, 0);
     //inkplate.image.draw("pexels-chase-yaws-192435414-11513527.jpg", 0, 0);
     unsigned long time2 = micros();
     Serial.printf("DrawImage time: %lu\r\n", time2 - time1);
 
     // Now do a dither!
     time1 = micros();
-    imgProcess.processImage((uint8_t*)(0xD0600000), 0, 0, 1024, 758, true, false, FS_KERNEL, FS_KERNEL_SIZE, 4);
+    imgProcess.processImage((uint8_t*)(0xD0600000), 0, 0, 1024, 758, true, false, STUCKI_KERNEL, STUCKI_KERNEL_SIZE, 4);
     time2 = micros();
     Serial.printf("Dithering time: %lu\r\n", time2 - time1);
     inkplate.display();
