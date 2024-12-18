@@ -14,8 +14,8 @@ void setup()
     Serial.println("Hello from Inkplate 6 Motion!");
 
     // Initialize Inkplate Motion library in 4 bit mode.
-    //inkplate.begin(INKPLATE_1BW);
-    inkplate.begin(INKPLATE_GL16);
+    inkplate.begin(INKPLATE_1BW);
+    //inkplate.begin(INKPLATE_GL16);
 
     imgProcess.begin(&inkplate, SCREEN_WIDTH);
     
@@ -68,7 +68,7 @@ void setup()
 
     // Now do a dither!
     time1 = micros();
-    imgProcess.processImage((uint8_t*)(0xD0600000), 0, 0, 1024, 758, true, false, STUCKI_KERNEL, STUCKI_KERNEL_SIZE, 4);
+    imgProcess.processImage((uint8_t*)(0xD0600000), 0, 0, 1024, 758, true, false, FS_KERNEL, FS_KERNEL_SIZE, inkplate.getDisplayMode() == INKPLATE_1BW?1:4);
     time2 = micros();
     Serial.printf("Dithering time: %lu\r\n", time2 - time1);
     inkplate.display();

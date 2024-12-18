@@ -37,8 +37,8 @@ class ImageProcessing
         int16_t *_afterNextErrorBuffer = NULL;
         
         // Pixel buffers.
-        uint8_t *_bufferedRowsArray = NULL;
-        uint8_t *_bufferRows[3];
+        //uint8_t *_bufferedRowsArray = NULL;
+        //uint8_t *_bufferRows[3];
 
         // Buffer for precalculate d weight factors.
         int16_t *_ditherWeightFactors = NULL;
