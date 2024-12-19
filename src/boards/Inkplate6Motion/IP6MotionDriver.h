@@ -40,6 +40,12 @@
 // Include library for image decoding.
 #include "imageDecoder.h"
 
+// Include the library for the image processing (image to grayscale conversion, color inversion, dither).
+#include "../../libs/imageProcessing/imageProcessing.h"
+
+// Include pre-defined dither kernels.
+#include "../../libs/imageProcessing/ditherKernels.h"
+
 // Defines for EPD GPIOs
 #define EPD_DRIVER_PINS_OUTPUT  0
 #define EPD_DRIVER_PINS_H_ZI    1
@@ -176,7 +182,12 @@ class EPDDriver : public Helpers
 
         // Class for image decode in Inkplate Motion library.
         ImageDecoder image;
-        
+
+        // Class for the image processing (grayscale, color invert, dither).
+        ImageProcessing imgProcess;
+
+        // If needed, DMA buffers used in drivers can be used for something else.
+        volatile uint8_t *_dmaBuffer[3];
 
     protected:
         // Function initializes all GPIO pins used on Inkplate for driving EPD.

@@ -46,13 +46,14 @@ ImageDecoder::ImageDecoder()
  *          The address to where image files from web should be downloaded
  *
  */
-void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress,
+void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, ImageProcessing *_imgProcessPtr, uint8_t *_tempFbAddress,
                          volatile uint8_t *_downloadFileMemory)
 {
     // Save these addresses locally.
     _framebufferHandler.framebuffer = _tempFbAddress;
     _wifi = _wifiPtr;
     _inkplate = _inkplatePtr;
+    _imgProcess = _imgProcessPtr;
     _imageDownloadMemoryPtr = _downloadFileMemory;
 
     // Set the framebuffer size.
@@ -83,6 +84,7 @@ void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_
  *          false - Image load failed. Check ImageDecoder::getError() for the reason.
  */
 bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither,
+                        const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize,
                         enum InkplateImageDecodeFormat _format, enum InkplateImagePathType _pathType)
 {
     // Check if the path detection is set to auto (it should be by default).
@@ -120,7 +122,7 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
             }
 
             // Use proper decoder for the image type.
-            bool _retValue = drawFromSd(&_file, _x, _y, _invert, _dither, _format);
+            bool _retValue = drawFromSd(&_file, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize, _format);
 
             // Close the file.
             _file.close();
@@ -138,7 +140,7 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
     else if (_pathType == INKPLATE_IMAGE_DECODE_PATH_WEB)
     {
         // Call drawFromWeb and return the result of that
-        return drawFromWeb(_path, _x, _y, _invert, _dither, _format);
+        return drawFromWeb(_path, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize, _format);
     }
 
     // If you got there, there must be something wrong.
@@ -167,6 +169,7 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
  *          false - Image load failed. Check ImageDecoder::getError() for the reason.
  */
 bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, bool _invert, uint8_t _dither,
+                                  const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, 
                                   enum InkplateImageDecodeFormat _format)
 {
     // Watch-out! Some decoders have some issues while reading directly from the SDRAM. I'm not sure why...
@@ -268,7 +271,8 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, b
     }
     }
 
-    RGBtoGrayscale(_inkplate, _x, _y, _framebufferHandler.framebuffer, _imageW, _imageH);
+    // Process the image and draw it in the epaper framebuffer.
+    _imgProcess->processImage((uint8_t*)(_framebufferHandler.framebuffer), _x, _y, _imageW, _imageH, _dither, _invert, _ditherKernelParameters, _ditherKernelParametersSize, _inkplate->getDisplayMode() == INKPLATE_1BW?1:4);
 
     // Decoded ok? Return true!
     return true;
@@ -294,6 +298,7 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, b
  *          false -  Image load/decode failed. Check ImageDecoder::getError() for reason.
  */
 bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither,
+                              const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, 
                               enum InkplateImageDecodeFormat _format)
 {
     // Reset error variable.
@@ -378,8 +383,8 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
     }
     }
 
-    // For testing only!
-    RGBtoGrayscale(_inkplate, _x, _y, _framebufferHandler.framebuffer, _imageW, _imageH);
+    // Process the image and draw it in the epaper framebuffer.
+    _imgProcess->processImage((uint8_t*)(_framebufferHandler.framebuffer), _x, _y, _imageW, _imageH, _dither, _invert, _ditherKernelParameters, _ditherKernelParametersSize, _inkplate->getDisplayMode()==INKPLATE_1BW? 1 : 4);
 
     // Everything went ok? Return success!
     return true;
@@ -408,6 +413,7 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
  * 
  */
 bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither,
+                               const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, 
                                enum InkplateImageDecodeFormat _format)
 {
     // Let's download  the file and save it to the image download memory
@@ -429,7 +435,7 @@ bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, 
     }
 
     // Now, draw the image from the buffer and return the result of that
-    return drawFromBuffer((void *)_imageDownloadMemoryPtr, fileSize, _x, _y, _invert, _dither, _format);
+    return drawFromBuffer((void *)_imageDownloadMemoryPtr, fileSize, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize, _format);
 }
 
 /**
@@ -445,37 +451,6 @@ enum InkplateImageDecodeErrors ImageDecoder::getError()
 {
     // Return last error.
     return _decodeError;
-}
-
-
-// To-Do: MOVE THIS IN THE SEPEARTE FILE!!!! FOR TESTING ONLY!
-void ImageDecoder::RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuffer, uint16_t _w,
-                                  uint16_t _h)
-{
-    unsigned long time1 = micros();
-    for (int _y = 0; _y < _h; _y++)
-    {
-        for (int _x = 0; _x < _w; _x++)
-        {
-            // Calculate the framebuffer array index.
-            uint32_t _fbArrayIndex = (_x + (1024 * _y)) * 3;
-
-            // get the individual RGB colors.
-            uint8_t _r = _rgbBuffer[_fbArrayIndex + 2];
-            uint8_t _g = _rgbBuffer[_fbArrayIndex + 1];
-            uint8_t _b = _rgbBuffer[_fbArrayIndex];
-
-            // Convert them into grayscale.
-            uint8_t _pixel = ((77 * _r) + (150 * _g) + (29 * _b)) >> 8;
-
-            // Write into epaper framebuffer.
-            //_inkplate->drawPixel(_x + x, _y + y, _pixel);
-            _framebufferHandler.framebuffer[(_x + (_framebufferHandler.fbWidth * _y))] = _pixel;
-        }
-    }
-    unsigned long time2 = micros();
-
-    Serial.printf("Time grayscale: %lu\r\n", time2 - time1);
 }
 
 #endif
