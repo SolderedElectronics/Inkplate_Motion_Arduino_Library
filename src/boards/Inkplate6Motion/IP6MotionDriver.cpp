@@ -982,10 +982,10 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             apds9960.enablePower();
         }
     }
-
+         /*
     if (_peripheral & INKPLATE_PERIPHERAL_LSM6DSO32)
     {
-        /*
+   
         if (!_en)
         {
             // Disable everything!
@@ -1006,11 +1006,11 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             // Update settings.
             lsm6ds3.begin(&lsm6ds3.settings);
         }
-        */
-        Serial.println("TODO: Gyroscope deep slep/enable via new driver");
+        
     }
 
-
+    */
+   
     // Check if microSD needs to be enabled/disabled.
     if (_peripheral & INKPLATE_PERIPHERAL_MICROSD)
     {

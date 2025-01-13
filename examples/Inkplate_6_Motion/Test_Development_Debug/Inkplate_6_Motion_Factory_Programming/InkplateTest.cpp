@@ -3,7 +3,6 @@
 #include <InkplateMotion.h>
 
 // Here are some more detailed parameters of the test which can be changed like tolerances
-// todo add to different file
 // VCOM input
 static const double minVcomInputOK = -5.0;
 static const double maxVcomInputOK = -0.5;

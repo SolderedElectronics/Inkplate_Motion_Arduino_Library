@@ -62,7 +62,7 @@ void setup()
 
     // Init Inkplate test class (this just gives it pointer to the Inkplate object and params)
     testClass.init(&inkplate, vcomEepromOffset, wifiSSID, wifiPASS, easyCDeviceAddress);
-
+    
 
     // Write to Serial
     Serial.println("Inkplate 6MOTION test begin!");
@@ -101,7 +101,7 @@ void setup()
         while (true)
             ;
     }
-
+    
     // Wait for WAKE button press to start testing
     inkplate.setTextColor(1);
     inkplate.setTextSize(3);

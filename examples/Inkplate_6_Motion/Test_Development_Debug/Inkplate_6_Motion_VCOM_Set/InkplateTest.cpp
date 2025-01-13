@@ -1,9 +1,12 @@
 #include "InkplateTest.h"
+#include "motion_testimg_1.h"
+#include "motion_testimg_2.h"
+#include "motion_testimg_3.h"
+#include "motion_testimg_4.h"
 #include <EEPROM.h>
 #include <InkplateMotion.h>
 
 // Here are some more detailed parameters of the test which can be changed like tolerances
-// todo add to different file
 // VCOM input
 static const double minVcomInputOK = -5.0;
 static const double maxVcomInputOK = -0.5;
@@ -52,6 +55,12 @@ void InkplateTest::init(Inkplate *inkplateObj, const int EEPROMoffset, char *wif
     this->wifiSSID = wifiSSID;
     this->wifiPASS = wifiPASS;
     this->qwiicTestAddress = qwiicTestAddress;
+
+    // Set pinModes
+    // These should have been previously set but set again just in case
+    pinMode(INKPLATE_WAKE, INPUT_PULLUP);
+    pinMode(INKPLATE_USER1, INPUT_PULLUP);
+    pinMode(INKPLATE_USER2, INPUT_PULLUP);
 }
 
 bool InkplateTest::setVcom()
@@ -178,47 +187,121 @@ bool InkplateTest::sdramTest()
     return sdramTestInternal((uint64_t)ramBuffer, (uint64_t)(ramBuffer) + (32 * 1024 * 1024), 32768);
 }
 
+int InkplateTest::waitForUserInput()
+{
+    while (true)
+    {
+        if (digitalRead(INKPLATE_USER1) == LOW)
+            return -1; // Previous slide
+        if (digitalRead(INKPLATE_USER2) == LOW)
+            return 1; // Next slide
+        if (digitalRead(INKPLATE_WAKE) == LOW)
+            return 0; // Exit
+        delay(50);    // Debounce delay
+    }
+}
+
+
 bool InkplateTest::displayUpdateTest()
 {
-    // Let's do all the possible display updates Inkplate 6MOTION can do
-    // First, 1 bit (which the device is already in at the time of this test) full update
-    inkplateObj->setTextSize(3);
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(1);
-    inkplateObj->print("Test: 1bit full update");
-    inkplateObj->display();
-    delay(250);
-    // Now 1 bit partial update
-    inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 1); // Draw a black rectangle too
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(0);
-    inkplateObj->print("Test: 1bit partial update");
-    inkplateObj->partialUpdate();
-    delay(250);
-    // Now switch the operating mode to 4bit and do full update
-    inkplateObj->selectDisplayMode(INKPLATE_GL16);
-    inkplateObj->clearDisplay(); // Clear it
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(0);
-    inkplateObj->print("Test: 4bit full update");
-    draw4bitColorPalette(); // Draw color palette for preview
-    inkplateObj->display(); // Do full update
-    delay(250);
-    inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 0); // Draw a black rectangle too
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(15);
-    inkplateObj->print("Test: 4bit partial update");
-    draw4bitColorPalette();       // Draw color palette for preview
-    inkplateObj->partialUpdate(); // Do partial update
-    delay(500);
-    // Go back to 1 bit mode and clear the display
-    inkplateObj->selectDisplayMode(INKPLATE_1BW);
-    inkplateObj->clearDisplay();
-    inkplateObj->display();
-    inkplateObj->setCursor(0, 0); // Reset cursor
-    // Always return true
+    int currentTest = 0;
+    const int totalTests = 8; // Total number of tests (excluding reset)
+
+    while (true)
+    {
+        inkplateObj->clearDisplay();
+
+        switch (currentTest)
+        {
+        case 0:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->setTextSize(3);
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->setTextColor(1);
+            inkplateObj->print("Test: 1bit full update");
+            inkplateObj->display();
+            break;
+
+        case 1:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 1);
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->setTextColor(0);
+            inkplateObj->print("Test: 1bit partial update");
+            inkplateObj->partialUpdate();
+            break;
+
+        case 2:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(0);
+            inkplateObj->clearDisplay();
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->print("Test: 4bit full update");
+            draw4bitColorPalette();
+            inkplateObj->display();
+            break;
+
+        case 3:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(15);
+            inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 0);
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->print("Test: 4bit partial update");
+            draw4bitColorPalette();
+            inkplateObj->partialUpdate();
+            break;
+
+        case 4:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap(0, 0, motion_testimg_1, inkplateObj->width(), inkplateObj->height(), BLACK);
+            inkplateObj->display();
+            break;
+
+        case 5:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap(0, 0, motion_testimg_2, inkplateObj->width(), inkplateObj->height(), BLACK);
+            inkplateObj->display();
+            break;
+
+        case 6:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(15);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap4Bit(0, 0, motion_testimg_3, inkplateObj->width(), inkplateObj->height());
+            inkplateObj->display();
+            break;
+
+        case 7:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(15);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap4Bit(0, 0, motion_testimg_4, inkplateObj->width(), inkplateObj->height());
+            inkplateObj->display();
+            break;
+        }
+
+        int userInput = waitForUserInput();
+        if (userInput == 0)
+        {
+            // Reset to 1bit mode before exiting
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->clearDisplay();
+            inkplateObj->display();
+            inkplateObj->setCursor(0, 0);
+            break;
+        }
+        currentTest = (currentTest + userInput + totalTests) % totalTests; // Loop through tests
+    }
+
     return true;
 }
+
 
 bool InkplateTest::batteryVoltageReadTest()
 {
@@ -539,12 +622,6 @@ bool InkplateTest::buttonPressTest()
 
     bool result = false;
 
-    // Set pinModes
-    // These should have been previously set but set again just in case
-    pinMode(INKPLATE_WAKE, INPUT_PULLUP);
-    pinMode(INKPLATE_USER1, INPUT_PULLUP);
-    pinMode(INKPLATE_USER2, INPUT_PULLUP);
-
     // Start measuring time
     unsigned long startTime = millis();
     bool wakePressed = false;
@@ -605,6 +682,14 @@ bool InkplateTest::testOnJig()
         return false;
     if (!microSdTest())
         return false;
+    if (!rtcTest())
+        return false;
+    if (!wsLedTest())
+        return false;
+    if (!lsm6ds3Test())
+        return false;
+    if (!shtc3Test())
+        return false;
     return true;
 }
 
@@ -615,15 +700,7 @@ bool InkplateTest::testInEnclosure()
     // Now do the rest of the tests
     if (!wifiTest())
         return false;
-    if (!rtcTest())
-        return false;
-    if (!wsLedTest())
-        return false;
     if (!apds9960Test())
-        return false;
-    if (!lsm6ds3Test())
-        return false;
-    if (!shtc3Test())
         return false;
     if (!rotaryEncTest())
         return false;
