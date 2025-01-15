@@ -2,7 +2,7 @@
  **************************************************
  *
  * @file        Inkplate_6_Motion_WiFi_Simple.ino
- * @brief       Simply connect to your home Wi-Fi network and get some data
+ * @brief       Simply connect to your home Wi-Fi network and GET some data
  *
  *
  * For info on how to quickly get started with Inkplate 6MOTION visit docs.inkplate.com
@@ -16,12 +16,13 @@
 
 Inkplate inkplate; // Create Inkplate object
 
-// Change WiFi SSID and password here.
-#define WIFI_SSID "Soldered"
-#define WIFI_PASS "dasduino"
+// Change WiFi SSID and password here
+#define WIFI_SSID ""
+#define WIFI_PASS ""
 
 // Link to download text data from
-char httpUrl[] = {"https://example.com/"};
+char httpUrl[] = {"https://raw.githubusercontent.com/SolderedElectronics/Inkplate_Motion_Arduino_Library/refs/heads/"
+                  "dev/examples/Advanced/Web_WiFi/Inkplate_6_Motion_WiFi_Simple/exampleFile.txt"};
 
 void setup()
 {
@@ -40,14 +41,17 @@ void setup()
     WiFi.setMode(INKPLATE_WIFI_MODE_STA);
 
     // Connect to WiFi:
-    if (!WiFi.begin(WIFI_SSID, WIFI_PASS))
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    // Wait until we're connected, this is strongly reccomended to do!
+    // At least do delay(3000) to give the modem some time to connect
+    inkplate.print("Connecting to Wi-Fi...");
+    while (!WiFi.connected())
     {
-        inkplate.println("Can't connect to Wi-Fi!");
-        // Go to infinite loop
-        while (true)
-            delay(100);
+        inkplate.print('.');
+        inkplate.partialUpdate(true);
+        delay(1000);
     }
-    inkplate.println("Successfully connected to Wi-Fi!");
+    inkplate.println("\nSuccessfully connected to Wi-Fi!");
     inkplate.display();
 
     // Let's now download a file
@@ -60,13 +64,18 @@ void setup()
     // Try to open the page
     if (client.begin(httpUrl))
     {
+        // Make GET request on that httpUrl
         if (client.GET())
         {
+            // GET was successful! Let's print some info
             inkplate.print("Connected, file size: ");
             inkplate.print(client.size(), DEC);
             inkplate.println("bytes");
             inkplate.partialUpdate(true);
+            inkplate.println("");
+            inkplate.println("File contents:");
 
+            // Read file contents:
             while (client.available())
             {
                 // Use blocking method to get all chunks of the HTTP
@@ -86,23 +95,19 @@ void setup()
                 }
             }
         }
-        inkplate.partialUpdate(true);
     }
     else
     {
-        inkplate.println("Failed to get the file");
-        inkplate.partialUpdate(true);
+        inkplate.println("Failed to get the file!");
     }
+    // Show updates on the display
+    inkplate.partialUpdate(true);
+
     // End client HTTP request
     // This is required! Otherwise any other AT command to the modem will fail
     client.end();
 
-    // Print out the received bytes
-    inkplate.print("\n\n\n\nTotal received bytes: ");
-    inkplate.println(totalSize, DEC);
-
-    // End message
-    inkplate.println("Done!");
+    // All done!
 }
 
 void loop()
