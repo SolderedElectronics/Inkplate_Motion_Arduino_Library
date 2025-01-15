@@ -28,6 +28,8 @@ class InkplateTest
     bool buttonPressTest();
     bool qwiicTest();
     bool wsLedTest();
+    int waitForUserInput();
+    void displayTestInfo(const char *testName);
 
     // Test all functions in series
     bool testOnJig();

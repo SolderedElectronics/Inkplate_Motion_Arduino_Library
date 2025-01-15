@@ -105,8 +105,10 @@ void setup()
     // Wait for WAKE button press to start testing
     inkplate.setTextColor(1);
     inkplate.setTextSize(3);
-    inkplate.setCursor(200, 300);
-    inkplate.println("PRESS WAKE BUTTON TO BEGIN TESTS");
+    inkplate.setCursor(150, 300);
+    inkplate.println("PRESS WAKE BUTTON TO BEGIN DISPLAY TESTS");
+    inkplate.setCursor(175, 400);
+    inkplate.println("WAKE BUTTON WILL FINISH TESTS");
     inkplate.display();
 
     pinMode(INKPLATE_WAKE, INPUT_PULLUP);

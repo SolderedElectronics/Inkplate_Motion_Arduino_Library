@@ -1,4 +1,8 @@
 #include "InkplateTest.h"
+#include "motion_testimg_1.h"
+#include "motion_testimg_2.h"
+#include "motion_testimg_3.h"
+#include "motion_testimg_4.h"
 #include <EEPROM.h>
 #include <InkplateMotion.h>
 
@@ -51,6 +55,12 @@ void InkplateTest::init(Inkplate *inkplateObj, const int EEPROMoffset, char *wif
     this->wifiSSID = wifiSSID;
     this->wifiPASS = wifiPASS;
     this->qwiicTestAddress = qwiicTestAddress;
+
+    // Set pinModes
+    // These should have been previously set but set again just in case
+    pinMode(INKPLATE_WAKE, INPUT_PULLUP);
+    pinMode(INKPLATE_USER1, INPUT_PULLUP);
+    pinMode(INKPLATE_USER2, INPUT_PULLUP);
 }
 
 bool InkplateTest::setVcom()
@@ -177,47 +187,121 @@ bool InkplateTest::sdramTest()
     return sdramTestInternal((uint64_t)ramBuffer, (uint64_t)(ramBuffer) + (32 * 1024 * 1024), 32768);
 }
 
+int InkplateTest::waitForUserInput()
+{
+    while (true)
+    {
+        if (digitalRead(INKPLATE_USER1) == LOW)
+            return -1; // Previous slide
+        if (digitalRead(INKPLATE_USER2) == LOW)
+            return 1; // Next slide
+        if (digitalRead(INKPLATE_WAKE) == LOW)
+            return 0; // Exit
+        delay(50);    // Debounce delay
+    }
+}
+
+
 bool InkplateTest::displayUpdateTest()
 {
-    // Let's do all the possible display updates Inkplate 6MOTION can do
-    // First, 1 bit (which the device is already in at the time of this test) full update
-    inkplateObj->setTextSize(3);
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(1);
-    inkplateObj->print("Test: 1bit full update");
-    inkplateObj->display();
-    delay(250);
-    // Now 1 bit partial update
-    inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 1); // Draw a black rectangle too
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(0);
-    inkplateObj->print("Test: 1bit partial update");
-    inkplateObj->partialUpdate();
-    delay(250);
-    // Now switch the operating mode to 4bit and do full update
-    inkplateObj->selectDisplayMode(INKPLATE_GL16);
-    inkplateObj->clearDisplay(); // Clear it
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(0);
-    inkplateObj->print("Test: 4bit full update");
-    draw4bitColorPalette(); // Draw color palette for preview
-    inkplateObj->display(); // Do full update
-    delay(250);
-    inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 0); // Draw a black rectangle too
-    inkplateObj->setCursor(50, 50);
-    inkplateObj->setTextColor(15);
-    inkplateObj->print("Test: 4bit partial update");
-    draw4bitColorPalette();       // Draw color palette for preview
-    inkplateObj->partialUpdate(); // Do partial update
-    delay(500);
-    // Go back to 1 bit mode and clear the display
-    inkplateObj->selectDisplayMode(INKPLATE_1BW);
-    inkplateObj->clearDisplay();
-    inkplateObj->display();
-    inkplateObj->setCursor(0, 0); // Reset cursor
-    // Always return true
+    int currentTest = 0;
+    const int totalTests = 8; // Total number of tests (excluding reset)
+
+    while (true)
+    {
+        inkplateObj->clearDisplay();
+
+        switch (currentTest)
+        {
+        case 0:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->setTextSize(3);
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->setTextColor(1);
+            inkplateObj->print("Test: 1bit full update");
+            inkplateObj->display();
+            break;
+
+        case 1:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 1);
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->setTextColor(0);
+            inkplateObj->print("Test: 1bit partial update");
+            inkplateObj->partialUpdate();
+            break;
+
+        case 2:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(0);
+            inkplateObj->clearDisplay();
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->print("Test: 4bit full update");
+            draw4bitColorPalette();
+            inkplateObj->display();
+            break;
+
+        case 3:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(15);
+            inkplateObj->fillRect(0, 0, inkplateObj->width(), inkplateObj->height(), 0);
+            inkplateObj->setCursor(50, 150);
+            inkplateObj->print("Test: 4bit partial update");
+            draw4bitColorPalette();
+            inkplateObj->partialUpdate();
+            break;
+
+        case 4:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap(0, 0, motion_testimg_1, inkplateObj->width(), inkplateObj->height(), BLACK);
+            inkplateObj->display();
+            break;
+
+        case 5:
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->setTextColor(BLACK);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap(0, 0, motion_testimg_2, inkplateObj->width(), inkplateObj->height(), BLACK);
+            inkplateObj->display();
+            break;
+
+        case 6:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(15);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap4Bit(0, 0, motion_testimg_3, inkplateObj->width(), inkplateObj->height());
+            inkplateObj->display();
+            break;
+
+        case 7:
+            inkplateObj->selectDisplayMode(INKPLATE_GRAYSCALE);
+            inkplateObj->setTextColor(15);
+            inkplateObj->clearDisplay();
+            inkplateObj->drawBitmap4Bit(0, 0, motion_testimg_4, inkplateObj->width(), inkplateObj->height());
+            inkplateObj->display();
+            break;
+        }
+
+        int userInput = waitForUserInput();
+        if (userInput == 0)
+        {
+            // Reset to 1bit mode before exiting
+            inkplateObj->selectDisplayMode(INKPLATE_1BW);
+            inkplateObj->clearDisplay();
+            inkplateObj->display();
+            inkplateObj->setCursor(0, 0);
+            break;
+        }
+        currentTest = (currentTest + userInput + totalTests) % totalTests; // Loop through tests
+    }
+
     return true;
 }
+
 
 bool InkplateTest::batteryVoltageReadTest()
 {
@@ -307,22 +391,9 @@ bool InkplateTest::rtcTest()
     inkplateObj->rtc.getTime(&h, &m, &s, &ss, NULL, NULL);
     inkplateObj->rtc.getDate(&d, &mn, &y, &wk);
 
-    uint8_t oldSeconds = s;
-
     // Compare the set and retrieved values
     // Don't compare seconds as second might have passed in the meantime
     bool result = (h == hours) && (m == minutes) && (d == day) && (mn == month) && (y == year) && (wk == weekday);
-
-    // Now compare if at least a second has passed
-    delay(1000);
-    inkplateObj->rtc.getTime(&h, &m, &s, &ss, NULL, NULL);
-    uint8_t newSeconds = s;
-
-    if ((newSeconds - oldSeconds) >= 1)
-        result = true;
-    else
-        result = false;
-
     printCurrentTestResult(result);
     return result;
 }
@@ -494,7 +565,7 @@ bool InkplateTest::rotaryEncTest()
 {
     bool result = false;
     // Turn on the peripheral
-    printCurrentTestName("Rotary encoder (Visual check & Spin - 5sec timeout!)");
+    printCurrentTestName("Rotary encoder (Visual check & Spin - 10sec timeout!)");
     inkplateObj->peripheralState(INKPLATE_PERIPHERAL_ROTARY_ENCODER, true);
     // Initialize rotary encoder.
     inkplateObj->rotaryEncoder.begin();
@@ -508,7 +579,7 @@ bool InkplateTest::rotaryEncTest()
     // Set current angle as zero
     inkplateObj->rotaryEncoder.setOffset(firstValue);
     unsigned long startTime = millis();
-    while (millis() - startTime < 5000)
+    while (millis() - startTime < 10000)
     {
         // Get the current rotary encoder value
         int currentValue = (int)inkplateObj->rotaryEncoder.readAngle();
@@ -550,12 +621,6 @@ bool InkplateTest::buttonPressTest()
     printCurrentTestName("Buttons - PRESS WAKE, USER1 and USER2 - 10sec timeout!\n");
 
     bool result = false;
-
-    // Set pinModes
-    // These should have been previously set but set again just in case
-    pinMode(INKPLATE_WAKE, INPUT_PULLUP);
-    pinMode(INKPLATE_USER1, INPUT_PULLUP);
-    pinMode(INKPLATE_USER2, INPUT_PULLUP);
 
     // Start measuring time
     unsigned long startTime = millis();
@@ -617,6 +682,14 @@ bool InkplateTest::testOnJig()
         return false;
     if (!microSdTest())
         return false;
+    if (!rtcTest())
+        return false;
+    if (!wsLedTest())
+        return false;
+    if (!lsm6ds3Test())
+        return false;
+    if (!shtc3Test())
+        return false;
     return true;
 }
 
@@ -631,17 +704,16 @@ bool InkplateTest::testInEnclosure()
         return false;
     if (!wsLedTest())
         return false;
-    if (!apds9960Test())
-        return false;
     if (!lsm6ds3Test())
         return false;
     if (!shtc3Test())
+        return false;
+    if (!apds9960Test())
         return false;
     if (!rotaryEncTest())
         return false;
     if (!buttonPressTest())
         return false;
-    // WSLED
     return true;
 }
 
@@ -866,7 +938,7 @@ void InkplateTest::checkScreenBorder()
 
     // Wait a little bit
     delay(2000);
-    // This is a visual  check, so it always passes
+    // This test always passes
     printCurrentTestResult(true);
 }
 
@@ -887,19 +959,19 @@ bool InkplateTest::wsLedTest()
     inkplateObj->led.setPixelColor(0, 150, 0, 0);
     inkplateObj->led.setPixelColor(1, 150, 0, 0);
     inkplateObj->led.show();
-    delay(700);
+    delay(500);
     inkplateObj->led.setPixelColor(0, 0, 150, 0);
     inkplateObj->led.setPixelColor(1, 0, 150, 0);
     inkplateObj->led.show();
-    delay(700);
+    delay(500);
     inkplateObj->led.setPixelColor(0, 0, 0, 150);
     inkplateObj->led.setPixelColor(1, 0, 0, 150);
     inkplateObj->led.show();
-    delay(700);
+    delay(500);
     inkplateObj->led.setPixelColor(0, 150, 150, 150);
     inkplateObj->led.setPixelColor(1, 150, 150, 150);
     inkplateObj->led.show();
-    delay(700);
+    delay(500);
 
 
     // Disable LEDs

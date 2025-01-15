@@ -27,7 +27,7 @@
 
 // If you want to test the device again change this
 // Can't be 0 as this is the default EEPROMoffset for VCOM writing
-int testsDoneEepromValue = 20; // Change this number if you want to repeat tests
+int testsDoneEepromValue = 30; // Change this number if you want to repeat tests
 int testsDoneEepromOffset = 8; // Where in EEPROM this symbollic value is written
 
 // WiFi credentials for testing

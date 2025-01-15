@@ -700,6 +700,14 @@ bool InkplateTest::testInEnclosure()
     // Now do the rest of the tests
     if (!wifiTest())
         return false;
+    if (!rtcTest())
+        return false;
+    if (!wsLedTest())
+        return false;
+    if (!lsm6ds3Test())
+        return false;
+    if (!shtc3Test())
+        return false;
     if (!apds9960Test())
         return false;
     if (!rotaryEncTest())
