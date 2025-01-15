@@ -43,7 +43,10 @@ SPIClass _inkplateSystemSPI(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO
  */
 EPDDriver::EPDDriver()
 {
-    // Empty constructor.
+    // Assign addresses for DMA buffers to be able to access it outside the class.
+    _dmaBuffer[0] = _oneLine1;
+    _dmaBuffer[1] = _oneLine2;
+    _dmaBuffer[2] = _oneLine3;
 }
 
 /**
@@ -75,8 +78,11 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
     // Copy Inkplate object pointer locally.
     _inkplate = _inkplatePtr;
 
+    // Initialize the image processing library.
+    imgProcess.begin(_inkplate, SCREEN_WIDTH);
+
     // Initialize image decoder library.
-    image.begin(_inkplate, &WiFi, (uint8_t *)0xD0600000, _downloadFileMemory);
+    image.begin(_inkplate, &WiFi, &imgProcess, (uint8_t*)0xD0600000, _downloadFileMemory);
 
     // Put every peripheral into low power mode.
     peripheralState(INKPLATE_PERIPHERAL_ALL_PERI, false);
@@ -696,7 +702,7 @@ double EPDDriver::readBattery()
     digitalWrite(INKPLATE_BATT_MEASURE_EN, HIGH);
 
     // Wait a little bit.
-    delay(15);
+    delay(40);
 
     // Get an voltage measurement from ADC.
     uint16_t _adcRaw = analogRead(INKPLATE_BATT_MEASURE);

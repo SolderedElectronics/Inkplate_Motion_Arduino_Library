@@ -25,6 +25,9 @@
 // Include file for the each board feature selection.
 #include "features/featureSelect.h"
 
+// Include Image Processing library as well.
+#include "../../libs/imageProcessing/imageProcessing.h"
+
 // Define the maximum downloadable file size for images (for drawImageFromWeb and draw functions)
 #define DOWNLOAD_IMAGE_MAX_SIZE 4*1024*1024 // 4MB by default
 
@@ -45,14 +48,11 @@ class ImageDecoder
 {
   public:
     ImageDecoder();
-    void begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, uint8_t *_tempFbAddress, volatile uint8_t * _downloadFileMemory);
-    bool draw(const char *_path, int _x, int _y, bool _invert = false, uint8_t _dither = false, enum InkplateImageDecodeFormat _format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO, enum InkplateImagePathType _pathType = INKPLATE_IMAGE_DECODE_PATH_AUTO);
-    bool drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
-    bool drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
-    bool drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, enum InkplateImageDecodeFormat _format);
-
-    // MOVE THIS INTO IMAGE PROCESSING!
-    void RGBtoGrayscale(Inkplate *_inkplate, int x, int y, volatile uint8_t *_rgbBuffer, uint16_t _w, uint16_t _h);
+    void begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, ImageProcessing *_imgProcessPtr, uint8_t *_tempFbAddress, volatile uint8_t * _downloadFileMemory);
+    bool draw(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, enum InkplateImageDecodeFormat _format = INKPLATE_IMAGE_DECODE_FORMAT_AUTO, enum InkplateImagePathType _pathType = INKPLATE_IMAGE_DECODE_PATH_AUTO);
+    bool drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, bool _invert, uint8_t _dither, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, enum InkplateImageDecodeFormat _format);
+    bool drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, enum InkplateImageDecodeFormat _format);
+    bool drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither, const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, enum InkplateImageDecodeFormat _format);
 
     // Get what kind of error ImageDecode class got.
     // Note that there is seperate method for the each image decoder errors.
@@ -64,6 +64,9 @@ class ImageDecoder
 
     // WiFiClass pointer to the object.
     WiFiClass *_wifi;
+
+    // Class for the image processing and displying content on the screen after decode.
+    ImageProcessing *_imgProcess;
 
     // Framebuffer handler.
     InkplateImageDecodeFBHandler _framebufferHandler;
