@@ -19,7 +19,7 @@
 #include "Adafruit_NeoPixel/Adafruit_NeoPixel.cpp"
 #include "RotaryEnc/AS5600.cpp"
 #include "SparkFun_APDS9960/SparkFun_APDS9960.cpp"
-#include "SparkFun_LSM6DS3/SparkFunLSM6DS3.cpp"
+#include "Adafruit_LSM6DS/Adafruit_LSM6DSO32.h"
 #include "SparkFun_SHTC3/SparkFun_SHTC3.cpp"
 #include "microSD/microSD.cpp"
 #endif

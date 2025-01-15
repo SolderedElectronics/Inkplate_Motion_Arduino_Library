@@ -2,7 +2,7 @@
  **************************************************
  *
  * @file        IP6MotionDriver.h
- * @brief       
+ * @brief
  *
  *
  * @copyright   GNU General Public License v3.0
@@ -39,7 +39,7 @@ SPIClass _inkplateSystemSPI(INKPLATE_MICROSD_SPI_MOSI, INKPLATE_MICROSD_SPI_MISO
 
 /**
  * @brief Constructor for EPDDriver object.
- * 
+ *
  */
 EPDDriver::EPDDriver()
 {
@@ -51,18 +51,18 @@ EPDDriver::EPDDriver()
 
 /**
  * @brief   ePaper driver initializer for the Inkplate 6 Motion board.
- * 
+ *
  * @return  int
  *          0 = Initialization has faild, check debug messages for more info.
- *          1 = Initialization ok. 
+ *          1 = Initialization ok.
  */
 int EPDDriver::initDriver(Inkplate *_inkplatePtr)
 {
     INKPLATE_DEBUG_MGS("EPD Driver init started");
 
     // Get the instances for DMA.
-    _epdMdmaHandle  = stm32FmcGetEpdMdmaInstance();
-    _sdramMdmaHandle  = stm32FmcGetSdramMdmaInstance();
+    _epdMdmaHandle = stm32FmcGetEpdMdmaInstance();
+    _sdramMdmaHandle = stm32FmcGetSdramMdmaInstance();
 
     // Configure IO expander.
     if (!internalIO.beginIO(IO_EXPANDER_INTERNAL_I2C_ADDR))
@@ -72,7 +72,7 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
 
     // Initialize every Inkplate 6 Motion peripheral.
     shtc3.begin();
-    lsm6ds3.begin();
+    lsm6dso32.begin_I2C();
     apds9960.init();
 
     // Copy Inkplate object pointer locally.
@@ -120,7 +120,7 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
 
 /**
  * @brief   Method for clearing the contennt form the screen.
- * 
+ *
  * @param   uint8_t *_clearWavefrom
  *          Waveform look up table for clearing the screen.
  * @param   _wavefromPhases _wavefromPhases
@@ -175,7 +175,7 @@ void EPDDriver::cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases)
 
 /**
  * @brief   Clears content from the internal frame buffer, but not on the screen itself.
- * 
+ *
  */
 void EPDDriver::clearDisplay()
 {
@@ -200,7 +200,7 @@ void EPDDriver::clearDisplay()
 /**
  * @brief   Partailly update the screen. Remove and add only necessary changes.
  *          Also, do not clear the whole screen (screen won't flash in 1 bit mode).
- * 
+ *
  * @param   uint8_t _leaveOn
  *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
  *          1 = Keep EPD PMIC active after ePaper refresh.
@@ -221,7 +221,7 @@ void EPDDriver::partialUpdate(uint8_t _leaveOn)
 /**
  * @brief   Partailly update the screen. Remove and add only necessary changes.
  *          Use a rapid clean to speed up the clean process of the pixels that will be changed.
- * 
+ *
  * @param   uint8_t _leaveOn
  *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
  *          1 = Keep EPD PMIC active after ePaper refresh.
@@ -243,10 +243,12 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
     uint16_t *_fbPtr;
 
     // Workaround to avod copying the same code with some minor changes.
-    uint8_t *_wf[] = {(uint8_t*)(_waveform4BitPartialInternal.clearLUT), (uint8_t*)(_waveform4BitPartialInternal.lut)};
+    uint8_t *_wf[] = {(uint8_t *)(_waveform4BitPartialInternal.clearLUT),
+                      (uint8_t *)(_waveform4BitPartialInternal.lut)};
     uint16_t _phases[] = {_waveform4BitPartialInternal.clearPhases, _waveform4BitPartialInternal.lutPhases};
     __IO uint8_t *_fb[] = {_currentScreenFB, _pendingScreenFB};
-    uint32_t _lineLoadTimings[] = {_waveform4BitPartialInternal.clearCycleDelay, _waveform4BitPartialInternal.cycleDelay};
+    uint32_t _lineLoadTimings[] = {_waveform4BitPartialInternal.clearCycleDelay,
+                                   _waveform4BitPartialInternal.cycleDelay};
 
     // First operations is cleaning old pixels from the ePaper, second is writing new pixels to the ePaper.
     for (int _operation = 0; _operation < 2; _operation++)
@@ -258,7 +260,7 @@ void EPDDriver::partialUpdate4Bit(uint8_t _leaveOn)
             _lineWriteWaitCycles = _lineLoadTimings[_operation];
 
             // First calculate the new fast GLUT for the current EPD waveform phase.
-            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_wf[_operation]) + ((unsigned long)(k) << 4)));
+            calculateGLUTOnTheFly(_fastGLUT, ((uint8_t *)(_wf[_operation]) + ((unsigned long)(k) << 4)));
 
             // Decode and send the pixels to the ePaper.
             pixelsUpdate(_fb[_operation], _fastGLUT, pixelDecode4BitEPD, 15, 2);
@@ -331,7 +333,8 @@ void EPDDriver::partialUpdate1Bit(uint8_t _leaveOn)
 
     // Copy everything in current screen framebuffer.
     // Use DMA to transfer framebuffers!
-    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB, (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
+    copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
+                     (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
 
     INKPLATE_DEBUG_MGS("Partial update done");
 
@@ -350,10 +353,10 @@ void EPDDriver::partialUpdate1Bit(uint8_t _leaveOn)
 /**
  * @brief   Update the whole screen using global updates. This means the whole screen
  *          will flicker to clean the previous image.
- * 
+ *
  * @param   uint8_t _leaveOn
  *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
- *          1 = Keep EPD PMIC active after ePaper refresh. 
+ *          1 = Keep EPD PMIC active after ePaper refresh.
  */
 void EPDDriver::display(uint8_t _leaveOn)
 {
@@ -376,10 +379,10 @@ void EPDDriver::display(uint8_t _leaveOn)
 /**
  * @brief   Use global 1 bit full update to update the content on the screen.
  *          Waveform for the 1 bit mode can be changed.
- * 
+ *
  * @param   uint8_t _leaveOn
  *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
- *          1 = Keep EPD PMIC active after ePaper refresh. 
+ *          1 = Keep EPD PMIC active after ePaper refresh.
  */
 void EPDDriver::display1b(uint8_t _leaveOn)
 {
@@ -394,7 +397,7 @@ void EPDDriver::display1b(uint8_t _leaveOn)
 
     // Pointer to the framebuffer (used by the fast GLUT). It gets 8 pixels from the framebuffer.
     uint8_t *_fbPtr;
-    
+
     // Use line write timing for the clear.
     _lineWriteWaitCycles = _waveform1BitInternal.clearCycleDelay;
 
@@ -407,7 +410,7 @@ void EPDDriver::display1b(uint8_t _leaveOn)
     for (int k = 0; k < _waveform1BitInternal.lutPhases; k++)
     {
         // Set the current lut for the wavefrom.
-        uint8_t *_currentWfLut = ((uint8_t**)default1BitWavefrom.lut)[k];
+        uint8_t *_currentWfLut = ((uint8_t **)default1BitWavefrom.lut)[k];
 
         pixelsUpdate(_pendingScreenFB, _currentWfLut, pixelDecode1BitEPDFull, 63, 8);
     }
@@ -424,10 +427,10 @@ void EPDDriver::display1b(uint8_t _leaveOn)
  * @brief   Use global 4 bit full update to update the content on the screen.
  *          Waveform for the 4 bit mode can be changed. Image will be displayed
  *          in grayscale.
- * 
+ *
  * @param   uint8_t _leaveOn
  *          0 = Shut down EPD power supply to save the power (but slower refresh due PMIC start-up time).
- *          1 = Keep EPD PMIC active after ePaper refresh. 
+ *          1 = Keep EPD PMIC active after ePaper refresh.
  */
 void EPDDriver::display4b(uint8_t _leaveOn)
 {
@@ -447,7 +450,7 @@ void EPDDriver::display4b(uint8_t _leaveOn)
     cleanFast(_waveform4BitInternal.clearLUT, _waveform4BitInternal.clearPhases);
 
     // Set waveform.
-    default4BitWavefrom.lut = (uint8_t*)&(waveform4BitPartialLUT[0]);
+    default4BitWavefrom.lut = (uint8_t *)&(waveform4BitPartialLUT[0]);
 
     // Now use timing for the 4 bit full update.
     _lineWriteWaitCycles = _waveform4BitInternal.cycleDelay;
@@ -455,7 +458,7 @@ void EPDDriver::display4b(uint8_t _leaveOn)
     for (int k = 0; k < _waveform4BitInternal.lutPhases; k++)
     {
         // First calculate the new fast GLUT for the current EPD waveform phase.
-        calculateGLUTOnTheFly(_fastGLUT, ((uint8_t*)(_waveform4BitInternal.lut) + ((unsigned long)(k) << 4)));
+        calculateGLUTOnTheFly(_fastGLUT, ((uint8_t *)(_waveform4BitInternal.lut) + ((unsigned long)(k) << 4)));
         pixelsUpdate(_pendingScreenFB, _fastGLUT, pixelDecode4BitEPD, 15, 2);
     }
 
@@ -466,7 +469,7 @@ void EPDDriver::display4b(uint8_t _leaveOn)
 
 /**
  * @brief   Loads custom wavefrom in Inkplate 6 Motion Driver
- * 
+ *
  * @param   InkplateWaveform _customWaveform
  *          Custom wavefrom / non-default one. Check wavefroms.h file for more info!
  * @return  bool
@@ -478,7 +481,8 @@ void EPDDriver::display4b(uint8_t _leaveOn)
 bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
 {
     // Do a few checks.
-    if ((_customWaveform.lutPhases == 0) || (_customWaveform.tag != 0xef)) return false;
+    if ((_customWaveform.lutPhases == 0) || (_customWaveform.tag != 0xef))
+        return false;
 
     // Check if the waveform is used on 1 bit mode or 4 bit mode.
     if (_customWaveform.mode == INKPLATE_WF_1BIT)
@@ -492,7 +496,8 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
         else
         {
             // Check for the LUTs. If is null, return error.
-            if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL) return 0;
+            if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL)
+                return 0;
 
             // Copy it internally.
             memcpy(&_waveform1BitInternal, &_customWaveform, sizeof(InkplateWaveform));
@@ -509,7 +514,8 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
         else
         {
             // Check for the LUTs. If is null, return error.
-            if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL) return 0;
+            if (_customWaveform.lut == NULL || _customWaveform.clearLUT == NULL)
+                return 0;
 
             // Copy it internally.
             memcpy(&_waveform4BitInternal, &_customWaveform, sizeof(InkplateWaveform));
@@ -522,7 +528,7 @@ bool EPDDriver::loadWaveform(InkplateWaveform _customWaveform)
 
 /**
  * @brief   Enables or disables power rails and GPIOs to the ePaper bus.
- * 
+ *
  * @param   uint8_t _state
  *          1 = Enable the ePaper PSU and set GPIOs for ePaper data bus.
  *          0 = Disable the ePaper PSU and disable GPIOs for ePaper data bus.
@@ -632,7 +638,7 @@ int EPDDriver::epdPSU(uint8_t _state)
 /**
  * @brief   Initializes all the GPIOs of the Inkplate 6 Motion (SDRAM Supply Enable,
  *          ePaper PSU GPIOs, WiFi GPIO and WiFi SPI, Rotary Encoder Power Enable etc).
- * 
+ *
  */
 void EPDDriver::gpioInit()
 {
@@ -683,12 +689,12 @@ void EPDDriver::gpioInit()
 
 /**
  * @brief   Reads the battery voltage (main battery conneted to the JST connector).
- * 
+ *
  * @return  double
  *          Battery voltage in volts.
  * @note    This method assumes 16 bit resolution on the ADC. Library sets ADC to 16 bit resolution at the start.
  *          If the ADC resolution changes, battery voltage measurement will be incorrect.
- * 
+ *
  */
 double EPDDriver::readBattery()
 {
@@ -716,7 +722,7 @@ double EPDDriver::readBattery()
 /**
  * @brief   Sets GPIOs of the ePaper control lines to output or Hi-Z.
  *          This is used by the epdPSU()
- * 
+ *
  * @param   uint8_t _state
  *          EPD_DRIVER_PINS_OUTPUT = ePaper pins are set as outputs.
  *          EPD_DRIVER_PINS_H_ZI = ePaper control pins are set to Hi-Z state to save
@@ -750,7 +756,7 @@ void EPDDriver::epdGpioState(uint8_t _state)
  * @brief   Used by the 1 bit partial update, it calculates difference between what is currently
  *          on the screen and what is pending in the framebuffer only stores different pixels.
  *          Also, packs them in wavefrom ready to be sent to the ePaper using FMC.
- * 
+ *
  * @param   uint8_t *_currentScreenFB
  *          Pointer to the framebuffer that stores current content of the screen.
  * @param   uint8_t *_pendingScreenFB
@@ -781,18 +787,22 @@ void EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScree
     uint32_t _fbAddressOffset = 0;
 
     // Using a pointer, interpret 8 bit array as 16 bit array.
-    uint16_t *_outDataArray = (uint16_t*)_oneLine3;
+    uint16_t *_outDataArray = (uint16_t *)_oneLine3;
 
     while (_fbAddressOffset < ((SCREEN_HEIGHT * SCREEN_WIDTH / 8)))
     {
         // Get the 64 lines from the current screen buffer into internal RAM.
-        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_currentScreenFB + _fbAddressOffset, (uint32_t)_oneLine1, sizeof(_oneLine1), 1);
-        while (stm32FmcSdramCompleteFlag() == 0);
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_currentScreenFB + _fbAddressOffset, (uint32_t)_oneLine1,
+                          sizeof(_oneLine1), 1);
+        while (stm32FmcSdramCompleteFlag() == 0)
+            ;
         stm32FmcClearSdramCompleteFlag();
 
         // Copy 64 lines from pending framebuffer of the EPD.
-        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_pendingScreenFB + _fbAddressOffset, (uint32_t)_oneLine2, sizeof(_oneLine2), 1);
-        while (stm32FmcSdramCompleteFlag() == 0);
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_pendingScreenFB + _fbAddressOffset, (uint32_t)_oneLine2,
+                          sizeof(_oneLine2), 1);
+        while (stm32FmcSdramCompleteFlag() == 0)
+            ;
         stm32FmcClearSdramCompleteFlag();
 
         // Find the difference between two framebuffers and make EPD mask!
@@ -807,8 +817,10 @@ void EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScree
 
         // Send data to the difference mask. Difference mask for EPD is two times larger than the framebuffer for 1 bit
         // mode.
-        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_oneLine3, (uint32_t)(_differenceMask) + (_fbAddressOffset << 1), sizeof(_oneLine3), 1);
-        while (stm32FmcSdramCompleteFlag() == 0);
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_oneLine3, (uint32_t)(_differenceMask) + (_fbAddressOffset << 1),
+                          sizeof(_oneLine3), 1);
+        while (stm32FmcSdramCompleteFlag() == 0)
+            ;
         stm32FmcClearSdramCompleteFlag();
 
         // Update the pointer.
@@ -819,10 +831,10 @@ void EPDDriver::differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScree
 /**
  * @brief   Used to draw a full screen image in frame buffer as fast as possible.
  *          Used by the 1 bit partial updates (the ultra fast ones).
- * 
+ *
  * @param   const uint8_t *_p
  *          Pointer to the image bitmap data.
- * 
+ *
  * @note    To-Do: Try to implement STM32 DMA2D for this.
  */
 void EPDDriver::drawBitmapFast(const uint8_t *_p)
@@ -840,15 +852,17 @@ void EPDDriver::drawBitmapFast(const uint8_t *_p)
         memcpy(_oneLine1, _p + i, sizeof(_oneLine1));
 
         // Start DMA transfer into pending screen framebuffer.
-        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_oneLine1, (uint32_t)(_pendingScreenFB) + i, sizeof(_oneLine1), 1);
-        while (stm32FmcSdramCompleteFlag() == 0);
+        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_oneLine1, (uint32_t)(_pendingScreenFB) + i, sizeof(_oneLine1),
+                          1);
+        while (stm32FmcSdramCompleteFlag() == 0)
+            ;
         stm32FmcClearSdramCompleteFlag();
     }
 }
 
 /**
  * @brief   Initializes the microSD card on the Inkplate 6 Motion.
- * 
+ *
  * @return  bool
  *          true = Initialization is successfull.
  *          false = Initialization has failed.
@@ -873,7 +887,7 @@ bool EPDDriver::microSDCardInit()
 
 /**
  * @brief   Enable or dosable Inkplate 6 Motion peripherals to sve the power in sleep.
- * 
+ *
  * @param   uint8_t _peripheral
  *          Selected peripheral (INKPLATE_PERIPHERAL_SDRAM, INKPLATE_PERIPHERAL_ROTARY_ENCODER, etc).
  *          See all of them in featureSelect.h in (src/features).
@@ -903,7 +917,7 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             stm32FmcInit(EPD_FMC_ADDR);
         }
     }
-    
+
     // Check if magnetic rotary encoder needs to be enabled/disabled.
     if (_peripheral & INKPLATE_PERIPHERAL_ROTARY_ENCODER)
     {
@@ -963,7 +977,7 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
     // Check if APDS9960 needs to be enabled/disabled.
     if (_peripheral & INKPLATE_PERIPHERAL_APDS9960)
     {
-       if (!_en)
+        if (!_en)
         {
             // Send command for disable power to the APDS9960.
             apds9960.disablePower();
@@ -974,9 +988,10 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             apds9960.enablePower();
         }
     }
-
-    if (_peripheral & INKPLATE_PERIPHERAL_LSM6DS3)
+         /*
+    if (_peripheral & INKPLATE_PERIPHERAL_LSM6DSO32)
     {
+   
         if (!_en)
         {
             // Disable everything!
@@ -997,9 +1012,11 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             // Update settings.
             lsm6ds3.begin(&lsm6ds3.settings);
         }
+        
     }
 
-
+    */
+   
     // Check if microSD needs to be enabled/disabled.
     if (_peripheral & INKPLATE_PERIPHERAL_MICROSD)
     {
@@ -1049,14 +1066,13 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             // Kepp the PWR MOSFET disabled with external pull-up resistor.
             internalIO.pinModeIO(INKPLATE_MICROSD_PWR_EN, INPUT, true);
         }
-
     }
 }
 
 /**
  * @brief   Method calcuates fast look-up table for the 4 bit global update mode.
  *          It calculates the LUT for the current waveform phase.
- * 
+ *
  * @param   uint8_t *_lut
  *          Pointer to the array where to store calculated LUT (must be 65536 bytes).
  * @param   uint8_t *_waveform
@@ -1079,11 +1095,11 @@ void EPDDriver::calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform)
 /**
  * @brief   Select current display mode.
  *          It can be 4 bit grayscale or 1 bit.
- * 
+ *
  * @param   uint8_t _mode
  *          INKPLATE_GL16 = 4 bit mode.
  *          INKPLATE_1BW = 1 bit mode.
- * 
+ *
  * @note    Once mode has been changed, all content of the framebuffers is cleared.
  */
 void EPDDriver::selectDisplayMode(uint8_t _mode)
@@ -1092,7 +1108,8 @@ void EPDDriver::selectDisplayMode(uint8_t _mode)
     _mode &= 1;
 
     // Check if the mode has changed. If not, ignore it.
-    if (_mode == _displayMode) return;
+    if (_mode == _displayMode)
+        return;
 
     // Copy the new value.
     _displayMode = _mode;
@@ -1100,17 +1117,17 @@ void EPDDriver::selectDisplayMode(uint8_t _mode)
     // If the change in mode is detected, flush/clear the frame buffers.
     clearDisplay();
 
-    // Force clearing current screen buffer. 
+    // Force clearing current screen buffer.
     copySDRAMBuffers(_sdramMdmaHandle, _oneLine1, sizeof(_oneLine1), _pendingScreenFB, _currentScreenFB,
                      (SCREEN_WIDTH * SCREEN_HEIGHT / 8));
-    
+
     // Block the partial updates.
     _blockPartial = 1;
 }
 
 /**
  * @brief   Get the current display mode (BW or grayscale).
- * 
+ *
  * @return  uint8_t
  *          INKPLATE_GL16 = 4 bit mode.
  *          INKPLATE_1BW = 1 bit mode.
@@ -1122,11 +1139,11 @@ uint8_t EPDDriver::getDisplayMode()
 
 /**
  * @brief   Set the number of partial updates afterwhich full screen update is performed.
- * 
+ *
  * @param   uint16_t _numberOfPartialUpdates
  *          Number of allowed partial updates afterwhich full update is performed.
  *          0 = disabled, no automatic full update will be performed.
- * 
+ *
  * @note    By default, this is disabled, but to keep best image quality perform a full update
  *          every 60-80 partial updates.
  */
@@ -1136,160 +1153,163 @@ void EPDDriver::setFullUpdateTreshold(uint16_t _numberOfPartialUpdates)
     _partialUpdateLimiter = _numberOfPartialUpdates;
 
     // If the limiter is enabled, force full update.
-    if (_numberOfPartialUpdates != 0) _blockPartial = true;
+    if (_numberOfPartialUpdates != 0)
+        _blockPartial = true;
 }
 
 /**
  * @brief   Method that do it's magic to update the screen. It's universal for all modes.
- * 
+ *
  * @param   volatile uint8_t *_frameBuffer
  *          Pointer to the framebuffer storing pixels.
  * @param   uint8_t *_waveformLut
  *          Used LUT for converting from pixels into waveform.
  * @param   void (*_pixelDecode)(void*, void*, void*)
- *          Callback to the function that will be used for decoding pixels to wavefrom (data ready to be sent to the ePaper).
+ *          Callback to the function that will be used for decoding pixels to wavefrom (data ready to be sent to the
+ * ePaper).
  * @param   const uint8_t _prebufferedLines
- *          How many lines to read at one from the framebuffer (SDRAM). It depends on BPP and buffer size (_oneLine1, _oneLine2, _oneLine3).
+ *          How many lines to read at one from the framebuffer (SDRAM). It depends on BPP and buffer size (_oneLine1,
+ * _oneLine2, _oneLine3).
  * @param   uint8_t _pixelsPerByte
  *          How many pixels are stored in one byte inside framebuffer (4 bit = 2 pixels, 1 bit = 8 pixels).
  */
-void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _pixelsPerByte)
+void EPDDriver::pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut,
+                             void (*_pixelDecode)(void *, void *, void *), const uint8_t _prebufferedLines,
+                             uint8_t _pixelsPerByte)
 {
-        // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
-        uint16_t *_fbPtr;
+    // Pointer to the framebuffer (used by the fast GLUT). It gets 4 pixels from the framebuffer.
+    uint16_t *_fbPtr;
 
-        // Calculate byte shift for each line.
-        uint16_t _lineByteIncrement = SCREEN_WIDTH / (_pixelsPerByte * 2);
+    // Calculate byte shift for each line.
+    uint16_t _lineByteIncrement = SCREEN_WIDTH / (_pixelsPerByte * 2);
 
-        // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
-        // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
-        // ~215MB/s read speed! Nice! Start the DMA transfer!
-        HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_frameBuffer, (uint32_t)_oneLine1,
-                          sizeof(_oneLine1), 1);
-        while (stm32FmcSdramCompleteFlag() == 0)
-            ;
-        stm32FmcClearSdramCompleteFlag();
-        _frameBuffer += sizeof(_oneLine1);
+    // Get the 16 rows of the data (faster RAM read speed, since it reads whole RAM column at once).
+    // Reading line by line will gets us only 89MB/s read speed, but reading 16 rows or more at once will get us
+    // ~215MB/s read speed! Nice! Start the DMA transfer!
+    HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_frameBuffer, (uint32_t)_oneLine1, sizeof(_oneLine1), 1);
+    while (stm32FmcSdramCompleteFlag() == 0)
+        ;
+    stm32FmcClearSdramCompleteFlag();
+    _frameBuffer += sizeof(_oneLine1);
 
-        // Set the current working RAM buffer to the first RAM Buffer (_oneLine1).
-        _fbPtr = (uint16_t *)_oneLine1;
+    // Set the current working RAM buffer to the first RAM Buffer (_oneLine1).
+    _fbPtr = (uint16_t *)_oneLine1;
 
-        // Decode the first line.
-        _pixelDecode(_decodedLine1, _waveformLut, _fbPtr);
+    // Decode the first line.
+    _pixelDecode(_decodedLine1, _waveformLut, _fbPtr);
+    _fbPtr += _lineByteIncrement;
+
+    // Set the pointers for double buffering.
+    _pendingDecodedLineBuffer = _decodedLine2;
+    _currentDecodedLineBuffer = _decodedLine1;
+
+    // Send to the screen!
+    vScanStart();
+    for (int i = 0; i < SCREEN_HEIGHT; i++)
+    {
+        hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
+
+        HAL_MDMA_Start_IT(_epdMdmaHandle, (uint32_t)_currentDecodedLineBuffer + 2, (uint32_t)EPD_FMC_ADDR,
+                          sizeof(_decodedLine1), 1);
+
+        // Decode the pixels into Waveform for EPD.
+        (_pixelDecode)(_pendingDecodedLineBuffer, _waveformLut, _fbPtr);
         _fbPtr += _lineByteIncrement;
 
-        // Set the pointers for double buffering.
-        _pendingDecodedLineBuffer = _decodedLine2;
-        _currentDecodedLineBuffer = _decodedLine1;
-
-        // Send to the screen!
-        vScanStart();
-        for (int i = 0; i < SCREEN_HEIGHT; i++)
+        // Swap the buffers!
+        if (_currentDecodedLineBuffer == _decodedLine1)
         {
-            hScanStart(_currentDecodedLineBuffer[0], _currentDecodedLineBuffer[1]);
-
-            HAL_MDMA_Start_IT(_epdMdmaHandle, (uint32_t)_currentDecodedLineBuffer + 2,
-                              (uint32_t)EPD_FMC_ADDR, sizeof(_decodedLine1), 1);
-
-            // Decode the pixels into Waveform for EPD.
-            (_pixelDecode)(_pendingDecodedLineBuffer, _waveformLut, _fbPtr);
-            _fbPtr += _lineByteIncrement;
-
-            // Swap the buffers!
-            if (_currentDecodedLineBuffer == _decodedLine1)
-            {
-                _currentDecodedLineBuffer = _decodedLine2;
-                _pendingDecodedLineBuffer = _decodedLine1;
-            }
-            else
-            {
-                _currentDecodedLineBuffer = _decodedLine1;
-                _pendingDecodedLineBuffer = _decodedLine2;
-            }
-
-            // Can't start new transfer until all data is sent to EPD.
-            while (stm32FmcEpdCompleteFlag() == 0)
-                ;
-            stm32FmcClearEpdCompleteFlag();
-
-            // Advance the line on EPD.
-            vScanEnd();
-
-            // Check if the buffer needs to be updated (after 16 lines).
-            if ((i & _prebufferedLines) == (_prebufferedLines - 1))
-            {
-                // Update the buffer pointer.
-                _fbPtr = (uint16_t *)_oneLine1;
-
-                // Start new RAM DMA transfer.
-                HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_frameBuffer, (uint32_t)(_oneLine1), sizeof(_oneLine1),
-                                  1);
-
-                _frameBuffer += sizeof(_oneLine1);
-
-                // Wait for DMA transfer to complete.
-                while (stm32FmcSdramCompleteFlag() == 0)
-                    ;
-                stm32FmcClearSdramCompleteFlag();
-            }
+            _currentDecodedLineBuffer = _decodedLine2;
+            _pendingDecodedLineBuffer = _decodedLine1;
         }
+        else
+        {
+            _currentDecodedLineBuffer = _decodedLine1;
+            _pendingDecodedLineBuffer = _decodedLine2;
+        }
+
+        // Can't start new transfer until all data is sent to EPD.
+        while (stm32FmcEpdCompleteFlag() == 0)
+            ;
+        stm32FmcClearEpdCompleteFlag();
+
+        // Advance the line on EPD.
+        vScanEnd();
+
+        // Check if the buffer needs to be updated (after 16 lines).
+        if ((i & _prebufferedLines) == (_prebufferedLines - 1))
+        {
+            // Update the buffer pointer.
+            _fbPtr = (uint16_t *)_oneLine1;
+
+            // Start new RAM DMA transfer.
+            HAL_MDMA_Start_IT(_sdramMdmaHandle, (uint32_t)_frameBuffer, (uint32_t)(_oneLine1), sizeof(_oneLine1), 1);
+
+            _frameBuffer += sizeof(_oneLine1);
+
+            // Wait for DMA transfer to complete.
+            while (stm32FmcSdramCompleteFlag() == 0)
+                ;
+            stm32FmcClearSdramCompleteFlag();
+        }
+    }
 }
 
 /**
  * @brief   Static method used for covnverting framebuffer pixel data to data ready to be send to ePaper.
- * 
+ *
  * @param   void *_out
  *          Pointer to the locaton where to store decoded pixels.
  * @param   void *_lut
  *          Pointer to the location of the LUT used for decode.
  * @param   void *_fb
  *          Pointer to the location of the piel framebuffer.
- *          
+ *
  */
 void EPDDriver::pixelDecode4BitEPD(void *_out, void *_lut, void *_fb)
 {
-    uint16_t *_fbHelper = (uint16_t*)_fb;
+    uint16_t *_fbHelper = (uint16_t *)_fb;
     for (int n = 0; n < (SCREEN_WIDTH / 4); n++)
     {
-        ((uint8_t*)(_out))[n] = ((uint8_t*)(_lut))[*(_fbHelper++)];
+        ((uint8_t *)(_out))[n] = ((uint8_t *)(_lut))[*(_fbHelper++)];
     }
 }
 
 /**
  * @brief   Static method used for covnverting framebuffer pixel data to data ready to be send to ePaper.
- * 
+ *
  * @param   void *_out
  *          Pointer to the locaton where to store decoded pixels.
  * @param   void *_lut
  *          Pointer to the location of the LUT used for decode.
  * @param   void *_fb
  *          Pointer to the location of the piel framebuffer.
- *          
+ *
  */
 void EPDDriver::pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb)
 {
-    uint8_t *_fbHelper = (uint8_t*)_fb;
+    uint8_t *_fbHelper = (uint8_t *)_fb;
     for (int n = 0; n < (SCREEN_WIDTH / 4); n += 2)
     {
-        ((uint8_t*)(_out))[n] = ((uint8_t*)(_lut))[(*_fbHelper) >> 4];
-        ((uint8_t*)(_out))[n + 1] = ((uint8_t*)(_lut))[(*(_fbHelper++)) & 0x0F];
+        ((uint8_t *)(_out))[n] = ((uint8_t *)(_lut))[(*_fbHelper) >> 4];
+        ((uint8_t *)(_out))[n + 1] = ((uint8_t *)(_lut))[(*(_fbHelper++)) & 0x0F];
     }
 }
 
 /**
  * @brief   Static method used for covnverting framebuffer pixel data to data ready to be send to ePaper.
- * 
+ *
  * @param   void *_out
  *          Pointer to the locaton where to store decoded pixels.
  * @param   void *_lut
  *          Pointer to the location of the LUT used for decode.
  * @param   void *_fb
  *          Pointer to the location of the piel framebuffer.
- *          
+ *
  */
 void EPDDriver::pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb)
 {
-    uint8_t *_fbHelper = (uint8_t*)_fb;
+    uint8_t *_fbHelper = (uint8_t *)_fb;
     memcpy(_out, _fbHelper, (SCREEN_WIDTH / 4));
 }
 
