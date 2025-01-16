@@ -15,9 +15,9 @@
 #define _ADAFRUIT_LSM6DS_H
 
 #include "Arduino.h"
-#include <Adafruit_BusIO_Register.h>
-#include <Adafruit_I2CDevice.h>
-#include <Adafruit_Sensor.h>
+#include "Adafruit_BusIO_Register.h"
+#include "Adafruit_I2CDevice.h"
+#include "Adafruit_Sensor.h"
 #include <Wire.h>
 
 #define LSM6DS_I2CADDR_DEFAULT 0x6A ///< LSM6DS default i2c address
