@@ -82,7 +82,7 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
     imgProcess.begin(_inkplate, SCREEN_WIDTH);
 
     // Initialize image decoder library.
-    image.begin(_inkplate, &WiFi, &imgProcess, (uint8_t*)0xD0600000, _downloadFileMemory);
+    image.begin(_inkplate, &WiFi, &imgProcess, (uint8_t *)0xD0600000, _downloadFileMemory);
 
     // Put every peripheral into low power mode.
     peripheralState(INKPLATE_PERIPHERAL_ALL_PERI, false);
@@ -988,10 +988,11 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             apds9960.enablePower();
         }
     }
-         /*
+
+    /*
     if (_peripheral & INKPLATE_PERIPHERAL_LSM6DSO32)
     {
-   
+
         if (!_en)
         {
             // Disable everything!
@@ -1012,11 +1013,10 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
             // Update settings.
             lsm6ds3.begin(&lsm6ds3.settings);
         }
-        
     }
-
     */
-   
+
+
     // Check if microSD needs to be enabled/disabled.
     if (_peripheral & INKPLATE_PERIPHERAL_MICROSD)
     {

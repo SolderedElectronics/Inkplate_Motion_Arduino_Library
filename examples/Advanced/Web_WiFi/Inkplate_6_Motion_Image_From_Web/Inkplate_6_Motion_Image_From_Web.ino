@@ -17,8 +17,8 @@
 Inkplate inkplate; // Create Inkplate object
 
 // Change WiFi SSID and password here
-#define WIFI_SSID "Soldered"
-#define WIFI_PASS "dasduino"
+#define WIFI_SSID ""
+#define WIFI_PASS ""
 
 // Link to download the .jpg image from
 char imageUrl[] = {"https://gssc.esa.int/navipedia/images/a/a9/Example.jpg"};

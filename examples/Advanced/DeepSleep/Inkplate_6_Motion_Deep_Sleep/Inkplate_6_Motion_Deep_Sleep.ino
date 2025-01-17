@@ -110,7 +110,6 @@ void loop()
 void printResetCause(void)
 {
     uint32_t reset_cause = RCC->RSR; // Read the RSR register
-
     inkplate.print("Reset cause(s):\n");
 
     if (reset_cause & RCC_RSR_CPURSTF)

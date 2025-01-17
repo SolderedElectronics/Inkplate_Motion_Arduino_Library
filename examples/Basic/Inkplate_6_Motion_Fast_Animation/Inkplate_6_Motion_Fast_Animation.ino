@@ -13,6 +13,8 @@
 // Include Inkplate Motion Library
 #include <InkplateMotion.h>
 
+// For now, animation frames for usage with drawBitmapFast can only be images exactly 1024 x 758
+
 // Include header file for all animation frames
 // To select the animation, open this file and edit it to select the animation
 #include "animationFrames.h"

@@ -34,7 +34,7 @@
 #define INKPLATE_PERIPHERAL_WS_LED         (1ULL << 2)
 #define INKPLATE_PERIPHERAL_SHTC3          (1ULL << 3)
 #define INKPLATE_PERIPHERAL_APDS9960       (1ULL << 4)
-#define INKPLATE_PERIPHERAL_LSM6DSO32        (1ULL << 5)
+#define INKPLATE_PERIPHERAL_LSM6DSO32      (1ULL << 5)
 #define INKPLATE_PERIPHERAL_MICROSD        (1ULL << 6)
 #define INKPLATE_PERIPHERAL_WIFI           (1ULL << 7)
 #define INKPLATE_PERIPHERAL_ALL_PERI                                                                                   \
