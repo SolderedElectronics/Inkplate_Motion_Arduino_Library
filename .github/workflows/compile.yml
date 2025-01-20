@@ -1,0 +1,31 @@
+name: Compile Examples
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - board:
+              fqbn: Inkplate_Motion:stm32:Inkplate6Motion
+            additional-sketch-paths: |
+              - examples
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Compile examples
+        uses: arduino/compile-sketches@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          platforms: |
+            - source-url: https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/raw/master/package_Dasduino_Boards_index.json
+              name: Inkplate_Motion:stm32
+
+          fqbn: ${{ matrix.board.fqbn }}
+          libraries: |
+            - source-path: ./
+          sketch-paths: |
+            ${{ matrix.additional-sketch-paths }}
+          cli-compile-flags: |
+            - --warnings="default"
