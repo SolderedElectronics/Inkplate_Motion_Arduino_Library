@@ -38,6 +38,3 @@ jobs:
             - source-path: ./
           sketch-paths: |
             ${{ matrix.additional-sketch-paths }}
-          cli-compile-flags: |
-            - --warnings=all
-            - --verbose
