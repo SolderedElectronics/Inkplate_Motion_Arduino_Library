@@ -11,11 +11,8 @@ jobs:
       # Install Arduino CLI manually
       - name: Install Arduino CLI
         run: |
-          # Download and extract Arduino CLI
           wget -qO- https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz | tar -xvz
-          # Move to a location in PATH
           sudo mv arduino-cli /usr/local/bin/
-          # Verify installation
           arduino-cli version || exit 1
 
       # Ensure that Bash is used for compatibility with the prebuild script
@@ -26,10 +23,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Update the Arduino core index and install required platform
+      # Add custom package index URL and update core index
+      - name: Configure Arduino CLI
+        run: |
+          arduino-cli config init
+          arduino-cli config set board_manager.additional_urls https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/raw/master/package_Dasduino_Boards_index.json
+          arduino-cli core update-index
+
+      # Install the required platform
       - name: Install Arduino Core
         run: |
-          arduino-cli core update-index
           arduino-cli core install Inkplate_Motion:stm32
 
       # Compile all examples and fail fast on error
