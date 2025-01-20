@@ -12,6 +12,8 @@ jobs:
             additional-sketch-paths: |
               - examples
     steps:
+      - name: Ensure Bash Shell
+        run: sudo ln -sf /bin/bash /bin/sh
       - name: Checkout
         uses: actions/checkout@v3
       - name: Compile examples
