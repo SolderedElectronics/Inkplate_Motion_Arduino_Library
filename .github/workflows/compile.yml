@@ -43,7 +43,8 @@ jobs:
             echo "Compiling $sketch"
             arduino-cli compile \
               --fqbn Inkplate_Motion:stm32:Inkplate6Motion \
-              --libraries . \ # Include the current repository as a library
+              --libraries "./" \
               "$sketch" \
-              --warnings=all --verbose
+              --warnings all \
+              --verbose
           done
