@@ -16,10 +16,10 @@ All in one and ready to use Inkplate Motion Arduino Library. Use e-paper with on
 5. Open Inkplate Motion example and run them on Inkplate Motion!
 
 ℹ**NOTE**ℹ
-In order to be able to upload the program to the Inkplate Motion with the USB, put Inkplate Motion in programming mode by pressing PROGRAMMING BUTTON. If you have Inkplate with the case, open the case, you will find the tool for pressing programming button with case closed.
+In order to be able to upload the program to the Inkplate Motion with the USB, put Inkplate Motion in programming mode by pressing PROGRAMMING BUTTON. If you have Inkplate with the case, open the case, you will find the tool for pressing programming button with case closed. 
 
 ## Code examples
-There are many examples in the library that you demonstrate how to use any of the Inkplate functionality. Use Basic folder to get familiar with principles of using the Inkplate, such as modes (BW and Gray), how to write graphics and text. In Advanced folder, you'll learn how to make HTTP/HTTPS requests, utilise low power, use SD card, read RTC, etc. Finally, get easily started on some projects. Examples and projects are added regularly by us or from community contributions. There is also a diagnostics folder with all tools for more advanced users (such as VCOM programming, waveform selection, etc).
+There are many examples in the library that you demonstrate how to use any of the Inkplate functionality. Use Basic folder to get familiar with principles of using the Inkplate, such as modes (BW and Gray), how to write graphics and text. In Advanced folder, you'll learn how to make HTTP/HTTPS requests, utilise low power, use SD card, read RTC, etc. Finally, get easily started on some projects. Examples and projects are added regularly by us or from community contributions. There is also a diagnostics folder with all tools for more advanced users (such as VCOM programming, waveform selection, etc). This sentence is changed for compile tests.
 
 ## Battery power
 
