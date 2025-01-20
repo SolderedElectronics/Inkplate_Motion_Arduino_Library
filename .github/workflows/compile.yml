@@ -11,9 +11,12 @@ jobs:
       # Install Arduino CLI manually
       - name: Install Arduino CLI
         run: |
+          # Download and extract Arduino CLI
           wget -qO- https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz | tar -xvz
+          # Move to a location in PATH
           sudo mv arduino-cli /usr/local/bin/
-          arduino-cli version
+          # Verify installation
+          arduino-cli version || exit 1
 
       # Ensure that Bash is used for compatibility with the prebuild script
       - name: Ensure Bash Shell
