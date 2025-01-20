@@ -38,7 +38,7 @@ volatile uint8_t _stm32MdmaSdramCompleteFlag = 0;
 /**
  * @brief   FMC initialization function for the STM32 FMC peripheral. This peripheral is used to communicate with the
  *          SDRAM and ePaper parallel bus.
- * 
+ *
  */
 static void MX_FMC_Init(void)
 {
@@ -105,16 +105,16 @@ static void MX_FMC_Init(void)
 
     if (HAL_SDRAM_Init(&_hsdram1, &_sdramTiming) != HAL_OK)
     {
-        Error_Handler( );
+        Error_Handler();
     }
 
-    __IO uint32_t _modeRegister         = 0;
-    FMC_SDRAM_CommandTypeDef _command  = {0};
+    __IO uint32_t _modeRegister = 0;
+    FMC_SDRAM_CommandTypeDef _command = {0};
 
-    _command.CommandMode               = FMC_SDRAM_CMD_CLK_ENABLE; /* Set MODE bits to "001" */
-    _command.CommandTarget             = FMC_SDRAM_CMD_TARGET_BANK2; /* configure the Target Bank bits */
-    _command.AutoRefreshNumber         = 1;
-    _command.ModeRegisterDefinition    = 0;
+    _command.CommandMode = FMC_SDRAM_CMD_CLK_ENABLE;     /* Set MODE bits to "001" */
+    _command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2; /* configure the Target Bank bits */
+    _command.AutoRefreshNumber = 1;
+    _command.ModeRegisterDefinition = 0;
     if (HAL_SDRAM_SendCommand(&_hsdram1, &_command, 0xfff) != HAL_OK)
     {
         Error_Handler();
@@ -123,31 +123,31 @@ static void MX_FMC_Init(void)
     HAL_Delay(1); /* Step 4: Insert 100 us minimum delay - Min HAL Delay is 1ms */
 
     /* Step 5: Configure a PALL (precharge all) command */
-    _command.CommandMode               = FMC_SDRAM_CMD_PALL; /* Set MODE bits to "010" */
-    _command.CommandTarget             = FMC_SDRAM_CMD_TARGET_BANK2;
-    _command.AutoRefreshNumber         = 1;
-    _command.ModeRegisterDefinition    = 0;
-    if(HAL_SDRAM_SendCommand(&_hsdram1, &_command, 0xfff) != HAL_OK)
+    _command.CommandMode = FMC_SDRAM_CMD_PALL; /* Set MODE bits to "010" */
+    _command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+    _command.AutoRefreshNumber = 1;
+    _command.ModeRegisterDefinition = 0;
+    if (HAL_SDRAM_SendCommand(&_hsdram1, &_command, 0xfff) != HAL_OK)
     {
         Error_Handler();
     }
 
     /* Step 6: Configure an Auto Refresh command */
-    _command.CommandMode               = FMC_SDRAM_CMD_AUTOREFRESH_MODE; /* Set MODE bits to "011" */
-    _command.CommandTarget             = FMC_SDRAM_CMD_TARGET_BANK2;
-    _command.AutoRefreshNumber         = 8;
-    _command.ModeRegisterDefinition   = 0;
+    _command.CommandMode = FMC_SDRAM_CMD_AUTOREFRESH_MODE; /* Set MODE bits to "011" */
+    _command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+    _command.AutoRefreshNumber = 8;
+    _command.ModeRegisterDefinition = 0;
     if (HAL_SDRAM_SendCommand(&_hsdram1, &_command, 0xfff) != HAL_OK)
     {
         Error_Handler();
     }
 
     /* Step 7: Program the external memory mode register */
-    _modeRegister                     = (0 << 0) | (0 << 2) | (2 << 4) | (0 << 7) | (1 << 9);
-    _command.CommandMode               = FMC_SDRAM_CMD_LOAD_MODE;
-    _command.ModeRegisterDefinition    = _modeRegister;
-    _command.CommandTarget             = FMC_SDRAM_CMD_TARGET_BANK2;
-    _command.AutoRefreshNumber        = 1;
+    _modeRegister = (0 << 0) | (0 << 2) | (2 << 4) | (0 << 7) | (1 << 9);
+    _command.CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
+    _command.ModeRegisterDefinition = _modeRegister;
+    _command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+    _command.AutoRefreshNumber = 1;
     HAL_SDRAM_SendCommand(&_hsdram1, &_command, 0xfff);
 
     /* Step 8: Set the refresh rate counter - refer to section SDRAM refresh timer register in RM0455 */
@@ -162,34 +162,34 @@ static void MX_FMC_Init(void)
 
 /**
  * @brief   Initializaton of the FMC Hardware (PLL, GPIOs, Clocks etc).
- * 
+ *
  */
 static void HAL_FMC_MspInit(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct ={0};
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
     if (_stm32FmcInitialized)
     {
         return;
     }
     _stm32FmcInitialized = 1;
-    
+
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
     /** Initializes the peripherals clock
      */
-        PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
-        PeriphClkInitStruct.PLL2.PLL2M = 6;
-        PeriphClkInitStruct.PLL2.PLL2N = 200;
-        PeriphClkInitStruct.PLL2.PLL2P = 2;
-        PeriphClkInitStruct.PLL2.PLL2Q = 2;
-        PeriphClkInitStruct.PLL2.PLL2R = 2;
-        PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_1;
-        PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
-        PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL2;
-        if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-        {
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
+    PeriphClkInitStruct.PLL2.PLL2M = 6;
+    PeriphClkInitStruct.PLL2.PLL2N = 200;
+    PeriphClkInitStruct.PLL2.PLL2P = 2;
+    PeriphClkInitStruct.PLL2.PLL2Q = 2;
+    PeriphClkInitStruct.PLL2.PLL2R = 2;
+    PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_1;
+    PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+    PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL2;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+    {
         Error_Handler();
-        }
+    }
 
     /* Peripheral clock enable */
     __HAL_RCC_FMC_CLK_ENABLE();
@@ -238,9 +238,8 @@ static void HAL_FMC_MspInit(void)
     PE0   ------> FMC_NBL0
     PE1   ------> FMC_NBL1
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                            |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_11|GPIO_PIN_12
-                            |GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_11 |
+                          GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -254,33 +253,31 @@ static void HAL_FMC_MspInit(void)
     GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4
-                            |GPIO_PIN_5|GPIO_PIN_8|GPIO_PIN_10|GPIO_PIN_15;
+    GPIO_InitStruct.Pin =
+        GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_10 | GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
     HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10
-                            |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14
-                            |GPIO_PIN_15|GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 |
+                          GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_0 | GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_14
-                            |GPIO_PIN_15|GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4
-                            |GPIO_PIN_5;
+    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_0 | GPIO_PIN_1 |
+                          GPIO_PIN_4 | GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
+    GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -290,7 +287,7 @@ static void HAL_FMC_MspInit(void)
 
 /**
  * @brief   STM32 HAL function for initialization STM32 FMC peripheral (ePaper peripheral).
- * 
+ *
  */
 extern "C" void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
 {
@@ -299,7 +296,7 @@ extern "C" void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
 
 /**
  * @brief   Deinitializaton of the FMC Hardware (PLL, GPIOs, Clocks etc).
- * 
+ *
  */
 static void HAL_FMC_MspDeInit(void)
 {
@@ -356,29 +353,26 @@ static void HAL_FMC_MspDeInit(void)
     PE0   ------> FMC_NBL0
     PE1   ------> FMC_NBL1
     */
-    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                            |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_11|GPIO_PIN_12
-                            |GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_11 |
+                               GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
 
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0);
 
-    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4
-                            |GPIO_PIN_5|GPIO_PIN_8|GPIO_PIN_10|GPIO_PIN_15);
+    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_10 |
+                               GPIO_PIN_15);
 
-    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10
-                            |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14
-                            |GPIO_PIN_15|GPIO_PIN_0|GPIO_PIN_1);
+    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 |
+                               GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_0 | GPIO_PIN_1);
 
-    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_14
-                            |GPIO_PIN_15|GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4
-                            |GPIO_PIN_5);
+    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_0 | GPIO_PIN_1 |
+                               GPIO_PIN_4 | GPIO_PIN_5);
 
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_5|GPIO_PIN_6);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_5 | GPIO_PIN_6);
 }
 
 /**
  * @brief   STM32 HAL function for deinitialization STM32 FMC peripheral (ePaper peripheral).
- * 
+ *
  */
 extern "C" void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram)
 {
@@ -387,16 +381,16 @@ extern "C" void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram)
 
 /**
  * @brief   STM32 HAL function for deinitialization STM32 FMC peripheral (SDRAM peripheral).
- * 
+ *
  */
-extern "C" void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef* hsdram)
+extern "C" void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef *hsdram)
 {
     HAL_FMC_MspDeInit();
 }
 
 /**
  * @brief   Function sets and initializes whole STM32 FMC peripheral.
- * 
+ *
  * @param   uint32_t _ePaperPeriphAddress
  *          SRAM LCD (ePaper) peripheral address - used to disable cache on this address.
  */
@@ -447,7 +441,7 @@ void stm32FmcInit(uint32_t _ePaperPeriphAddress)
 
 /**
  * @brief   Deinitializaton of the complete FMC peripheral.
- * 
+ *
  */
 void stm32FmcDeInit()
 {
@@ -462,7 +456,7 @@ void stm32FmcDeInit()
  * @brief   Initializaton of the STM32 MDMA (Master Direct Memory Access controller).
  *          Used for getting data from the SDRAM into internal SRAM and to transfer
  *          ePaper dat ato the ePaper fast as possible. Also enables the interrutps on DMA.
- * 
+ *
  */
 void stm32FmcMdmaInit()
 {
@@ -511,7 +505,7 @@ void stm32FmcMdmaInit()
     _hmdmaMdmaChannel41Sw0.Init.DestBlockAddressOffset = 0;
     if (HAL_MDMA_Init(&_hmdmaMdmaChannel41Sw0) != HAL_OK)
     {
-      Error_Handler();
+        Error_Handler();
     }
 
     HAL_NVIC_SetPriority(MDMA_IRQn, 5, 0);
@@ -520,7 +514,7 @@ void stm32FmcMdmaInit()
 
 /**
  * @brief   Returns the address of the SRAM instance (used for data transfer between STM32 and ePaper).
- * 
+ *
  * @return  SRAM_HandleTypeDef*
  *          Pointer to the STM32 SRAM/LCD FMC Instance.
  */
@@ -532,7 +526,7 @@ SRAM_HandleTypeDef *stm32FmcGetEpdInstance()
 
 /**
  * @brief   Returns the address of the SDRAM instance (used for communication between SDRAM and STM32).
- * 
+ *
  * @return  SDRAM_HandleTypeDef*
  *          Pointer to the STM32 SDRAM FMC Instance.
  */
@@ -544,7 +538,7 @@ SDRAM_HandleTypeDef *stm32FmcGetSdramInstance()
 
 /**
  * @brief   Returns the STM32 Master DMA instance used by the ePaper (STM32->ePaper data transfer).
- * 
+ *
  * @return  MDMA_HandleTypeDef*
  *          Address of the Master DMA STM32 instance.
  */
@@ -554,13 +548,13 @@ MDMA_HandleTypeDef *stm32FmcGetEpdMdmaInstance()
     return &_hmdmaMdmaChannel41Sw0;
 }
 
-// 
+//
 /**
  * @brief   Returns the STM32 Master DMA instance used by the SDRAM (STM32<-SDRAM data transfer).
- * 
+ *
  * @return  MDMA_HandleTypeDef*
  *          Address of the Master DMA STM32 instance.
- * 
+ *
  * @note    It is used for data transfer between SDRAM and STM32, but not otherway around.
  */
 MDMA_HandleTypeDef *stm32FmcGetSdramMdmaInstance()
@@ -571,7 +565,7 @@ MDMA_HandleTypeDef *stm32FmcGetSdramMdmaInstance()
 
 /**
  * @brief   Gets the instance of the STM32 MPU (Memory Protection Unit).
- * 
+ *
  * @return  MPU_Region_InitTypeDef*
  *          Returns the address of the STM32 MPU instance.
  */
@@ -584,7 +578,7 @@ MPU_Region_InitTypeDef *stm32FmcGetMpuInstance()
  * @brief   It disables cacheing on LCD FMC memory area, but not affecting caching on SRAM by using MPU.
  *          Initializaton and setup of the MPU on FMC SRAM part of the peripheral. This is neeeded due epaper
  *          control timings.
- * 
+ *
  * @param   uint32_t _ePaperPeriphAddress
  *          SRAM LCD (ePaper) peripheral address - used to disable cache on this address.
  */
@@ -614,7 +608,7 @@ void stm32FmcMpuInit(uint32_t _epaperPeriphAddress)
 
 /**
  * @brief   Callback function called after the data transfer for the SDRAM has completed.
- * 
+ *
  * @param   MDMA_HandleTypeDef *_mdma
  *          Pointer to the MDMA handle - required by the STM32 HAL library.
  */
@@ -625,7 +619,7 @@ void stm32FmcSdramTransferCompleteCallback(MDMA_HandleTypeDef *_mdma)
 
 /**
  * @brief   Callback function called after the data transfer for the ePaper has completed.
- * 
+ *
  * @param   MDMA_HandleTypeDef *_mdma
  *          Pointer to the MDMA handle - required by the STM32 HAL library.
  */
@@ -636,7 +630,7 @@ void stm32FmcEpdTransferCompleteCallback(MDMA_HandleTypeDef *_mdma)
 
 /**
  * @brief   Clears the transfer complete flag to ready for the next transfer.
- * 
+ *
  */
 void stm32FmcClearEpdCompleteFlag()
 {
@@ -645,7 +639,7 @@ void stm32FmcClearEpdCompleteFlag()
 
 /**
  * @brief   Clears the transfer complete flag to ready for the next transfer.
- * 
+ *
  */
 void stm32FmcClearSdramCompleteFlag()
 {
@@ -654,11 +648,11 @@ void stm32FmcClearSdramCompleteFlag()
 
 /**
  * @brief   Returns the transfer complete flag state.
- * 
+ *
  * @return  uint8_t
  *          1 = transfer complete.
  *          0 = transfet still in progress.
- * 
+ *
  */
 uint8_t stm32FmcEpdCompleteFlag()
 {
@@ -667,11 +661,11 @@ uint8_t stm32FmcEpdCompleteFlag()
 
 /**
  * @brief   Returns the transfer complete flag state.
- * 
+ *
  * @return  uint8_t
  *          1 = transfer complete.
  *          0 = transfet still in progress.
- * 
+ *
  */
 uint8_t stm32FmcSdramCompleteFlag()
 {
@@ -680,7 +674,7 @@ uint8_t stm32FmcSdramCompleteFlag()
 
 /**
  * @brief   STM32 function for interrupt callback register.
- * 
+ *
  */
 extern "C" void MDMA_IRQHandler()
 {

@@ -27,98 +27,128 @@
 // Use of in-line for AVR to save flash.
 #define nop asm volatile("nop\n\t")
 //------------------------------------------------------------------------------
-inline void SdSpiArduinoDriver::activate() {
-  SPI.beginTransaction(m_spiSettings);
+inline void SdSpiArduinoDriver::activate()
+{
+    SPI.beginTransaction(m_spiSettings);
 }
 //------------------------------------------------------------------------------
-inline void SdSpiArduinoDriver::begin(SdSpiConfig spiConfig) {
-  (void)spiConfig;
-  SPI.begin();
+inline void SdSpiArduinoDriver::begin(SdSpiConfig spiConfig)
+{
+    (void)spiConfig;
+    SPI.begin();
 }
 //------------------------------------------------------------------------------
-inline void SdSpiArduinoDriver::deactivate() { SPI.endTransaction(); }
+inline void SdSpiArduinoDriver::deactivate()
+{
+    SPI.endTransaction();
+}
 //------------------------------------------------------------------------------
-inline void SdSpiArduinoDriver::end() { SPI.end(); }
+inline void SdSpiArduinoDriver::end()
+{
+    SPI.end();
+}
 //------------------------------------------------------------------------------
-inline uint8_t SdSpiArduinoDriver::receive() { return SPI.transfer(0XFF); }
+inline uint8_t SdSpiArduinoDriver::receive()
+{
+    return SPI.transfer(0XFF);
+}
 //------------------------------------------------------------------------------
-inline uint8_t SdSpiArduinoDriver::receive(uint8_t* buf, size_t count) {
-  if (count == 0) {
-    return 0;
-  }
-#ifdef SPSR
-  SPDR = 0XFF;
-  while (--count) {
-    // nops optimize loop for 16MHz CPU 8 MHz SPI
-    nop;
-    nop;
-    while (!(SPSR & _BV(SPIF))) {
+inline uint8_t SdSpiArduinoDriver::receive(uint8_t *buf, size_t count)
+{
+    if (count == 0)
+    {
+        return 0;
     }
-    uint8_t in = SPDR;
+#ifdef SPSR
     SPDR = 0XFF;
-    *buf++ = in;
-  }
-  while (!(SPSR & _BV(SPIF))) {
-  }
-  *buf = SPDR;
-#elif defined(SPI_RXCIF_bm)
-  SPI0.DATA = 0XFF;
-  while (--count) {
-    // nops optimize loop for ATmega4809 16MHz CPU 8 MHz SPI
-    nop;
-    nop;
-    nop;
-    nop;
-    while (!(SPI0.INTFLAGS & SPI_RXCIF_bm)) {
+    while (--count)
+    {
+        // nops optimize loop for 16MHz CPU 8 MHz SPI
+        nop;
+        nop;
+        while (!(SPSR & _BV(SPIF)))
+        {
+        }
+        uint8_t in = SPDR;
+        SPDR = 0XFF;
+        *buf++ = in;
     }
-    uint8_t in = SPI0.DATA;
+    while (!(SPSR & _BV(SPIF)))
+    {
+    }
+    *buf = SPDR;
+#elif defined(SPI_RXCIF_bm)
     SPI0.DATA = 0XFF;
-    *buf++ = in;
-  }
-  while (!(SPI0.INTFLAGS & SPI_RXCIF_bm)) {
-  }
-  *buf = SPI0.DATA;
-#else  // SPSR
+    while (--count)
+    {
+        // nops optimize loop for ATmega4809 16MHz CPU 8 MHz SPI
+        nop;
+        nop;
+        nop;
+        nop;
+        while (!(SPI0.INTFLAGS & SPI_RXCIF_bm))
+        {
+        }
+        uint8_t in = SPI0.DATA;
+        SPI0.DATA = 0XFF;
+        *buf++ = in;
+    }
+    while (!(SPI0.INTFLAGS & SPI_RXCIF_bm))
+    {
+    }
+    *buf = SPI0.DATA;
+#else // SPSR
 #error Unsupported AVR CPU - edit SdFatConfig.h to use standard SPI library.
-#endif  // SPSR
-  return 0;
+#endif // SPSR
+    return 0;
 }
 //------------------------------------------------------------------------------
-inline void SdSpiArduinoDriver::send(uint8_t data) { SPI.transfer(data); }
+inline void SdSpiArduinoDriver::send(uint8_t data)
+{
+    SPI.transfer(data);
+}
 //------------------------------------------------------------------------------
-inline void SdSpiArduinoDriver::send(const uint8_t* buf, size_t count) {
-  if (count == 0) {
-    return;
-  }
+inline void SdSpiArduinoDriver::send(const uint8_t *buf, size_t count)
+{
+    if (count == 0)
+    {
+        return;
+    }
 #ifdef SPSR
-  SPDR = *buf++;
-  while (--count) {
-    uint8_t b = *buf++;
-    // nops optimize loop for 16MHz CPU 8 MHz SPI
-    nop;
-    nop;
-    while (!(SPSR & (1 << SPIF))) {
+    SPDR = *buf++;
+    while (--count)
+    {
+        uint8_t b = *buf++;
+        // nops optimize loop for 16MHz CPU 8 MHz SPI
+        nop;
+        nop;
+        while (!(SPSR & (1 << SPIF)))
+        {
+        }
+        SPDR = b;
     }
-    SPDR = b;
-  }
-  while (!(SPSR & (1 << SPIF))) {
-  }
+    while (!(SPSR & (1 << SPIF)))
+    {
+    }
 #elif defined(SPI_RXCIF_bm)
-  SPI0.DATA = *buf++;
-  while (--count) {
-    uint8_t b = *buf++;
-    // nops optimize loop for ATmega4809 16MHz CPU 8 MHz SPI
-    nop;
-    nop;
-    nop;
-    while (!(SPI0.INTFLAGS & SPI_RXCIF_bm)) {
+    SPI0.DATA = *buf++;
+    while (--count)
+    {
+        uint8_t b = *buf++;
+        // nops optimize loop for ATmega4809 16MHz CPU 8 MHz SPI
+        nop;
+        nop;
+        nop;
+        while (!(SPI0.INTFLAGS & SPI_RXCIF_bm))
+        {
+        }
+        SPI0.DATA = b;
     }
-    SPI0.DATA = b;
-  }
-  while (!(SPI0.INTFLAGS & SPI_RXCIF_bm)) {
-  }
-#else  // SPSR
+    while (!(SPI0.INTFLAGS & SPI_RXCIF_bm))
+    {
+    }
+#else // SPSR
 #error Unsupported AVR CPU - edit SdFatConfig.h to use standard SPI library.
-#endif  // SPSR
+#endif // SPSR
 }
-#endif  // SdSpiAvr_h
+#endif // SdSpiAvr_h

@@ -25,40 +25,59 @@
 #include "FsStructs.h"
 // bgnLba = relSector;
 // endLba = relSector + partSize - 1;
-void lbaToMbrChs(uint8_t* chs, uint32_t capacityMB, uint32_t lba) {
-  uint32_t c;
-  uint8_t h;
-  uint8_t s;
+void lbaToMbrChs(uint8_t *chs, uint32_t capacityMB, uint32_t lba)
+{
+    uint32_t c;
+    uint8_t h;
+    uint8_t s;
 
-  uint8_t numberOfHeads;
-  uint8_t sectorsPerTrack = capacityMB <= 256 ? 32 : 63;
-  if (capacityMB <= 16) {
-    numberOfHeads = 2;
-  } else if (capacityMB <= 32) {
-    numberOfHeads = 4;
-  } else if (capacityMB <= 128) {
-    numberOfHeads = 8;
-  } else if (capacityMB <= 504) {
-    numberOfHeads = 16;
-  } else if (capacityMB <= 1008) {
-    numberOfHeads = 32;
-  } else if (capacityMB <= 2016) {
-    numberOfHeads = 64;
-  } else if (capacityMB <= 4032) {
-    numberOfHeads = 128;
-  } else {
-    numberOfHeads = 255;
-  }
-  c = lba / (numberOfHeads * sectorsPerTrack);
-  if (c <= 1023) {
-    h = (lba % (numberOfHeads * sectorsPerTrack)) / sectorsPerTrack;
-    s = (lba % sectorsPerTrack) + 1;
-  } else {
-    c = 1023;
-    h = 254;
-    s = 63;
-  }
-  chs[0] = h;
-  chs[1] = ((c >> 2) & 0XC0) | s;
-  chs[2] = c;
+    uint8_t numberOfHeads;
+    uint8_t sectorsPerTrack = capacityMB <= 256 ? 32 : 63;
+    if (capacityMB <= 16)
+    {
+        numberOfHeads = 2;
+    }
+    else if (capacityMB <= 32)
+    {
+        numberOfHeads = 4;
+    }
+    else if (capacityMB <= 128)
+    {
+        numberOfHeads = 8;
+    }
+    else if (capacityMB <= 504)
+    {
+        numberOfHeads = 16;
+    }
+    else if (capacityMB <= 1008)
+    {
+        numberOfHeads = 32;
+    }
+    else if (capacityMB <= 2016)
+    {
+        numberOfHeads = 64;
+    }
+    else if (capacityMB <= 4032)
+    {
+        numberOfHeads = 128;
+    }
+    else
+    {
+        numberOfHeads = 255;
+    }
+    c = lba / (numberOfHeads * sectorsPerTrack);
+    if (c <= 1023)
+    {
+        h = (lba % (numberOfHeads * sectorsPerTrack)) / sectorsPerTrack;
+        s = (lba % sectorsPerTrack) + 1;
+    }
+    else
+    {
+        c = 1023;
+        h = 254;
+        s = 63;
+    }
+    chs[0] = h;
+    chs[1] = ((c >> 2) & 0XC0) | s;
+    chs[2] = c;
 }

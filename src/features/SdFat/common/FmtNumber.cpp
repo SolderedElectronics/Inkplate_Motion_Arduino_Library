@@ -30,7 +30,7 @@
 #ifdef __AVR__
 #include <avr/pgmspace.h>
 #define USE_STIMMER
-#endif  // __AVR__
+#endif // __AVR__
 //------------------------------------------------------------------------------
 // Stimmer div/mod 10 for AVR
 // this code fragment works out i/10 and i%10 by calculating
@@ -40,84 +40,82 @@
 // (we add 1 because we will be using the floor of the result later)
 // divmod10_asm16 and divmod10_asm32 are public domain code by Stimmer.
 // http://forum.arduino.cc/index.php?topic=167414.msg1293679#msg1293679
-#define divmod10_asm16(in32, mod8, tmp8)   \
-  asm volatile(                            \
-      " ldi %2,51     \n\t"                \
-      " mul %A0,%2    \n\t"                \
-      " clr %A0       \n\t"                \
-      " add r0,%2     \n\t"                \
-      " adc %A0,r1    \n\t"                \
-      " mov %1,r0     \n\t"                \
-      " mul %B0,%2    \n\t"                \
-      " clr %B0       \n\t"                \
-      " add %A0,r0    \n\t"                \
-      " adc %B0,r1    \n\t"                \
-      " clr r1        \n\t"                \
-      " add %1,%A0    \n\t"                \
-      " adc %A0,%B0   \n\t"                \
-      " adc %B0,r1   \n\t"                 \
-      " add %1,%B0    \n\t"                \
-      " adc %A0,r1   \n\t"                 \
-      " adc %B0,r1    \n\t"                \
-      " lsr %B0       \n\t"                \
-      " ror %A0       \n\t"                \
-      " ror %1        \n\t"                \
-      " ldi %2,10     \n\t"                \
-      " mul %1,%2     \n\t"                \
-      " mov %1,r1     \n\t"                \
-      " clr r1        \n\t"                \
-      : "+r"(in32), "=d"(mod8), "=d"(tmp8) \
-      :                                    \
-      : "r0")
+#define divmod10_asm16(in32, mod8, tmp8)                                                                               \
+    asm volatile(" ldi %2,51     \n\t"                                                                                 \
+                 " mul %A0,%2    \n\t"                                                                                 \
+                 " clr %A0       \n\t"                                                                                 \
+                 " add r0,%2     \n\t"                                                                                 \
+                 " adc %A0,r1    \n\t"                                                                                 \
+                 " mov %1,r0     \n\t"                                                                                 \
+                 " mul %B0,%2    \n\t"                                                                                 \
+                 " clr %B0       \n\t"                                                                                 \
+                 " add %A0,r0    \n\t"                                                                                 \
+                 " adc %B0,r1    \n\t"                                                                                 \
+                 " clr r1        \n\t"                                                                                 \
+                 " add %1,%A0    \n\t"                                                                                 \
+                 " adc %A0,%B0   \n\t"                                                                                 \
+                 " adc %B0,r1   \n\t"                                                                                  \
+                 " add %1,%B0    \n\t"                                                                                 \
+                 " adc %A0,r1   \n\t"                                                                                  \
+                 " adc %B0,r1    \n\t"                                                                                 \
+                 " lsr %B0       \n\t"                                                                                 \
+                 " ror %A0       \n\t"                                                                                 \
+                 " ror %1        \n\t"                                                                                 \
+                 " ldi %2,10     \n\t"                                                                                 \
+                 " mul %1,%2     \n\t"                                                                                 \
+                 " mov %1,r1     \n\t"                                                                                 \
+                 " clr r1        \n\t"                                                                                 \
+                 : "+r"(in32), "=d"(mod8), "=d"(tmp8)                                                                  \
+                 :                                                                                                     \
+                 : "r0")
 
-#define divmod10_asm32(in32, mod8, tmp8)   \
-  asm volatile(                            \
-      " ldi %2,51     \n\t"                \
-      " mul %A0,%2    \n\t"                \
-      " clr %A0       \n\t"                \
-      " add r0,%2     \n\t"                \
-      " adc %A0,r1    \n\t"                \
-      " mov %1,r0     \n\t"                \
-      " mul %B0,%2    \n\t"                \
-      " clr %B0       \n\t"                \
-      " add %A0,r0    \n\t"                \
-      " adc %B0,r1    \n\t"                \
-      " mul %C0,%2    \n\t"                \
-      " clr %C0       \n\t"                \
-      " add %B0,r0    \n\t"                \
-      " adc %C0,r1    \n\t"                \
-      " mul %D0,%2    \n\t"                \
-      " clr %D0       \n\t"                \
-      " add %C0,r0    \n\t"                \
-      " adc %D0,r1    \n\t"                \
-      " clr r1        \n\t"                \
-      " add %1,%A0    \n\t"                \
-      " adc %A0,%B0   \n\t"                \
-      " adc %B0,%C0   \n\t"                \
-      " adc %C0,%D0   \n\t"                \
-      " adc %D0,r1    \n\t"                \
-      " add %1,%B0    \n\t"                \
-      " adc %A0,%C0   \n\t"                \
-      " adc %B0,%D0   \n\t"                \
-      " adc %C0,r1    \n\t"                \
-      " adc %D0,r1    \n\t"                \
-      " add %1,%D0    \n\t"                \
-      " adc %A0,r1    \n\t"                \
-      " adc %B0,r1    \n\t"                \
-      " adc %C0,r1    \n\t"                \
-      " adc %D0,r1    \n\t"                \
-      " lsr %D0       \n\t"                \
-      " ror %C0       \n\t"                \
-      " ror %B0       \n\t"                \
-      " ror %A0       \n\t"                \
-      " ror %1        \n\t"                \
-      " ldi %2,10     \n\t"                \
-      " mul %1,%2     \n\t"                \
-      " mov %1,r1     \n\t"                \
-      " clr r1        \n\t"                \
-      : "+r"(in32), "=d"(mod8), "=d"(tmp8) \
-      :                                    \
-      : "r0")
+#define divmod10_asm32(in32, mod8, tmp8)                                                                               \
+    asm volatile(" ldi %2,51     \n\t"                                                                                 \
+                 " mul %A0,%2    \n\t"                                                                                 \
+                 " clr %A0       \n\t"                                                                                 \
+                 " add r0,%2     \n\t"                                                                                 \
+                 " adc %A0,r1    \n\t"                                                                                 \
+                 " mov %1,r0     \n\t"                                                                                 \
+                 " mul %B0,%2    \n\t"                                                                                 \
+                 " clr %B0       \n\t"                                                                                 \
+                 " add %A0,r0    \n\t"                                                                                 \
+                 " adc %B0,r1    \n\t"                                                                                 \
+                 " mul %C0,%2    \n\t"                                                                                 \
+                 " clr %C0       \n\t"                                                                                 \
+                 " add %B0,r0    \n\t"                                                                                 \
+                 " adc %C0,r1    \n\t"                                                                                 \
+                 " mul %D0,%2    \n\t"                                                                                 \
+                 " clr %D0       \n\t"                                                                                 \
+                 " add %C0,r0    \n\t"                                                                                 \
+                 " adc %D0,r1    \n\t"                                                                                 \
+                 " clr r1        \n\t"                                                                                 \
+                 " add %1,%A0    \n\t"                                                                                 \
+                 " adc %A0,%B0   \n\t"                                                                                 \
+                 " adc %B0,%C0   \n\t"                                                                                 \
+                 " adc %C0,%D0   \n\t"                                                                                 \
+                 " adc %D0,r1    \n\t"                                                                                 \
+                 " add %1,%B0    \n\t"                                                                                 \
+                 " adc %A0,%C0   \n\t"                                                                                 \
+                 " adc %B0,%D0   \n\t"                                                                                 \
+                 " adc %C0,r1    \n\t"                                                                                 \
+                 " adc %D0,r1    \n\t"                                                                                 \
+                 " add %1,%D0    \n\t"                                                                                 \
+                 " adc %A0,r1    \n\t"                                                                                 \
+                 " adc %B0,r1    \n\t"                                                                                 \
+                 " adc %C0,r1    \n\t"                                                                                 \
+                 " adc %D0,r1    \n\t"                                                                                 \
+                 " lsr %D0       \n\t"                                                                                 \
+                 " ror %C0       \n\t"                                                                                 \
+                 " ror %B0       \n\t"                                                                                 \
+                 " ror %A0       \n\t"                                                                                 \
+                 " ror %1        \n\t"                                                                                 \
+                 " ldi %2,10     \n\t"                                                                                 \
+                 " mul %1,%2     \n\t"                                                                                 \
+                 " mov %1,r1     \n\t"                                                                                 \
+                 " clr r1        \n\t"                                                                                 \
+                 : "+r"(in32), "=d"(mod8), "=d"(tmp8)                                                                  \
+                 :                                                                                                     \
+                 : "r0")
 //------------------------------------------------------------------------------
 /*
 // C++ code is based on this version of divmod10 by robtillaart.
@@ -161,138 +159,161 @@ unsigned divu10(unsigned n) {
 */
 //------------------------------------------------------------------------------
 // Format 16-bit unsigned
-char* fmtBase10(char* str, uint16_t n) {
-  while (n > 9) {
+char *fmtBase10(char *str, uint16_t n)
+{
+    while (n > 9)
+    {
 #ifdef USE_STIMMER
-    uint8_t tmp8, r;
-    divmod10_asm16(n, r, tmp8);
-#else   // USE_STIMMER
-    uint16_t t = n;
-    n = (n >> 1) + (n >> 2);
-    n = n + (n >> 4);
-    n = n + (n >> 8);
-    // n = n + (n >> 16);  // no code for 16-bit n
-    n = n >> 3;
-    uint8_t r = t - (((n << 2) + n) << 1);
-    if (r > 9) {
-      n++;
-      r -= 10;
+        uint8_t tmp8, r;
+        divmod10_asm16(n, r, tmp8);
+#else  // USE_STIMMER
+        uint16_t t = n;
+        n = (n >> 1) + (n >> 2);
+        n = n + (n >> 4);
+        n = n + (n >> 8);
+        // n = n + (n >> 16);  // no code for 16-bit n
+        n = n >> 3;
+        uint8_t r = t - (((n << 2) + n) << 1);
+        if (r > 9)
+        {
+            n++;
+            r -= 10;
+        }
+#endif // USE_STIMMER
+        *--str = r + '0';
     }
-#endif  // USE_STIMMER
-    *--str = r + '0';
-  }
-  *--str = n + '0';
-  return str;
+    *--str = n + '0';
+    return str;
 }
 //------------------------------------------------------------------------------
 // format 32-bit unsigned
-char* fmtBase10(char* str, uint32_t n) {
-  while (n > 0XFFFF) {
+char *fmtBase10(char *str, uint32_t n)
+{
+    while (n > 0XFFFF)
+    {
 #ifdef USE_STIMMER
-    uint8_t tmp8, r;
-    divmod10_asm32(n, r, tmp8);
-#else   //  USE_STIMMER
-    uint32_t t = n;
-    n = (n >> 1) + (n >> 2);
-    n = n + (n >> 4);
-    n = n + (n >> 8);
-    n = n + (n >> 16);
-    n = n >> 3;
-    uint8_t r = t - (((n << 2) + n) << 1);
-    if (r > 9) {
-      n++;
-      r -= 10;
+        uint8_t tmp8, r;
+        divmod10_asm32(n, r, tmp8);
+#else  //  USE_STIMMER
+        uint32_t t = n;
+        n = (n >> 1) + (n >> 2);
+        n = n + (n >> 4);
+        n = n + (n >> 8);
+        n = n + (n >> 16);
+        n = n >> 3;
+        uint8_t r = t - (((n << 2) + n) << 1);
+        if (r > 9)
+        {
+            n++;
+            r -= 10;
+        }
+#endif // USE_STIMMER
+        *--str = r + '0';
     }
-#endif  // USE_STIMMER
-    *--str = r + '0';
-  }
-  return fmtBase10(str, (uint16_t)n);
+    return fmtBase10(str, (uint16_t)n);
 }
 //------------------------------------------------------------------------------
-char* fmtHex(char* str, uint32_t n) {
-  do {
-    uint8_t h = n & 0XF;
-    *--str = h + (h < 10 ? '0' : 'A' - 10);
-    n >>= 4;
-  } while (n);
-  return str;
+char *fmtHex(char *str, uint32_t n)
+{
+    do
+    {
+        uint8_t h = n & 0XF;
+        *--str = h + (h < 10 ? '0' : 'A' - 10);
+        n >>= 4;
+    } while (n);
+    return str;
 }
 //------------------------------------------------------------------------------
-char* fmtSigned(char* str, int32_t num, uint8_t base, bool caps) {
-  bool neg = base == 10 && num < 0;
-  if (neg) {
-    num = -num;
-  }
-  str = fmtUnsigned(str, num, base, caps);
-  if (neg) {
-    *--str = '-';
-  }
-  return str;
+char *fmtSigned(char *str, int32_t num, uint8_t base, bool caps)
+{
+    bool neg = base == 10 && num < 0;
+    if (neg)
+    {
+        num = -num;
+    }
+    str = fmtUnsigned(str, num, base, caps);
+    if (neg)
+    {
+        *--str = '-';
+    }
+    return str;
 }
 //-----------------------------------------------------------------------------
-char* fmtUnsigned(char* str, uint32_t num, uint8_t base, bool caps) {
+char *fmtUnsigned(char *str, uint32_t num, uint8_t base, bool caps)
+{
 #if USE_FMT_BASE10
-  if (base == 10) return fmtBase10(str, (uint32_t)num);
-#endif  // USE_FMT_BASE10
-  do {
-    int c = num % base;
-    *--str = c + (c < 10 ? '0' : caps ? 'A' - 10 : 'a' - 10);
-  } while (num /= base);
-  return str;
+    if (base == 10)
+        return fmtBase10(str, (uint32_t)num);
+#endif // USE_FMT_BASE10
+    do
+    {
+        int c = num % base;
+        *--str = c + (c < 10 ? '0' : caps ? 'A' - 10 : 'a' - 10);
+    } while (num /= base);
+    return str;
 }
 //-----------------------------------------------------------------------------
 
 static const double powTen[] = {1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9};
-static const double rnd[] = {5e-1, 5e-2, 5e-3, 5e-4, 5e-5,
-                             5e-6, 5e-7, 5e-8, 5e-9, 5e-10};
+static const double rnd[] = {5e-1, 5e-2, 5e-3, 5e-4, 5e-5, 5e-6, 5e-7, 5e-8, 5e-9, 5e-10};
 static const size_t MAX_PREC = sizeof(powTen) / sizeof(powTen[0]);
 
-char* fmtDouble(char* str, double num, uint8_t prec, bool altFmt) {
-  bool neg = num < 0;
-  if (neg) {
-    num = -num;
-  }
-  if (isnan(num)) {
-    *--str = 'n';
-    *--str = 'a';
-    *--str = 'n';
-    return str;
-  }
-  if (isinf(num)) {
-    *--str = 'f';
-    *--str = 'n';
-    *--str = 'i';
-    return str;
-  }
-  // last float < 2^32
-  if (num > 4294967040.0) {
-    *--str = 'f';
-    *--str = 'v';
-    *--str = 'o';
-    return str;
-  }
-
-  if (prec > MAX_PREC) {
-    prec = MAX_PREC;
-  }
-  num += rnd[prec];
-  uint32_t ul = num;
-  if (prec) {
-    char* s = str - prec;
-    uint32_t f = (num - ul) * powTen[prec - 1];
-    str = fmtBase10(str, f);
-    while (str > s) {
-      *--str = '0';
+char *fmtDouble(char *str, double num, uint8_t prec, bool altFmt)
+{
+    bool neg = num < 0;
+    if (neg)
+    {
+        num = -num;
     }
-  }
-  if (prec || altFmt) {
-    *--str = '.';
-  }
-  str = fmtBase10(str, ul);
-  if (neg) {
-    *--str = '-';
-  }
-  return str;
+    if (isnan(num))
+    {
+        *--str = 'n';
+        *--str = 'a';
+        *--str = 'n';
+        return str;
+    }
+    if (isinf(num))
+    {
+        *--str = 'f';
+        *--str = 'n';
+        *--str = 'i';
+        return str;
+    }
+    // last float < 2^32
+    if (num > 4294967040.0)
+    {
+        *--str = 'f';
+        *--str = 'v';
+        *--str = 'o';
+        return str;
+    }
+
+    if (prec > MAX_PREC)
+    {
+        prec = MAX_PREC;
+    }
+    num += rnd[prec];
+    uint32_t ul = num;
+    if (prec)
+    {
+        char *s = str - prec;
+        uint32_t f = (num - ul) * powTen[prec - 1];
+        str = fmtBase10(str, f);
+        while (str > s)
+        {
+            *--str = '0';
+        }
+    }
+    if (prec || altFmt)
+    {
+        *--str = '.';
+    }
+    str = fmtBase10(str, ul);
+    if (neg)
+    {
+        *--str = '-';
+    }
+    return str;
 }
 //------------------------------------------------------------------------------
 /** Print a number followed by a field terminator.
@@ -302,104 +323,130 @@ char* fmtDouble(char* str, double num, uint8_t prec, bool altFmt) {
  * \param[in] expChar Use exp format if non zero.
  * \return Pointer to first character of result.
  */
-char* fmtDouble(char* str, double value, uint8_t prec, bool altFmt,
-                char expChar) {
-  if (expChar != 'e' && expChar != 'E') {
-    expChar = 0;
-  }
-  bool neg = value < 0;
-  if (neg) {
-    value = -value;
-  }
-  // check for nan inf ovf
-  if (isnan(value)) {
-    *--str = 'n';
-    *--str = 'a';
-    *--str = 'n';
-    return str;
-  }
-  if (isinf(value)) {
-    *--str = 'f';
-    *--str = 'n';
-    *--str = 'i';
-    return str;
-  }
-  if (!expChar && value > 4294967040.0) {
-    *--str = 'f';
-    *--str = 'v';
-    *--str = 'o';
-    return str;
-  }
-  if (prec > 9) {
-    prec = 9;
-  }
-  if (expChar) {
-    int8_t exp = 0;
-    bool expNeg = false;
-    if (value) {
-      if (value > 10.0L) {
-        while (value > 1e16L) {
-          value *= 1e-16L;
-          exp += 16;
-        }
-        while (value > 1e4L) {
-          value *= 1e-4L;
-          exp += 4;
-        }
-        while (value > 10.0L) {
-          value *= 0.1L;
-          exp++;
-        }
-      } else if (value < 1.0L) {
-        while (value < 1e-16L) {
-          value *= 1e16L;
-          exp -= 16;
-        }
-        while (value < 1e-4L) {
-          value *= 1e4L;
-          exp -= 4;
-        }
-        while (value < 1.0L) {
-          value *= 10.0L;
-          exp--;
-        }
-      }
-      value += rnd[prec];
-      if (value >= 10.0L) {
-        value *= 0.1L;
-        exp++;
-      }
-      expNeg = exp < 0;
-      if (expNeg) {
-        exp = -exp;
-      }
+char *fmtDouble(char *str, double value, uint8_t prec, bool altFmt, char expChar)
+{
+    if (expChar != 'e' && expChar != 'E')
+    {
+        expChar = 0;
     }
-    str = fmtBase10(str, (uint16_t)exp);
-    if (exp < 10) {
-      *--str = '0';
+    bool neg = value < 0;
+    if (neg)
+    {
+        value = -value;
     }
-    *--str = expNeg ? '-' : '+';
-    *--str = expChar;
-  } else {
-    // round value
-    value += rnd[prec];
-  }
+    // check for nan inf ovf
+    if (isnan(value))
+    {
+        *--str = 'n';
+        *--str = 'a';
+        *--str = 'n';
+        return str;
+    }
+    if (isinf(value))
+    {
+        *--str = 'f';
+        *--str = 'n';
+        *--str = 'i';
+        return str;
+    }
+    if (!expChar && value > 4294967040.0)
+    {
+        *--str = 'f';
+        *--str = 'v';
+        *--str = 'o';
+        return str;
+    }
+    if (prec > 9)
+    {
+        prec = 9;
+    }
+    if (expChar)
+    {
+        int8_t exp = 0;
+        bool expNeg = false;
+        if (value)
+        {
+            if (value > 10.0L)
+            {
+                while (value > 1e16L)
+                {
+                    value *= 1e-16L;
+                    exp += 16;
+                }
+                while (value > 1e4L)
+                {
+                    value *= 1e-4L;
+                    exp += 4;
+                }
+                while (value > 10.0L)
+                {
+                    value *= 0.1L;
+                    exp++;
+                }
+            }
+            else if (value < 1.0L)
+            {
+                while (value < 1e-16L)
+                {
+                    value *= 1e16L;
+                    exp -= 16;
+                }
+                while (value < 1e-4L)
+                {
+                    value *= 1e4L;
+                    exp -= 4;
+                }
+                while (value < 1.0L)
+                {
+                    value *= 10.0L;
+                    exp--;
+                }
+            }
+            value += rnd[prec];
+            if (value >= 10.0L)
+            {
+                value *= 0.1L;
+                exp++;
+            }
+            expNeg = exp < 0;
+            if (expNeg)
+            {
+                exp = -exp;
+            }
+        }
+        str = fmtBase10(str, (uint16_t)exp);
+        if (exp < 10)
+        {
+            *--str = '0';
+        }
+        *--str = expNeg ? '-' : '+';
+        *--str = expChar;
+    }
+    else
+    {
+        // round value
+        value += rnd[prec];
+    }
 
-  uint32_t whole = value;
-  if (prec) {
-    char* tmp = str - prec;
-    uint32_t fraction = (value - whole) * powTen[prec - 1];
-    str = fmtBase10(str, fraction);
-    while (str > tmp) {
-      *--str = '0';
+    uint32_t whole = value;
+    if (prec)
+    {
+        char *tmp = str - prec;
+        uint32_t fraction = (value - whole) * powTen[prec - 1];
+        str = fmtBase10(str, fraction);
+        while (str > tmp)
+        {
+            *--str = '0';
+        }
     }
-  }
-  if (prec || altFmt) *--str = '.';
-  str = fmtBase10(str, whole);
-  if (neg) {
-    *--str = '-';
-  }
-  return str;
+    if (prec || altFmt)
+        *--str = '.';
+    str = fmtBase10(str, whole);
+    if (neg)
+    {
+        *--str = '-';
+    }
+    return str;
 }
 //==============================================================================
 //  functions below not used
@@ -408,113 +455,143 @@ char* fmtDouble(char* str, double value, uint8_t prec, bool altFmt,
 #ifdef __AVR__
 static const float m[] PROGMEM = {1e-1, 1e-2, 1e-4, 1e-8, 1e-16, 1e-32};
 static const float p[] PROGMEM = {1e+1, 1e+2, 1e+4, 1e+8, 1e+16, 1e+32};
-#else   // __AVR__
+#else  // __AVR__
 static const float m[] = {1e-1, 1e-2, 1e-4, 1e-8, 1e-16, 1e-32};
 static const float p[] = {1e+1, 1e+2, 1e+4, 1e+8, 1e+16, 1e+32};
-#endif  // __AVR__
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
+#endif // __AVR__
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 // scale float v by power of ten. return v*10^n
-float scale10(float v, int8_t n) {
-  const float* s;
-  if (n < 0) {
-    n = -n;
-    s = m;
-  } else {
-    s = p;
-  }
-  n &= 63;
-  for (uint8_t i = 0; n; n >>= 1, i++) {
+float scale10(float v, int8_t n)
+{
+    const float *s;
+    if (n < 0)
+    {
+        n = -n;
+        s = m;
+    }
+    else
+    {
+        s = p;
+    }
+    n &= 63;
+    for (uint8_t i = 0; n; n >>= 1, i++)
+    {
 #ifdef __AVR__
-    if (n & 1) {
-      v *= pgm_read_float(&s[i]);
+        if (n & 1)
+        {
+            v *= pgm_read_float(&s[i]);
+        }
+#else  // __AVR__
+        if (n & 1)
+        {
+            v *= s[i];
+        }
+#endif // __AVR__
     }
-#else   // __AVR__
-    if (n & 1) {
-      v *= s[i];
-    }
-#endif  // __AVR__
-  }
-  return v;
+    return v;
 }
 //------------------------------------------------------------------------------
-float scanFloat(const char* str, const char** ptr) {
-  int16_t const EXP_LIMIT = 100;
-  bool digit = false;
-  bool dot = false;
-  uint32_t fract = 0;
-  int fracExp = 0;
-  uint8_t nd = 0;
-  bool neg;
-  int c;
-  float v;
-  const char* successPtr = str;
+float scanFloat(const char *str, const char **ptr)
+{
+    int16_t const EXP_LIMIT = 100;
+    bool digit = false;
+    bool dot = false;
+    uint32_t fract = 0;
+    int fracExp = 0;
+    uint8_t nd = 0;
+    bool neg;
+    int c;
+    float v;
+    const char *successPtr = str;
 
-  if (ptr) {
-    *ptr = str;
-  }
+    if (ptr)
+    {
+        *ptr = str;
+    }
 
-  while (isSpace((c = *str++))) {
-  }
-  neg = c == '-';
-  if (c == '-' || c == '+') {
-    c = *str++;
-  }
-  // Skip leading zeros
-  while (c == '0') {
-    c = *str++;
-    digit = true;
-  }
-  for (;;) {
-    if (isDigit(c)) {
-      digit = true;
-      if (nd < 9) {
-        fract = 10 * fract + c - '0';
-        nd++;
-        if (dot) {
-          fracExp--;
+    while (isSpace((c = *str++)))
+    {
+    }
+    neg = c == '-';
+    if (c == '-' || c == '+')
+    {
+        c = *str++;
+    }
+    // Skip leading zeros
+    while (c == '0')
+    {
+        c = *str++;
+        digit = true;
+    }
+    for (;;)
+    {
+        if (isDigit(c))
+        {
+            digit = true;
+            if (nd < 9)
+            {
+                fract = 10 * fract + c - '0';
+                nd++;
+                if (dot)
+                {
+                    fracExp--;
+                }
+            }
+            else
+            {
+                if (!dot)
+                {
+                    fracExp++;
+                }
+            }
         }
-      } else {
-        if (!dot) {
-          fracExp++;
+        else if (c == '.')
+        {
+            if (dot)
+            {
+                goto fail;
+            }
+            dot = true;
         }
-      }
-    } else if (c == '.') {
-      if (dot) {
-        goto fail;
-      }
-      dot = true;
-    } else {
-      if (!digit) {
-        goto fail;
-      }
-      break;
+        else
+        {
+            if (!digit)
+            {
+                goto fail;
+            }
+            break;
+        }
+        successPtr = str;
+        c = *str++;
     }
-    successPtr = str;
-    c = *str++;
-  }
-  if (c == 'e' || c == 'E') {
-    int exp = 0;
-    c = *str++;
-    bool expNeg = c == '-';
-    if (c == '-' || c == '+') {
-      c = *str++;
+    if (c == 'e' || c == 'E')
+    {
+        int exp = 0;
+        c = *str++;
+        bool expNeg = c == '-';
+        if (c == '-' || c == '+')
+        {
+            c = *str++;
+        }
+        while (isDigit(c))
+        {
+            if (exp > EXP_LIMIT)
+            {
+                goto fail;
+            }
+            exp = 10 * exp + c - '0';
+            successPtr = str;
+            c = *str++;
+        }
+        fracExp += expNeg ? -exp : exp;
     }
-    while (isDigit(c)) {
-      if (exp > EXP_LIMIT) {
-        goto fail;
-      }
-      exp = 10 * exp + c - '0';
-      successPtr = str;
-      c = *str++;
+    if (ptr)
+    {
+        *ptr = successPtr;
     }
-    fracExp += expNeg ? -exp : exp;
-  }
-  if (ptr) {
-    *ptr = successPtr;
-  }
-  v = scale10(static_cast<float>(fract), fracExp);
-  return neg ? -v : v;
+    v = scale10(static_cast<float>(fract), fracExp);
+    return neg ? -v : v;
 
 fail:
-  return 0;
+    return 0;
 }

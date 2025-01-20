@@ -20,7 +20,7 @@ void (*STM32H7RTC::userFcn)() = nullptr;
 
 /**
  * @brief   Constructor for a new STM32H7RTC object.
- * 
+ *
  */
 STM32H7RTC::STM32H7RTC()
 {
@@ -29,11 +29,11 @@ STM32H7RTC::STM32H7RTC()
 
 /**
  * @brief   Initialize the RTC inside STM32.
- * 
+ *
  * @param   uint8_t _format
  *          Clock format - RTC_HOURFORMAT_24 for 24 hour clock or
  *          RTC_HOURFORMAT_12 for 12 hour format.
- *          
+ *
  * @param   bool _resetRtc
  *          Force RTC reset (override already set RTC).
  * @return  RTC_HandleTypeDef
@@ -46,7 +46,7 @@ RTC_HandleTypeDef STM32H7RTC::begin(uint8_t _format, bool _resetRtc)
 
     // Enable backup domain (needed for RTC).
     HAL_PWR_EnableBkUpAccess();
-    
+
     // Enable backup regulator.
     HAL_PWR_EnableBkUpReg();
 
@@ -135,7 +135,7 @@ RTC_HandleTypeDef STM32H7RTC::begin(uint8_t _format, bool _resetRtc)
 
 /**
  * @brief   Set the time inside STM32 RTC using human readable format.
- * 
+ *
  * @param   uint8_t _h
  *          RTC Hour value.
  * @param   uint8_t _m
@@ -170,7 +170,7 @@ void STM32H7RTC::setTime(uint8_t _h, uint8_t _m, uint8_t _s, uint32_t _ss, uint8
 
 /**
  * @brief   Get the time from the STM32 RTC in human readable format.
- * 
+ *
  * @param   uint8_t *_h
  *          Pointer to the address where to store hours value from the STM32 RTC.
  * @param   uint8_t *_m
@@ -185,12 +185,12 @@ void STM32H7RTC::setTime(uint8_t _h, uint8_t _m, uint8_t _s, uint32_t _ss, uint8
  *          Pointer to the address where to store status of the daylight savings.
  * @return  RTC_TimeTypeDef
  *          Return the time in RTC Typedef format.
- * 
+ *
  * @note    Since _ss, _paAm and _dayLightSaving are not commonly used, NULL can be used as parameter if these
  *          parameters are not needed.
  */
 RTC_TimeTypeDef STM32H7RTC::getTime(uint8_t *_h, uint8_t *_m, uint8_t *_s, uint32_t *_ss, uint8_t *_pmAm,
-                                  uint32_t *_dayLightSaving)
+                                    uint32_t *_dayLightSaving)
 {
     RTC_TimeTypeDef myTime = {0};
     RTC_DateTypeDef myDate = {0};
@@ -213,7 +213,7 @@ RTC_TimeTypeDef STM32H7RTC::getTime(uint8_t *_h, uint8_t *_m, uint8_t *_s, uint3
 }
 /**
  * @brief   Gets the time from the STM32 in STM32 RTC Time Typedef.
- * 
+ *
  * @return  RTC_TimeTypeDef
  *          RTC Time in STM32 RTC Time Typedef format.
  */
@@ -227,7 +227,7 @@ RTC_TimeTypeDef STM32H7RTC::getTime()
 
 /**
  * @brief   Set the date inside STM32 RTC.
- * 
+ *
  * @param   uint8_t _d
  *          Day of the month.
  * @param   uint8_t _m
@@ -251,7 +251,7 @@ void STM32H7RTC::setDate(uint8_t _d, uint8_t _m, uint16_t _y, uint8_t _weekday)
 
 /**
  * @brief   Get the date from the STM32 RTC.
- * 
+ *
  * @param   uint8_t *_d
  *          Pointer to the address where to store the day of the month.
  * @param   uint8_t *_m
@@ -262,7 +262,7 @@ void STM32H7RTC::setDate(uint8_t _d, uint8_t _m, uint16_t _y, uint8_t _weekday)
  *          Pointer to the address where to store the weekday value.
  * @return  RTC_DateTypeDef
  *          Returns the date in STM32 RTC DateTypeDef format.
- * 
+ *
  * @note    If _weekday is not required, NULL can be used as parameter.
  */
 RTC_DateTypeDef STM32H7RTC::getDate(uint8_t *_d, uint8_t *_m, uint8_t *_y, uint8_t *_weekday)
@@ -278,7 +278,7 @@ RTC_DateTypeDef STM32H7RTC::getDate(uint8_t *_d, uint8_t *_m, uint8_t *_y, uint8
 
 /**
  * @brief   Get the date from the STM32 RTC in STM32 RTC DateTypeDef format.
- * 
+ *
  * @return  RTC_DateTypeDef
  *          RTC Date in STM32 RTC DateTypeDef format.
  */
@@ -290,7 +290,7 @@ RTC_DateTypeDef STM32H7RTC::getDate()
 
 /**
  * @brief   Enables the RTC Alarm with Interrutps.
- * 
+ *
  * @param   uint8_t _d
  *          Set the month day for the RTC alarm.
  * @param   uint8_t _h
@@ -317,11 +317,11 @@ RTC_DateTypeDef STM32H7RTC::getDate()
  *          or RTC_HOURFORMAT12_PM.
  * @param   uint32_t _dayLightSaving
  *          Set daylightime savings. Use RTC_DAYLIGHTSAVING_SUB1H, RTC_DAYLIGHTSAVING_ADD1H or
- *          RTC_DAYLIGHTSAVING_NONE 
- *          
+ *          RTC_DAYLIGHTSAVING_NONE
+ *
  */
 void STM32H7RTC::enableAlarm(uint8_t _d, uint8_t _h, uint8_t _m, uint8_t _s, uint32_t _alarm, uint32_t _alarmMask,
-                           uint8_t _pmAm, uint32_t _dayLightSaving)
+                             uint8_t _pmAm, uint32_t _dayLightSaving)
 {
     RTC_AlarmTypeDef myAlarm = {0};
     myAlarm.AlarmTime.Hours = _h;
@@ -340,7 +340,7 @@ void STM32H7RTC::enableAlarm(uint8_t _d, uint8_t _h, uint8_t _m, uint8_t _s, uin
 
 /**
  * @brief   Enable callback on alarm interrupt event.
- * 
+ *
  * @param   void (*_f)() Callback to the function that will be called at the Alarm event.
  */
 void STM32H7RTC::enableAlarmInterrupt(void (*_f)())
@@ -352,7 +352,7 @@ void STM32H7RTC::enableAlarmInterrupt(void (*_f)())
 
 /**
  * @brief   Disable prev. set alarm.
- * 
+ *
  * @param   uint32_t _alarm
  *          Alarm A or Alarm B. Use RTC_ALARM_A or RTC_ALARM_B. Alarm A has full
  *          functionallity in this library, while Alarm B has limited.
@@ -364,7 +364,7 @@ void STM32H7RTC::disableAlarm(uint32_t _alarm)
 
 /**
  * @brief   Disable alarm Interrupts.
- * 
+ *
  */
 void STM32H7RTC::disableAlarmInterrupt()
 {
@@ -376,7 +376,7 @@ void STM32H7RTC::disableAlarmInterrupt()
 /**
  * @brief   Enable the simple alarm without interrupts. Must use polling method
  *          to check the state of the alarm.
- * 
+ *
  * @param   uint8_t _d
  *          Set the RTC Alarm day in month.
  * @param   uint8_t _h
@@ -403,11 +403,11 @@ void STM32H7RTC::disableAlarmInterrupt()
  *          or RTC_HOURFORMAT12_PM.
  * @param   uint32_t _dayLightSaving
  *          Set daylightime savings. Use RTC_DAYLIGHTSAVING_SUB1H, RTC_DAYLIGHTSAVING_ADD1H or
- *          RTC_DAYLIGHTSAVING_NONE 
- *          
+ *          RTC_DAYLIGHTSAVING_NONE
+ *
  */
 void STM32H7RTC::enableSimpleAlarm(uint8_t _d, uint8_t _h, uint8_t _m, uint8_t _s, uint32_t _alarm, uint32_t _alarmMask,
-                                 uint8_t _pmAm, uint32_t _dayLightSaving)
+                                   uint8_t _pmAm, uint32_t _dayLightSaving)
 {
     RTC_AlarmTypeDef myAlarm = {0};
     myAlarm.AlarmTime.Hours = _h;
@@ -427,7 +427,7 @@ void STM32H7RTC::enableSimpleAlarm(uint8_t _d, uint8_t _h, uint8_t _m, uint8_t _
 /**
  * @brief   Check if the Alarm is triggered. Only for Alarm A for now.
  *          This is used along with enableSimpleAlarm().
- * 
+ *
  * @param   bool _clearFlag
  *          Set to true to clear alarm flag rightaway, set to false to keep it.
  * @return  bool
@@ -444,7 +444,7 @@ bool STM32H7RTC::checkForAlarm(bool _clearFlag)
 
 /**
  * @brief   Get the values of previously set alarm.
- * 
+ *
  * @param   uint8_t *_d
  *          Pointer to the address where to store day in a month for the RTC Alarm.
  * @param   uint8_t *_h
@@ -471,13 +471,13 @@ bool STM32H7RTC::checkForAlarm(bool _clearFlag)
  *          or RTC_HOURFORMAT12_PM.
  * @param   uint32_t *_dayLightSaving
  *          Set daylightime savings. Use RTC_DAYLIGHTSAVING_SUB1H, RTC_DAYLIGHTSAVING_ADD1H or
- *          RTC_DAYLIGHTSAVING_NONE 
+ *          RTC_DAYLIGHTSAVING_NONE
  * @return  RTC_AlarmTypeDef
  *          Retrun STM32 RTC Alarm Typedef.
- *          
+ *
  */
 RTC_AlarmTypeDef STM32H7RTC::getAlarm(uint8_t *_d, uint8_t *_h, uint8_t *_m, uint8_t *_s, uint32_t _alarm,
-                                    uint32_t *_alarmMask, uint8_t *_pmAm, uint32_t *_dayLightSaving)
+                                      uint32_t *_alarmMask, uint8_t *_pmAm, uint32_t *_dayLightSaving)
 {
     RTC_AlarmTypeDef myAlarm = {0};
     HAL_RTC_GetAlarm(&_stm32MotionHrtc, &myAlarm, _alarm, RTC_FORMAT);
@@ -493,9 +493,9 @@ RTC_AlarmTypeDef STM32H7RTC::getAlarm(uint8_t *_d, uint8_t *_h, uint8_t *_m, uin
 
 /**
  * @brief   Get the RTC Alarm Typedef filled with RTC Alarm data.
- * 
+ *
  * @return  RTC_AlarmTypeDef
- *          Retrun STM32 RTC Alarm Typedef. 
+ *          Retrun STM32 RTC Alarm Typedef.
  */
 RTC_AlarmTypeDef STM32H7RTC::getAlarm()
 {
@@ -507,15 +507,15 @@ RTC_AlarmTypeDef STM32H7RTC::getAlarm()
 // RTC_OUTPUT_ALARMA, RTC_OUTPUT_ALARMB or RTC_OUTPUT_DISABLE for _alarm
 /**
  * @brief   Route RTC Alarm signal to the GPIO pin.
- * 
+ *
  * @param   bool _outEn
  *          True - Enable the RTC Alarm Output on GPIO pin.
  *          False - Disable RTC Alarm Output on GPIO pin.
  * @param   uint32_t _alarm
  *          RTC_OUTPUT_ALARMA, RTC_OUTPUT_ALARMB or RTC_OUTPUT_DISABLE.
- * 
+ *
  * @note    If used _outEn = false, _alarm must be RTC_OUTPUT_DISABLE.
- *          
+ *
  */
 void STM32H7RTC::setAlarmOutput(bool _outEn, uint32_t _alarm)
 {
@@ -545,7 +545,7 @@ void STM32H7RTC::setAlarmOutput(bool _outEn, uint32_t _alarm)
 
 /**
  * @brief   Writes a magic number to know that RTC is already set.
- * 
+ *
  */
 void STM32H7RTC::rtcSetFlag()
 {
@@ -555,10 +555,10 @@ void STM32H7RTC::rtcSetFlag()
 
 /**
  * @brief   Check if the RTC is alreday set (time and date).
- * 
+ *
  * @return  bool
  *          true - RTC is already set.
- *          false - RTC is still not set. 
+ *          false - RTC is still not set.
  */
 bool STM32H7RTC::isRTCSet()
 {
@@ -567,26 +567,26 @@ bool STM32H7RTC::isRTCSet()
 
 /**
  * @brief   Allows to write into the backup RAM region used by the RTC.
- * 
+ *
  * @param   uint16_t _addr
  *          Start address - goes from 0 to 4095.
  * @param   void *_data
  *          Pointer to the data that needs to be written.
  * @param   _n
  *          How many bytes needs to be written.
- * 
+ *
  * @note    This is not the same memory location as RTC Backup RAM. This is SRAM Backup region.
  */
 void STM32H7RTC::writeToBackupRAM(uint16_t _addr, void *_data, int _n)
 {
     // Convert backup RAM address (from 0 - 4095) to the physical address of the register.
-    uint8_t *_reg = (uint8_t*)(0x38800000 + (_addr & 0x00000FFF));
+    uint8_t *_reg = (uint8_t *)(0x38800000 + (_addr & 0x00000FFF));
 
     // Convert data into bytes.
-    uint8_t *_byteData = (uint8_t*)_data;
+    uint8_t *_byteData = (uint8_t *)_data;
 
     // Flush the cache! Min. size for the cache flush is 32 bytes.
-    SCB_CleanDCache_by_Addr((uint32_t *)_byteData, _n>32?_n:32);
+    SCB_CleanDCache_by_Addr((uint32_t *)_byteData, _n > 32 ? _n : 32);
 
     // Store bytes.
     for (int i = 0; i < _n; i++)
@@ -595,31 +595,31 @@ void STM32H7RTC::writeToBackupRAM(uint16_t _addr, void *_data, int _n)
     }
 
     // Flush the cache! Min. size for the cache flush is 32 bytes.
-    SCB_CleanDCache_by_Addr((uint32_t *)_reg, _n>32?_n:32);
+    SCB_CleanDCache_by_Addr((uint32_t *)_reg, _n > 32 ? _n : 32);
 }
 
 /**
  * @brief   Allows to read data from the backup RAM region used by the RTC.
- * 
+ *
  * @param   uint16_t _addr
- *          Start address - goes from 0 to 4095. 
+ *          Start address - goes from 0 to 4095.
  * @param   void *_data
  *          Pointer to the address where to store data from the Backup SRAM.
  * @param   int _n
  *          How many bytes needs to be written.
- * 
+ *
  * @note    This is not the same memory location as RTC Backup RAM. This is SRAM Backup region.
  */
 void STM32H7RTC::readFromBackupRAM(uint16_t _addr, void *_data, int _n)
 {
     // Convert backup RAM address (from 0 - 4095) to the physical address of the register.
-    uint8_t *_reg = (uint8_t*)(0x38800000 + (_addr & 0x00000FFF));
+    uint8_t *_reg = (uint8_t *)(0x38800000 + (_addr & 0x00000FFF));
 
     // Convert data into bytes.
-    uint8_t *_byteData = (uint8_t*)_data;
+    uint8_t *_byteData = (uint8_t *)_data;
 
     // Flush the cache! Min. size for the cache flush is 32 bytes.
-    SCB_CleanDCache_by_Addr((uint32_t *)_reg, _n>32?_n:32);
+    SCB_CleanDCache_by_Addr((uint32_t *)_reg, _n > 32 ? _n : 32);
 
     // Store bytes.
     for (int i = 0; i < _n; i++)
@@ -628,12 +628,12 @@ void STM32H7RTC::readFromBackupRAM(uint16_t _addr, void *_data, int _n)
     }
 
     // Flush the cache! Min. size for the cache flush is 32 bytes.
-    SCB_CleanDCache_by_Addr((uint32_t *)_byteData, _n>32?_n:32);
+    SCB_CleanDCache_by_Addr((uint32_t *)_byteData, _n > 32 ? _n : 32);
 }
 
 /**
  * @brief   STM32 HALL Callback function - Called in the event of the Alarm Interrupt.
- * 
+ *
  * @param   RTC_HandleTypeDef *hrtc
  *          STM32 RTC Instance - needed by the STM32 HAL Library.
  */
@@ -646,7 +646,7 @@ extern "C" void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 
 /**
  * @brief   STM32 RTC Alarm Callback registrsation.
- * 
+ *
  */
 extern "C" void RTC_Alarm_IRQHandler(void)
 {
@@ -655,10 +655,10 @@ extern "C" void RTC_Alarm_IRQHandler(void)
 
 /**
  * @brief   Hardware peripheral initialization.
- * 
+ *
  * @param   RTC_HandleTypeDef *hrtc
  *          STM32 RTC Instance - needed by the STM32 HAL Library.
- * 
+ *
  */
 extern "C" void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc)
 {
@@ -670,10 +670,10 @@ extern "C" void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc)
 
 /**
  * @brief   Hardware peripheral deinitialization.
- * 
+ *
  * @param   RTC_HandleTypeDef *hrtc
  *          STM32 RTC Instance - needed by the STM32 HAL Library.
- * 
+ *
  */
 extern "C" void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
 {

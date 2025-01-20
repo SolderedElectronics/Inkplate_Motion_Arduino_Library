@@ -26,55 +26,81 @@
 #if defined(SD_USE_CUSTOM_SPI) && defined(__arm__) && defined(CORE_TEENSY)
 #define USE_BLOCK_TRANSFER 1
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::activate() { m_spi->beginTransaction(m_spiSettings); }
+void SdSpiArduinoDriver::activate()
+{
+    m_spi->beginTransaction(m_spiSettings);
+}
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::begin(SdSpiConfig spiConfig) {
-  if (spiConfig.spiPort) {
-    m_spi = spiConfig.spiPort;
+void SdSpiArduinoDriver::begin(SdSpiConfig spiConfig)
+{
+    if (spiConfig.spiPort)
+    {
+        m_spi = spiConfig.spiPort;
 #if defined(SDCARD_SPI) && defined(SDCARD_SS_PIN)
-  } else if (spiConfig.csPin == SDCARD_SS_PIN) {
-    m_spi = &SDCARD_SPI;
-    m_spi->setMISO(SDCARD_MISO_PIN);
-    m_spi->setMOSI(SDCARD_MOSI_PIN);
-    m_spi->setSCK(SDCARD_SCK_PIN);
-#endif  // defined(SDCARD_SPI) && defined(SDCARD_SS_PIN)
-  } else {
-    m_spi = &SPI;
-  }
-  m_spi->begin();
+    }
+    else if (spiConfig.csPin == SDCARD_SS_PIN)
+    {
+        m_spi = &SDCARD_SPI;
+        m_spi->setMISO(SDCARD_MISO_PIN);
+        m_spi->setMOSI(SDCARD_MOSI_PIN);
+        m_spi->setSCK(SDCARD_SCK_PIN);
+#endif // defined(SDCARD_SPI) && defined(SDCARD_SS_PIN)
+    }
+    else
+    {
+        m_spi = &SPI;
+    }
+    m_spi->begin();
 }
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::deactivate() { m_spi->endTransaction(); }
+void SdSpiArduinoDriver::deactivate()
+{
+    m_spi->endTransaction();
+}
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::end() { m_spi->end(); }
+void SdSpiArduinoDriver::end()
+{
+    m_spi->end();
+}
 //------------------------------------------------------------------------------
-uint8_t SdSpiArduinoDriver::receive() { return m_spi->transfer(0XFF); }
+uint8_t SdSpiArduinoDriver::receive()
+{
+    return m_spi->transfer(0XFF);
+}
 //------------------------------------------------------------------------------
-uint8_t SdSpiArduinoDriver::receive(uint8_t* buf, size_t count) {
+uint8_t SdSpiArduinoDriver::receive(uint8_t *buf, size_t count)
+{
 #if USE_BLOCK_TRANSFER
-  memset(buf, 0XFF, count);
-  m_spi->transfer(buf, count);
-#else   // USE_BLOCK_TRANSFER
-  for (size_t i = 0; i < count; i++) {
-    buf[i] = m_spi->transfer(0XFF);
-  }
-#endif  // USE_BLOCK_TRANSFER
-  return 0;
+    memset(buf, 0XFF, count);
+    m_spi->transfer(buf, count);
+#else  // USE_BLOCK_TRANSFER
+    for (size_t i = 0; i < count; i++)
+    {
+        buf[i] = m_spi->transfer(0XFF);
+    }
+#endif // USE_BLOCK_TRANSFER
+    return 0;
 }
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::send(uint8_t data) { m_spi->transfer(data); }
+void SdSpiArduinoDriver::send(uint8_t data)
+{
+    m_spi->transfer(data);
+}
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::send(const uint8_t* buf, size_t count) {
+void SdSpiArduinoDriver::send(const uint8_t *buf, size_t count)
+{
 #if USE_BLOCK_TRANSFER
-  uint32_t tmp[128];
-  if (0 < count && count <= 512) {
-    memcpy(tmp, buf, count);
-    m_spi->transfer(tmp, count);
-    return;
-  }
-#endif  // USE_BLOCK_TRANSFER
-  for (size_t i = 0; i < count; i++) {
-    m_spi->transfer(buf[i]);
-  }
+    uint32_t tmp[128];
+    if (0 < count && count <= 512)
+    {
+        memcpy(tmp, buf, count);
+        m_spi->transfer(tmp, count);
+        return;
+    }
+#endif // USE_BLOCK_TRANSFER
+    for (size_t i = 0; i < count; i++)
+    {
+        m_spi->transfer(buf[i]);
+    }
 }
-#endif  // defined(SD_USE_CUSTOM_SPI) && defined(__arm__) &&defined(CORE_TEENSY)
+#endif // defined(SD_USE_CUSTOM_SPI) && defined(__arm__) &&defined(CORE_TEENSY)

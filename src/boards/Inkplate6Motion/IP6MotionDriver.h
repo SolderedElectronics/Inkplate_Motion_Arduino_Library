@@ -47,11 +47,11 @@
 #include "../../libs/imageProcessing/ditherKernels.h"
 
 // Defines for EPD GPIOs
-#define EPD_DRIVER_PINS_OUTPUT  0
-#define EPD_DRIVER_PINS_H_ZI    1
+#define EPD_DRIVER_PINS_OUTPUT 0
+#define EPD_DRIVER_PINS_H_ZI   1
 
 // FMC address for sending data to the EPD.
-#define EPD_FMC_ADDR    0x68000000
+#define EPD_FMC_ADDR 0x68000000
 
 // Inplate Motion base class.
 class Inkplate;
@@ -93,7 +93,8 @@ static inline void vScanStart()
 // Compiler be nice, please do not optimise this function.
 __attribute__((optimize("O0"))) static inline void cycleDelay(uint32_t _cycles)
 {
-    while(_cycles--);
+    while (_cycles--)
+        ;
 }
 
 // Start writing the first line into epaper display.
@@ -125,157 +126,160 @@ __attribute__((always_inline)) static inline void vScanEnd()
 
 class EPDDriver : public Helpers
 {
-    public:
-        EPDDriver();
-        int initDriver(Inkplate *_inkplatePtr);
-        void cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases);
-        void clearDisplay();
-        void partialUpdate(uint8_t _leaveOn = 0);
-        void display(uint8_t _leaveOn = 0);
-        int epdPSU(uint8_t _state);
-        bool loadWaveform(InkplateWaveform _customWaveform);
-        double readBattery();
-        void selectDisplayMode(uint8_t _mode);
-        uint8_t getDisplayMode();
+  public:
+    EPDDriver();
+    int initDriver(Inkplate *_inkplatePtr);
+    void cleanFast(uint8_t *_clearWavefrom, uint8_t _wavefromPhases);
+    void clearDisplay();
+    void partialUpdate(uint8_t _leaveOn = 0);
+    void display(uint8_t _leaveOn = 0);
+    int epdPSU(uint8_t _state);
+    bool loadWaveform(InkplateWaveform _customWaveform);
+    double readBattery();
+    void selectDisplayMode(uint8_t _mode);
+    uint8_t getDisplayMode();
 
-        // Set the automatic partial update.
-        void setFullUpdateTreshold(uint16_t _numberOfPartialUpdates);
+    // Set the automatic partial update.
+    void setFullUpdateTreshold(uint16_t _numberOfPartialUpdates);
 
-        // Should be moved into Inkplate.h or Graphics.h.
-        void drawBitmapFast(const uint8_t *_p);
+    // Should be moved into Inkplate.h or Graphics.h.
+    void drawBitmapFast(const uint8_t *_p);
 
-        // Initializer for microSD card.
-        bool microSDCardInit();
+    // Initializer for microSD card.
+    bool microSDCardInit();
 
-        // Enable selected peripherals.
-        void peripheralState(uint8_t _peripheral, bool _en);
+    // Enable selected peripherals.
+    void peripheralState(uint8_t _peripheral, bool _en);
 
-        // Object for ePaper power managment IC.
-        EpdPmic pmic;
+    // Object for ePaper power managment IC.
+    EpdPmic pmic;
 
-        // Object for GPIO expander.
-        IOExpander internalIO;
+    // Object for GPIO expander.
+    IOExpander internalIO;
 
-        // Object for the STM32 built-in RTC.
-        STM32H7RTC rtc;
+    // Object for the STM32 built-in RTC.
+    STM32H7RTC rtc;
 
-        // Object for the magnetic rotary encoder.
-        AS5600 rotaryEncoder;
+    // Object for the magnetic rotary encoder.
+    AS5600 rotaryEncoder;
 
-        // Object for NeoPixel LED.
-        Adafruit_NeoPixel led = Adafruit_NeoPixel(2, INKPLATE_WSLED_DIN, NEO_GRB + NEO_KHZ800);
+    // Object for NeoPixel LED.
+    Adafruit_NeoPixel led = Adafruit_NeoPixel(2, INKPLATE_WSLED_DIN, NEO_GRB + NEO_KHZ800);
 
-        // Object for SHTC3 temperature and humidity sensor.
-        SHTC3 shtc3;
+    // Object for SHTC3 temperature and humidity sensor.
+    SHTC3 shtc3;
 
-        // Object for the ADPS9960 Sensor.
-        SparkFun_APDS9960 apds9960;
+    // Object for the ADPS9960 Sensor.
+    SparkFun_APDS9960 apds9960;
 
-        // Object for LSM6DSO32 accelerometer & gyroscope.
-        Adafruit_LSM6DSO32 lsm6dso32;
+    // Object for LSM6DSO32 accelerometer & gyroscope.
+    Adafruit_LSM6DSO32 lsm6dso32;
 
-        // Object for the Inkplate on-board micro SD card.
-        SdFat sdFat;
+    // Object for the Inkplate on-board micro SD card.
+    SdFat sdFat;
 
-        // Inkplate Motion object, needed for drawPixel.
-        Inkplate *_inkplate;
+    // Inkplate Motion object, needed for drawPixel.
+    Inkplate *_inkplate;
 
-        // Class for image decode in Inkplate Motion library.
-        ImageDecoder image;
+    // Class for image decode in Inkplate Motion library.
+    ImageDecoder image;
 
-        // Class for the image processing (grayscale, color invert, dither).
-        ImageProcessing imgProcess;
+    // Class for the image processing (grayscale, color invert, dither).
+    ImageProcessing imgProcess;
 
-        // If needed, DMA buffers used in drivers can be used for something else.
-        volatile uint8_t *_dmaBuffer[3];
+    // If needed, DMA buffers used in drivers can be used for something else.
+    volatile uint8_t *_dmaBuffer[3];
 
-    protected:
-        // Function initializes all GPIO pins used on Inkplate for driving EPD.
-        void gpioInit();
+  protected:
+    // Function initializes all GPIO pins used on Inkplate for driving EPD.
+    void gpioInit();
 
-        // External SRAM frame buffers astart addresses. Statically allocated due speed.
-        // Frame buffer for current image on the screen. 2MB in size (2097152 bytes).
-        volatile uint8_t *_currentScreenFB = (uint8_t *)0xD0000000;
+    // External SRAM frame buffers astart addresses. Statically allocated due speed.
+    // Frame buffer for current image on the screen. 2MB in size (2097152 bytes).
+    volatile uint8_t *_currentScreenFB = (uint8_t *)0xD0000000;
 
-        // Frame buffer for the image that will be written to the screen on update. 2MB in size (2097152 bytes).
-        volatile uint8_t *_pendingScreenFB = (uint8_t *)0xD0200000;
+    // Frame buffer for the image that will be written to the screen on update. 2MB in size (2097152 bytes).
+    volatile uint8_t *_pendingScreenFB = (uint8_t *)0xD0200000;
 
-        // "Scratchpad memory" used for calculations (partial update for example). 2MB in size (2097152 bytes).
-        volatile uint8_t *_scratchpadMemory = (uint8_t *)0xD0400000;
+    // "Scratchpad memory" used for calculations (partial update for example). 2MB in size (2097152 bytes).
+    volatile uint8_t *_scratchpadMemory = (uint8_t *)0xD0400000;
 
-        // Buffer for downloading files from the web. 4MB in size (4194304 bytes).
-        volatile uint8_t *_downloadFileMemory = (uint8_t *)0xD0800000;
+    // Buffer for downloading files from the web. 4MB in size (4194304 bytes).
+    volatile uint8_t *_downloadFileMemory = (uint8_t *)0xD0800000;
 
-    private:
-        // Sets EPD control GPIO pins to the output or High-Z state.
-        void epdGpioState(uint8_t _state);
+  private:
+    // Sets EPD control GPIO pins to the output or High-Z state.
+    void epdGpioState(uint8_t _state);
 
-        // Function calculates 4 pixels at once from 4 bit per pixel buffer on the fly (before start writing new frame).
-        // With this we can crate LUT that will take all 4 pixels from the frame buffer and convert them into waveform.
-        void calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform);
+    // Function calculates 4 pixels at once from 4 bit per pixel buffer on the fly (before start writing new frame).
+    // With this we can crate LUT that will take all 4 pixels from the frame buffer and convert them into waveform.
+    void calculateGLUTOnTheFly(uint8_t *_lut, uint8_t *_waveform);
 
-        // Function calculates the difference between tfo framebuffers (usually between current image on the screen and pending in the MCU memory).
-        void differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
+    // Function calculates the difference between tfo framebuffers (usually between current image on the screen and
+    // pending in the MCU memory).
+    void differenceMask(uint8_t *_currentScreenFB, uint8_t *_pendingScreenFB, uint8_t *_differenceMask);
 
-        // Internal method for global 1 bit ePaper screen update.
-        void display1b(uint8_t _leaveOn);
-        
-        // Internal method for global 4 bit ePaper screen update.
-        void display4b(uint8_t _leaveOn);
+    // Internal method for global 1 bit ePaper screen update.
+    void display1b(uint8_t _leaveOn);
 
-        // Universal method fot the ePaper screen update.
-        void pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut, void (*_pixelDecode)(void*, void*, void*), const uint8_t _prebufferedLines, uint8_t _bitsPerPx);
+    // Internal method for global 4 bit ePaper screen update.
+    void display4b(uint8_t _leaveOn);
 
-        // Mode dependant methods for conversion framebuffer data into waveforem data. Used by the pixelsUpdate.
-        static void pixelDecode4BitEPD(void *_out, void *_lut, void *_fb);
-        static void pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb);
-        static void pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb);
+    // Universal method fot the ePaper screen update.
+    void pixelsUpdate(volatile uint8_t *_frameBuffer, uint8_t *_waveformLut,
+                      void (*_pixelDecode)(void *, void *, void *), const uint8_t _prebufferedLines,
+                      uint8_t _bitsPerPx);
 
-        // Internal 4 bit partial update method.
-        void partialUpdate4Bit(uint8_t _leaveOn);
+    // Mode dependant methods for conversion framebuffer data into waveforem data. Used by the pixelsUpdate.
+    static void pixelDecode4BitEPD(void *_out, void *_lut, void *_fb);
+    static void pixelDecode1BitEPDFull(void *_out, void *_lut, void *_fb);
+    static void pixelDecode1BitEPDPartial(void *_out, void *_lut, void *_fb);
 
-        // Internal 1 bit partial update method.
-        void partialUpdate1Bit(uint8_t _leaveOn);
+    // Internal 4 bit partial update method.
+    void partialUpdate4Bit(uint8_t _leaveOn);
 
-        // Object for the SdFat SPI STM32 library.
-        SdSpiConfig* _microSDCardSPIConf = nullptr;
+    // Internal 1 bit partial update method.
+    void partialUpdate1Bit(uint8_t _leaveOn);
 
-        // Typedef handles for Master DMA.
-        MDMA_HandleTypeDef *_epdMdmaHandle;
-        MDMA_HandleTypeDef *_sdramMdmaHandle;
+    // Object for the SdFat SPI STM32 library.
+    SdSpiConfig *_microSDCardSPIConf = nullptr;
 
-        // Default EPD PSU state is off.
-        uint8_t _epdPSUState = 0;
+    // Typedef handles for Master DMA.
+    MDMA_HandleTypeDef *_epdMdmaHandle;
+    MDMA_HandleTypeDef *_sdramMdmaHandle;
 
-        // Current display mode. By defaul, set it to 1 bit B&W mode.
-        uint8_t _displayMode = INKPLATE_1BW;
-        
-        // Block partial update at startup, use full update.
-        uint8_t _blockPartial = 1;
+    // Default EPD PSU state is off.
+    uint8_t _epdPSUState = 0;
 
-        // Internal typedef for the 4 bit waveform - global update.
-        InkplateWaveform _waveform4BitInternal = default4BitWavefrom;
+    // Current display mode. By defaul, set it to 1 bit B&W mode.
+    uint8_t _displayMode = INKPLATE_1BW;
 
-        // Internal typedef for the 1 bit mode waveform - global update.
-        InkplateWaveform _waveform1BitInternal = default1BitWavefrom;
+    // Block partial update at startup, use full update.
+    uint8_t _blockPartial = 1;
 
-        // Internal typedef for the 4 bit waveform - partial update.
-        InkplateWaveform _waveform4BitPartialInternal = default4BitPartialUpdate;
+    // Internal typedef for the 4 bit waveform - global update.
+    InkplateWaveform _waveform4BitInternal = default4BitWavefrom;
 
-        // Internal typedef for the 1 bit waveform - partial update.
-        InkplateWaveform _waveform1BitPartialInternal = default1BitPartialUpdate;
+    // Internal typedef for the 1 bit mode waveform - global update.
+    InkplateWaveform _waveform1BitInternal = default1BitWavefrom;
 
-        // Variable keeps track on how many partial updates have been executed for automatic full update.
-        uint16_t _partialUpdateCounter = 0;
+    // Internal typedef for the 4 bit waveform - partial update.
+    InkplateWaveform _waveform4BitPartialInternal = default4BitPartialUpdate;
 
-        // Variable that set the user-defined treshold for the full update. If zero, automatic full update is disabled.
-        uint16_t _partialUpdateLimiter = 0;
+    // Internal typedef for the 1 bit waveform - partial update.
+    InkplateWaveform _waveform1BitPartialInternal = default1BitPartialUpdate;
 
-        // Variable keeps current status of the microSD card initializaton.
-        bool _microSdInit = false;
+    // Variable keeps track on how many partial updates have been executed for automatic full update.
+    uint16_t _partialUpdateCounter = 0;
 
-        // Fast LUT table for conversion from 2 * 4 bit grayscale pixel to EPD Wavefrom.
-        uint8_t _fastGLUT[65536];
+    // Variable that set the user-defined treshold for the full update. If zero, automatic full update is disabled.
+    uint16_t _partialUpdateLimiter = 0;
+
+    // Variable keeps current status of the microSD card initializaton.
+    bool _microSdInit = false;
+
+    // Fast LUT table for conversion from 2 * 4 bit grayscale pixel to EPD Wavefrom.
+    uint8_t _fastGLUT[65536];
 };
 
 #endif

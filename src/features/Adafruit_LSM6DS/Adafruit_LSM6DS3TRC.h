@@ -28,16 +28,17 @@
  *    @brief  Class that stores state and functions for interacting with
  *            the LSM6DS3TRC
  */
-class Adafruit_LSM6DS3TRC : public Adafruit_LSM6DS {
-public:
-  Adafruit_LSM6DS3TRC();
-  ~Adafruit_LSM6DS3TRC(){};
+class Adafruit_LSM6DS3TRC : public Adafruit_LSM6DS
+{
+  public:
+    Adafruit_LSM6DS3TRC();
+    ~Adafruit_LSM6DS3TRC(){};
 
-  void enableI2CMasterPullups(bool enable_pullups);
-  void enablePedometer(bool enable);
+    void enableI2CMasterPullups(bool enable_pullups);
+    void enablePedometer(bool enable);
 
-private:
-  bool _init(int32_t sensor_id);
+  private:
+    bool _init(int32_t sensor_id);
 };
 
 #endif

@@ -30,4 +30,4 @@ typedef FsBlockDeviceInterface FsBlockDevice;
 #else
 typedef SdCard FsBlockDevice;
 #endif
-#endif  // FsBlockDevice_h
+#endif // FsBlockDevice_h

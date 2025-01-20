@@ -14,7 +14,7 @@
 // ------ //
 
 #define ws2812_wrap_target 0
-#define ws2812_wrap 3
+#define ws2812_wrap        3
 
 #define ws2812_T1 2
 #define ws2812_T2 5
@@ -36,28 +36,29 @@ static const struct pio_program ws2812_program = {
     .origin = -1,
 };
 
-static inline pio_sm_config ws2812_program_get_default_config(uint offset) {
-  pio_sm_config c = pio_get_default_sm_config();
-  sm_config_set_wrap(&c, offset + ws2812_wrap_target, offset + ws2812_wrap);
-  sm_config_set_sideset(&c, 1, false, false);
-  return c;
+static inline pio_sm_config ws2812_program_get_default_config(uint offset)
+{
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + ws2812_wrap_target, offset + ws2812_wrap);
+    sm_config_set_sideset(&c, 1, false, false);
+    return c;
 }
 
 #include "hardware/clocks.h"
-static inline void ws2812_program_init(PIO pio, uint sm, uint offset, uint pin,
-                                       float freq, uint bits) {
-  pio_gpio_init(pio, pin);
-  pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
-  pio_sm_config c = ws2812_program_get_default_config(offset);
-  sm_config_set_sideset_pins(&c, pin);
-  sm_config_set_out_shift(&c, false, true,
-                          bits); // <----<<< Length changed to "bits"
-  sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
-  int cycles_per_bit = ws2812_T1 + ws2812_T2 + ws2812_T3;
-  float div = clock_get_hz(clk_sys) / (freq * cycles_per_bit);
-  sm_config_set_clkdiv(&c, div);
-  pio_sm_init(pio, sm, offset, &c);
-  pio_sm_set_enabled(pio, sm, true);
+static inline void ws2812_program_init(PIO pio, uint sm, uint offset, uint pin, float freq, uint bits)
+{
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+    pio_sm_config c = ws2812_program_get_default_config(offset);
+    sm_config_set_sideset_pins(&c, pin);
+    sm_config_set_out_shift(&c, false, true,
+                            bits); // <----<<< Length changed to "bits"
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    int cycles_per_bit = ws2812_T1 + ws2812_T2 + ws2812_T3;
+    float div = clock_get_hz(clk_sys) / (freq * cycles_per_bit);
+    sm_config_set_clkdiv(&c, div);
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
 }
 
 #endif

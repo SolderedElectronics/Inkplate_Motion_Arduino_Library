@@ -23,7 +23,7 @@ class MicroSD
 
   private:
     // Settings for the dedicated microSD card SPI port.
-    SdSpiConfig* stm32SpiCfg = nullptr;
+    SdSpiConfig *stm32SpiCfg = nullptr;
 };
 
 #endif

@@ -23,7 +23,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include "FsNew.h"
-void* operator new(size_t size, newalign_t* ptr) {
-  (void)size;
-  return ptr;
+void *operator new(size_t size, newalign_t *ptr)
+{
+    (void)size;
+    return ptr;
 }

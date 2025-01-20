@@ -19,8 +19,8 @@
 #include "Arduino.h"
 
 // Include all needed image decoders.
-#include "../libs/bmpDecode/bmpDecode.h"
 #include "../libs/TJpgDec/tjpgd.h"
+#include "../libs/bmpDecode/bmpDecode.h"
 #include "../libs/pngle/pngle.h"
 
 // Used by the image decoder for detecting different image formats.
@@ -62,8 +62,14 @@ static const uint8_t _helpersJpgSignature[4] = {3, 0xFF, 0xD8, 0xFF};
 static const uint8_t _helpersPngSignature[9] = {8, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
 
 bool inkplateImageDecodeHelpersBmp(BmpDecodeHandle *_bmpDecoder, InkplateImageDecodeErrors *_decodeError);
-bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, uint8_t *, size_t), int (*_outFunc)(JDEC *, void *, JRECT *), InkplateImageDecodeErrors *_decodeError, void *_sessionHandler);
-bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t *_pngle), void (*_outFunc)(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4]), int *_imgW, int *_imgH, InkplateImageDecodeErrors *_decodeError, void *_sessionHandler);
+bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, uint8_t *, size_t),
+                                   int (*_outFunc)(JDEC *, void *, JRECT *), InkplateImageDecodeErrors *_decodeError,
+                                   void *_sessionHandler);
+bool inkplateImageDecodeHelpersPng(pngle_t *_pngDecoder, bool (*_inFunc)(pngle_t *_pngle),
+                                   void (*_outFunc)(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h,
+                                                    uint8_t rgba[4]),
+                                   int *_imgW, int *_imgH, InkplateImageDecodeErrors *_decodeError,
+                                   void *_sessionHandler);
 enum InkplateImageDecodeFormat inkplateImageDecodeHelpersDetectImageFormat(char *_filename, void *_bytes);
 bool inkplateImageDecodeHelpersCheckHeaders(void *_dataPtr, void *_headerSignature);
 bool inkplateImageDecodeHelpersIsWebPath(char *_path);

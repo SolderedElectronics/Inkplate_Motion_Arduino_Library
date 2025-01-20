@@ -28,6 +28,6 @@
 
 #ifndef EXFAT_READ_ONLY
 #define EXFAT_READ_ONLY 0
-#endif  // EXFAT_READ_ONLY
+#endif // EXFAT_READ_ONLY
 
-#endif  // ExFatConfig_h
+#endif // ExFatConfig_h
