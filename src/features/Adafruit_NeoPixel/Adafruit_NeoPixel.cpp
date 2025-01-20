@@ -2594,8 +2594,8 @@ void Adafruit_NeoPixel::show(void)
 #ifdef NEO_KHZ400
     }
     else
-    {   // 400 KHz bitstream
-        // ToDo!
+    { // 400 KHz bitstream
+      // ToDo!
     }
 #endif
     //----
@@ -2762,8 +2762,8 @@ void Adafruit_NeoPixel::show(void)
 #if defined(NEO_KHZ400)
     }
     else
-    {   // 400 KHz bitstream
-        // ToDo!
+    { // 400 KHz bitstream
+      // ToDo!
     }
 #endif
 
@@ -2817,8 +2817,8 @@ void Adafruit_NeoPixel::show(void)
 #if defined(NEO_KHZ400)
     }
     else
-    {   // 400 KHz bitstream
-        // ToDo!
+    { // 400 KHz bitstream
+      // ToDo!
     }
 #endif
 #elif defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_ARDUINO_CORE_STM32)
