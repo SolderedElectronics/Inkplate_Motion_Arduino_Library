@@ -2,6 +2,8 @@ name: Compile Examples
 
 on:
   push:
+    branches:
+      - dev
 
 jobs:
   build:
@@ -16,13 +18,24 @@ jobs:
               - examples
 
     steps:
-      # Ensure that Bash is used for compatibility with the prebuild script
+      # Ensure Bash for compatibility
       - name: Ensure Bash Shell
         run: sudo ln -sf /bin/bash /bin/sh
 
-      # Checkout the repository
+      # Checkout code
       - name: Checkout
         uses: actions/checkout@v3
+
+      # -----------------------------------
+      # Cache the Arduino packages folder
+      # -----------------------------------
+      - name: Cache Arduino dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.arduino15
+          key: ${{ runner.os }}-arduino15-${{ hashFiles('**/*.ino', 'library.properties', 'library.json') }}
+          restore-keys: |
+            ${{ runner.os }}-arduino15-
 
       # Compile all examples
       - name: Compile examples
@@ -36,5 +49,6 @@ jobs:
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
             - source-path: ./
+            - name: ArduinoJson
           sketch-paths: |
             ${{ matrix.additional-sketch-paths }}

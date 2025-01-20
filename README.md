@@ -1,44 +1,100 @@
 # Inkplate Motion Arduino Library
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/SolderedElectronics/Inkplate-Motion-Arduino-Library/main/extras/images/Inkplate6Motion.jpg">
+  <img src="https://raw.githubusercontent.com/SolderedElectronics/Inkplate-Motion-Arduino-Library/main/extras/images/Inkplate6Motion.jpg" alt="Inkplate Motion">
 </p>
 
-All in one and ready to use Inkplate Motion Arduino Library. Use e-paper with one of the quickest refresh updates with user-frendly Arduino IDE. Draw text, shapes or image with just few lines on code!
+All-in-one, ready-to-use **Inkplate Motion Arduino Library**! This library is specifically for our Inkplate MOTION series of development boards. Unlike the original Inkplate boards (which are based on ESP32), **Inkplate MOTION is based on STM32**.
 
-# ⚠️This library is still in the development!⚠️
+Enjoy fast e-paper refresh rates in a user-friendly Arduino IDE. Draw text, shapes, and images; fetch data via Wi-Fi; and use any number of peripherals with just a few lines of code! ⚡
 
-## Getting started
-1. Install Inkplate Motion Board Definition though [Dasduino Board Definition](https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE). Select Inklplate Motion board.
-2. If you aren't using macOS install CH340 drivers (in case you don't have them yet) - instructions [here](https://soldered.com/learn/ch340-driver-installation-croduino-basic3-nova2/)
-3. Get the STM32CubeProgrammer from [STMicroelectronics](https://www.st.com/en/development-tools/stm32cubeprog.html). It's needed to for programming Inkplate Motion STM32 MCU.
-4. Get the library by downloading it from here or by using ~Arduino Library Manager~
-5. Open Inkplate Motion example and run them on Inkplate Motion!
+---
 
-ℹ**NOTE**ℹ
-In order to be able to upload the program to the Inkplate Motion with the USB, put Inkplate Motion in programming mode by pressing PROGRAMMING BUTTON. If you have Inkplate with the case, open the case, you will find the tool for pressing programming button with case closed. 
+## ⚠️ Note: This library is brand new!
 
-## Code examples
-There are many examples in the library that you demonstrate how to use any of the Inkplate functionality. Use Basic folder to get familiar with principles of using the Inkplate, such as modes (BW and Gray), how to write graphics and text. In Advanced folder, you'll learn how to make HTTP/HTTPS requests, utilise low power, use SD card, read RTC, etc. Finally, get easily started on some projects. Examples and projects are added regularly by us or from community contributions. There is also a diagnostics folder with all tools for more advanced users (such as VCOM programming, waveform selection, etc). This sentence is changed for compile tests.
+As we roll out our first Inkplate MOTION board, Inkplate 6 MOTION, this is the first time this library is available to the public. In the spirit of our open-source approach, **we welcome your feedback and contributions**. Please feel free to open a GitHub issue in this repository if you need more info on how to implement a feature or if you spot a software bug. 🐛
 
-## Battery power
+---
 
-Inkplate boards has two options for powering it. First one is obvious - USB port at side of the board. Just plug any micro USB cable and you are good to go. Second option is battery. Supported batteries are standard Li-Ion/Li-Poly batteries with 3.7V nominal voltage. Connector for the battery is standard 2.00mm pitch JST connector. The onboard charger will charge the battery with 500mA when USB is plugged at the same time. You can use battery of any size or capacity if you don't have a enclosure (but mind the current capability of the baterry since Inkplate Motion can draw quite bit of current while refreshing the screen). If you are using our enclosure, battery size shouldn't exceed 90mm x 40mm (3.5 x 1.57 inch) and 5mm (0.19 inch) in height. [This battery](https://soldered.com/product/li-ion-battery-1200mah-3-7v/) is good fit for the Inkplate. Also, Inkplate's hardware is specially optimized for low power consumption in deep sleep mode, making it extremely suitable for battery applications.
+## Documentation
+
+For the full Inkplate documentation, getting started guides, FAQs, and other resources, please visit [docs.inkplate.com](https://docs.inkplate.com).
+
+> ℹ **NOTE**  
+> As of now, the documentation is still a work in progress, but it will be available soon at the above link.
+
+---
+
+## Getting Started 🚀
+
+1. **Install the Inkplate Motion Board Definition**  
+   Use the [Dasduino Board Definition](https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE). Select the Inkplate Motion board from the boards menu in the Arduino IDE.
+
+2. **Install CH340 Drivers (Windows Only)**  
+   If you’re on Windows and haven’t already done so, install the CH340 drivers. Follow the instructions [here](https://soldered.com/learn/ch340-driver-installation-croduino-basic3-nova2/).
+
+3. **Install the STM32CubeProgrammer**  
+   Download it from [STMicroelectronics](https://www.st.com/en/development-tools/stm32cubeprog.html). It’s needed for programming the Inkplate Motion’s STM32 MCU.
+
+4. **Get the Library**  
+   You can download the Inkplate Motion Arduino Library from this repository or install it directly from the Arduino Library Manager.
+
+5. **Open and Upload Examples**  
+   Open any of the Inkplate Motion example sketches from the Arduino IDE and upload them to your Inkplate Motion board!
+
+> ℹ **NOTE**  
+> To upload code via USB, put Inkplate Motion in programming mode by pressing the **PROGRAMMING BUTTON**. If you have a board with a case, you can use the provided tool to press the programming button without fully opening the enclosure.
+
+---
+
+## Code Examples 🖥️
+
+The example sketches in this library showcase various features of the Inkplate 6 MOTION. They are organized into categories:
+
+- **Basic**  
+  Demonstrates drawing simple graphics (text, shapes) in black and white or grayscale, and refreshing the screen with fast updates.
+
+- **Advanced**  
+  Explores deeper features like low-power deep sleep, built-in RTC, SD card reader, Wi-Fi, and onboard peripherals and sensors.
+
+- **Diagnostics**  
+  Contains test sketches, VCOM setting adjustments, and other diagnostic tools for troubleshooting.
+
+---
+
+## Battery Power 🔋
+
+Inkplate boards support two power options:
+
+1. **USB Port**  
+   Simply plug in any micro USB cable to power the board.
+
+2. **Battery**  
+   Use a standard Li-Ion/Li-Poly 3.7V battery with a 2.00 mm pitch JST connector. The onboard charger will charge the battery at 500 mA whenever USB power is connected. You can use any size or capacity battery as long as current requirements are met. However, if you're using our enclosure, the battery should not exceed **90 mm x 40 mm (3.5 x 1.57 inches)** and **5 mm (0.19 inches)** in height.  
+   [This battery](https://soldered.com/product/li-ion-battery-1200mah-3-7v/) is a good fit for the Inkplate Motion. The board is optimized for low power consumption in deep sleep mode, making it suitable for battery-powered applications.
 
 ### ⚠️ WARNING
-Please check the polarity on the battery JST connector! Some batteries that can be purchased from the web have reversed polarity that can damage Inkplate board! You are safe if you are using the pouch battery from [soldered.com](https://soldered.com/categories/power-sources-batteries/batteries/lithium-batteries/) or Inkplate with the built-in battery . 
+Please check the polarity of the battery JST connector! Some off-the-shelf batteries have reversed polarity, which can damage the Inkplate board. If you use batteries from [soldered.com](https://soldered.com/categories/power-sources-batteries/batteries/lithium-batteries/) or official Inkplate batteries, you’re safe.
 
-### ℹ NOTE
-CR2032 battery is only for RTC backup. Inkplate cannot be powered with it.
+> ℹ **NOTE**  
+> A CR2032 coin cell is only for RTC backup. It **cannot** power the Inkplate.
+
+---
 
 ## License
-This repo uses the source code from another repositories. All their license files are located in "licences" folder.
+
+This repository uses source code from other projects. All relevant license files are located in the `licenses` folder.
+
+---
 
 ## ESP32 WiFi Coprocessor
-To be able to connect to the WiFi, Inkplate Motion uses ESP32-C3 MCu with SPI AT Commands Firmare on it. ESP32 firmware will be already flashed for you. But, if for some reason ESP32 if corrupted, or you overwritten the AT SPI firmware, you can find it in extras folder. Firmware can be flashed using [CONNECT Programmer](https://soldered.com/product/connect-programmer/) and esptool.
+
+To enable Wi-Fi connectivity, Inkplate Motion uses an **ESP32-C3 MCU** running an SPI AT Commands Firmware. This firmware is pre-flashed on your Inkplate Motion. If you ever overwrite or corrupt the AT SPI firmware, you can find a backup in the `extras` folder. You can flash it using the [CONNECT Programmer](https://soldered.com/product/connect-programmer/) and `esptool`.
+
+---
 
 ## Where to get the Inkplate Motion?
-You can get it by supporting by backing this project on the [Crowdsupply](https://www.crowdsupply.com/soldered/inkplate-6-motion).
 
+You can get Inkplate Motion by supporting us on [Crowd Supply](https://www.crowdsupply.com/soldered/inkplate-6-motion). 🙌
 
-For all questions and issues please reach us via [e-mail](mailto:hello@soldered.com) or our [contact form](https://soldered.com/contact/).
+For any questions or issues, please reach out via [email](mailto:hello@soldered.com) or our [contact form](https://soldered.com/contact/).
