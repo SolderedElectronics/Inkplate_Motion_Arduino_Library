@@ -8,11 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Set up Arduino CLI
-      - name: Set up Arduino CLI
-        uses: arduino/setup-arduino-cli@v1
-        with:
-          version: latest
+      # Install Arduino CLI manually
+      - name: Install Arduino CLI
+        run: |
+          wget -qO- https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz | tar -xvz
+          sudo mv arduino-cli /usr/local/bin/
+          arduino-cli version
 
       # Ensure that Bash is used for compatibility with the prebuild script
       - name: Ensure Bash Shell
