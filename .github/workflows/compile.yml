@@ -7,15 +7,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: true # Stop immediately if a failure occurs in any matrix job
-      matrix:
-        include:
-          - board:
-              fqbn: Inkplate_Motion:stm32:Inkplate6Motion
-            additional-sketch-paths: |
-              - examples
-
     steps:
       # Ensure that Bash is used for compatibility with the prebuild script
       - name: Ensure Bash Shell
@@ -25,22 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Compile all examples
+      # Install necessary platforms
+      - name: Install Arduino Core
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install Inkplate_Motion:stm32
+
+      # Compile all examples and fail fast on error
       - name: Compile examples
-        uses: arduino/compile-sketches@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          platforms: |
-            - source-url: https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/raw/master/package_Dasduino_Boards_index.json
-              name: Inkplate_Motion:stm32
-
-          fqbn: ${{ matrix.board.fqbn }}
-          libraries: |
-            - source-path: ./
-          sketch-paths: |
-            ${{ matrix.additional-sketch-paths }}
-
-      # Stop workflow if a compilation error occurs
-      - name: Check for Compilation Errors
-        if: failure() # This will trigger if the compile-sketches action fails
-        run: exit 1
+        run: |
+          set -e # Exit immediately if a command exits with a non-zero status
+          for sketch in $(find examples -name '*.ino'); do
+            echo "Compiling $sketch"
+            arduino-cli compile --fqbn Inkplate_Motion:stm32:Inkplate6Motion "$sketch" --warnings=all --verbose
+          done
