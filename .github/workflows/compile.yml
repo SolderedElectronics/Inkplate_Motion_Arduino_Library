@@ -8,6 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Set up Arduino CLI
+      - name: Set up Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+        with:
+          version: latest
+
       # Ensure that Bash is used for compatibility with the prebuild script
       - name: Ensure Bash Shell
         run: sudo ln -sf /bin/bash /bin/sh
@@ -16,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Install necessary platforms
+      # Update the Arduino core index and install required platform
       - name: Install Arduino Core
         run: |
           arduino-cli core update-index
