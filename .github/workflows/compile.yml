@@ -1,21 +1,31 @@
 name: Compile Examples
-on: [push]
+
+on:
+  push:
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: true # Stop immediately if a failure occurs in any matrix job
       matrix:
         include:
           - board:
               fqbn: Inkplate_Motion:stm32:Inkplate6Motion
             additional-sketch-paths: |
               - examples
+
     steps:
+      # Ensure that Bash is used for compatibility with the prebuild script
       - name: Ensure Bash Shell
         run: sudo ln -sf /bin/bash /bin/sh
+
+      # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
+
+      # Compile all examples
       - name: Compile examples
         uses: arduino/compile-sketches@v1
         with:
@@ -29,5 +39,8 @@ jobs:
             - source-path: ./
           sketch-paths: |
             ${{ matrix.additional-sketch-paths }}
-          cli-compile-flags: |
-            - --warnings="default"
+
+      # Stop workflow if a compilation error occurs
+      - name: Check for Compilation Errors
+        if: failure() # This will trigger if the compile-sketches action fails
+        run: exit 1
