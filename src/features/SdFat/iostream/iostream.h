@@ -34,124 +34,144 @@
  * \param[in] is the Stream
  * \return The stream
  */
-inline istream &ws(istream &is) {
-  is.skipWhite();
-  return is;
+inline istream &ws(istream &is)
+{
+    is.skipWhite();
+    return is;
 }
 /** insert endline
  * \param[in] os The Stream
  * \return The stream
  */
-inline ostream &endl(ostream &os) {
-  os.put('\n');
+inline ostream &endl(ostream &os)
+{
+    os.put('\n');
 #if ENDL_CALLS_FLUSH
-  os.flush();
-#endif  // ENDL_CALLS_FLUSH
-  return os;
+    os.flush();
+#endif // ENDL_CALLS_FLUSH
+    return os;
 }
 /** flush manipulator
  * \param[in] os The stream
  * \return The stream
  */
-inline ostream &flush(ostream &os) {
-  os.flush();
-  return os;
+inline ostream &flush(ostream &os)
+{
+    os.flush();
+    return os;
 }
 /**
  * \struct setfill
  * \brief type for setfill manipulator
  */
-struct setfill {
-  /** fill character */
-  char c;
-  /** constructor
-   *
-   * \param[in] arg new fill character
-   */
-  explicit setfill(char arg) : c(arg) {}
+struct setfill
+{
+    /** fill character */
+    char c;
+    /** constructor
+     *
+     * \param[in] arg new fill character
+     */
+    explicit setfill(char arg) : c(arg)
+    {
+    }
 };
 /** setfill manipulator
  * \param[in] os the stream
  * \param[in] arg set setfill object
  * \return the stream
  */
-inline ostream &operator<<(ostream &os, const setfill &arg) {
-  os.fill(arg.c);
-  return os;
+inline ostream &operator<<(ostream &os, const setfill &arg)
+{
+    os.fill(arg.c);
+    return os;
 }
 /** setfill manipulator
  * \param[in] obj the stream
  * \param[in] arg set setfill object
  * \return the stream
  */
-inline istream &operator>>(istream &obj, const setfill &arg) {
-  obj.fill(arg.c);
-  return obj;
+inline istream &operator>>(istream &obj, const setfill &arg)
+{
+    obj.fill(arg.c);
+    return obj;
 }
 //------------------------------------------------------------------------------
 /** \struct setprecision
  * \brief type for setprecision manipulator
  */
-struct setprecision {
-  /** precision */
-  unsigned int p;
-  /** constructor
-   * \param[in] arg new precision
-   */
-  explicit setprecision(unsigned int arg) : p(arg) {}
+struct setprecision
+{
+    /** precision */
+    unsigned int p;
+    /** constructor
+     * \param[in] arg new precision
+     */
+    explicit setprecision(unsigned int arg) : p(arg)
+    {
+    }
 };
 /** setprecision manipulator
  * \param[in] os the stream
  * \param[in] arg set setprecision object
  * \return the stream
  */
-inline ostream &operator<<(ostream &os, const setprecision &arg) {
-  os.precision(arg.p);
-  return os;
+inline ostream &operator<<(ostream &os, const setprecision &arg)
+{
+    os.precision(arg.p);
+    return os;
 }
 /** setprecision manipulator
  * \param[in] is the stream
  * \param[in] arg set setprecision object
  * \return the stream
  */
-inline istream &operator>>(istream &is, const setprecision &arg) {
-  is.precision(arg.p);
-  return is;
+inline istream &operator>>(istream &is, const setprecision &arg)
+{
+    is.precision(arg.p);
+    return is;
 }
 //------------------------------------------------------------------------------
 /** \struct setw
  * \brief type for setw manipulator
  */
-struct setw {
-  /** width */
-  unsigned w;
-  /** constructor
-   * \param[in] arg new width
-   */
-  explicit setw(unsigned arg) : w(arg) {}
+struct setw
+{
+    /** width */
+    unsigned w;
+    /** constructor
+     * \param[in] arg new width
+     */
+    explicit setw(unsigned arg) : w(arg)
+    {
+    }
 };
 /** setw manipulator
  * \param[in] os the stream
  * \param[in] arg set setw object
  * \return the stream
  */
-inline ostream &operator<<(ostream &os, const setw &arg) {
-  os.width(arg.w);
-  return os;
+inline ostream &operator<<(ostream &os, const setw &arg)
+{
+    os.width(arg.w);
+    return os;
 }
 /** setw manipulator
  * \param[in] is the stream
  * \param[in] arg set setw object
  * \return the stream
  */
-inline istream &operator>>(istream &is, const setw &arg) {
-  is.width(arg.w);
-  return is;
+inline istream &operator>>(istream &is, const setw &arg)
+{
+    is.width(arg.w);
+    return is;
 }
 //==============================================================================
 /**
  * \class iostream
  * \brief Input/Output stream
  */
-class iostream : public istream, public ostream {};
-#endif  // iostream_h
+class iostream : public istream, public ostream
+{
+};
+#endif // iostream_h

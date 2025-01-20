@@ -26,13 +26,14 @@
  *    @brief  Class that stores state and functions for interacting with
  *            the LSM6DS33 I2C Digital Potentiometer
  */
-class Adafruit_LSM6DS33 : public Adafruit_LSM6DS {
-public:
-  Adafruit_LSM6DS33();
-  ~Adafruit_LSM6DS33(){};
+class Adafruit_LSM6DS33 : public Adafruit_LSM6DS
+{
+  public:
+    Adafruit_LSM6DS33();
+    ~Adafruit_LSM6DS33(){};
 
-private:
-  bool _init(int32_t sensor_id);
+  private:
+    bool _init(int32_t sensor_id);
 };
 
 #endif

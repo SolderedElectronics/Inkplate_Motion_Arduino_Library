@@ -25,22 +25,25 @@
 #define DBG_FILE "FatVolume.cpp"
 #include "../common/DebugMacros.h"
 #include "FatLib.h"
-FatVolume* FatVolume::m_cwv = nullptr;
+FatVolume *FatVolume::m_cwv = nullptr;
 //------------------------------------------------------------------------------
-bool FatVolume::chdir(const char* path) {
-  FatFile dir;
-  if (!dir.open(vwd(), path, O_RDONLY)) {
-    DBG_FAIL_MACRO;
-    goto fail;
-  }
-  if (!dir.isDir()) {
-    DBG_FAIL_MACRO;
-    goto fail;
-  }
-  // m_vwd = dir;
-  m_vwd.copy(&dir);
-  return true;
+bool FatVolume::chdir(const char *path)
+{
+    FatFile dir;
+    if (!dir.open(vwd(), path, O_RDONLY))
+    {
+        DBG_FAIL_MACRO;
+        goto fail;
+    }
+    if (!dir.isDir())
+    {
+        DBG_FAIL_MACRO;
+        goto fail;
+    }
+    // m_vwd = dir;
+    m_vwd.copy(&dir);
+    return true;
 
 fail:
-  return false;
+    return false;
 }

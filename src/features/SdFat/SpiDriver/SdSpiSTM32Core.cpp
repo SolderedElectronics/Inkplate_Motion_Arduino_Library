@@ -26,40 +26,62 @@
 #include "SdSpiDriver.h"
 #if defined(SD_USE_CUSTOM_SPI) && defined(STM32_CORE_VERSION)
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::activate() { m_spi->beginTransaction(m_spiSettings); }
-//------------------------------------------------------------------------------
-void SdSpiArduinoDriver::begin(SdSpiConfig spiConfig) {
-  if (spiConfig.spiPort) {
-    m_spi = spiConfig.spiPort;
-  } else {
-    m_spi = &SPI;
-  }
-  m_spi->begin();
+void SdSpiArduinoDriver::activate()
+{
+    m_spi->beginTransaction(m_spiSettings);
 }
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::deactivate() { m_spi->endTransaction(); }
-//------------------------------------------------------------------------------
-void SdSpiArduinoDriver::end() { m_spi->end(); }
-//------------------------------------------------------------------------------
-uint8_t SdSpiArduinoDriver::receive() { return m_spi->transfer(0XFF); }
-//------------------------------------------------------------------------------
-uint8_t SdSpiArduinoDriver::receive(uint8_t* buf, size_t count) {
-  // Must send 0XFF - SD looks at send data for command.
-  memset(buf, 0XFF, count);
-  m_spi->transfer(buf, count);
-  return 0;
+void SdSpiArduinoDriver::begin(SdSpiConfig spiConfig)
+{
+    if (spiConfig.spiPort)
+    {
+        m_spi = spiConfig.spiPort;
+    }
+    else
+    {
+        m_spi = &SPI;
+    }
+    m_spi->begin();
 }
 //------------------------------------------------------------------------------
-void SdSpiArduinoDriver::send(uint8_t data) { m_spi->transfer(data); }
-//------------------------------------------------------------------------------
-void SdSpiArduinoDriver::send(const uint8_t* buf, size_t count) {
-  // Avoid stack overflow if bad count.  This should cause a write error.
-  if (count > 512) {
-    return;
-  }
-  // Not easy to avoid receive so use tmp RX buffer.
-  uint8_t rxBuf[512];
-  // Discard const - STM32 not const correct.
-  m_spi->transfer(const_cast<uint8_t*>(buf), rxBuf, count);
+void SdSpiArduinoDriver::deactivate()
+{
+    m_spi->endTransaction();
 }
-#endif  // defined(SD_USE_CUSTOM_SPI) && defined(STM32_CORE_VERSION)
+//------------------------------------------------------------------------------
+void SdSpiArduinoDriver::end()
+{
+    m_spi->end();
+}
+//------------------------------------------------------------------------------
+uint8_t SdSpiArduinoDriver::receive()
+{
+    return m_spi->transfer(0XFF);
+}
+//------------------------------------------------------------------------------
+uint8_t SdSpiArduinoDriver::receive(uint8_t *buf, size_t count)
+{
+    // Must send 0XFF - SD looks at send data for command.
+    memset(buf, 0XFF, count);
+    m_spi->transfer(buf, count);
+    return 0;
+}
+//------------------------------------------------------------------------------
+void SdSpiArduinoDriver::send(uint8_t data)
+{
+    m_spi->transfer(data);
+}
+//------------------------------------------------------------------------------
+void SdSpiArduinoDriver::send(const uint8_t *buf, size_t count)
+{
+    // Avoid stack overflow if bad count.  This should cause a write error.
+    if (count > 512)
+    {
+        return;
+    }
+    // Not easy to avoid receive so use tmp RX buffer.
+    uint8_t rxBuf[512];
+    // Discard const - STM32 not const correct.
+    m_spi->transfer(const_cast<uint8_t *>(buf), rxBuf, count);
+}
+#endif // defined(SD_USE_CUSTOM_SPI) && defined(STM32_CORE_VERSION)

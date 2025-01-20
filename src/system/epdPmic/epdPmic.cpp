@@ -103,7 +103,7 @@ double EpdPmic::getVCOM()
 
     // Get the register values.
     readRegister(TPS651851_VCOM1, _vcomRegs, 2);
-    
+
     // Convert integer value into volts.
     _vcomVolts = (_vcomRegs[1] | ((_vcomRegs[0] & 1) << 8)) / 100.0;
 

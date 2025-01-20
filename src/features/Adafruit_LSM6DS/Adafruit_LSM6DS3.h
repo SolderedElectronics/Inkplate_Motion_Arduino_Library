@@ -28,15 +28,16 @@
  *    @brief  Class that stores state and functions for interacting with
  *            the LSM6DS3
  */
-class Adafruit_LSM6DS3 : public Adafruit_LSM6DS {
-public:
-  Adafruit_LSM6DS3();
-  ~Adafruit_LSM6DS3(){};
+class Adafruit_LSM6DS3 : public Adafruit_LSM6DS
+{
+  public:
+    Adafruit_LSM6DS3();
+    ~Adafruit_LSM6DS3(){};
 
-  void enableI2CMasterPullups(bool enable_pullups);
+    void enableI2CMasterPullups(bool enable_pullups);
 
-private:
-  bool _init(int32_t sensor_id);
+  private:
+    bool _init(int32_t sensor_id);
 };
 
 #endif

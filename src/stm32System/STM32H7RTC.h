@@ -82,7 +82,7 @@ class STM32H7RTC
     // Enable alarm without the Alarm Interrupt.
     void enableSimpleAlarm(uint8_t _d, uint8_t _h, uint8_t _m, uint8_t _s, uint32_t _alarm, uint32_t _alarmMask,
                            uint8_t _pmAm = RTC_HOURFORMAT12_AM, uint32_t _dayLightSaving = RTC_DAYLIGHTSAVING_NONE);
-    
+
     // Check for the alarm (polling method).
     bool checkForAlarm(bool _clearFlag = true);
 
@@ -112,7 +112,6 @@ class STM32H7RTC
     static void (*userFcn)();
 
   protected:
-
   private:
 };
 

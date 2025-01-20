@@ -34,41 +34,50 @@
 /** Indicate FillStack() and UnusedStack() are available. */
 #define HAS_UNUSED_STACK 1
 /** boundary between stack and heap. */
-extern char* __brkval;
+extern char *__brkval;
 /** End of bss section.*/
 extern char __bss_end;
 /** Amount of free stack space.
  * \return The number of free bytes.
  */
-inline int FreeStack() {
-  char* sp = reinterpret_cast<char*>(SP);
-  return __brkval ? sp - __brkval : sp - &__bss_end;
+inline int FreeStack()
+{
+    char *sp = reinterpret_cast<char *>(SP);
+    return __brkval ? sp - __brkval : sp - &__bss_end;
 }
 #elif defined(ARDUINO_ARCH_APOLLO3)
 #define HAS_UNUSED_STACK 0
-#elif defined(PLATFORM_ID)  // Particle board
+#elif defined(PLATFORM_ID) // Particle board
 #include "Arduino.h"
-inline int FreeStack() { return System.freeMemory(); }
+inline int FreeStack()
+{
+    return System.freeMemory();
+}
 #elif defined(__IMXRT1062__)
 #define HAS_UNUSED_STACK 1
 extern uint8_t _ebss;
-inline int FreeStack() {
-  register uint32_t sp asm("sp");
-  return reinterpret_cast<char*>(sp) - reinterpret_cast<char*>(&_ebss);
+inline int FreeStack()
+{
+    register uint32_t sp asm("sp");
+    return reinterpret_cast<char *>(sp) - reinterpret_cast<char *>(&_ebss);
 }
 #elif defined(__arm__)
 #define HAS_UNUSED_STACK 1
-extern "C" char* sbrk(int incr);
-inline int FreeStack() {
-  register uint32_t sp asm("sp");
-  return reinterpret_cast<char*>(sp) - reinterpret_cast<char*>(sbrk(0));
+extern "C" char *sbrk(int incr);
+inline int FreeStack()
+{
+    register uint32_t sp asm("sp");
+    return reinterpret_cast<char *>(sp) - reinterpret_cast<char *>(sbrk(0));
 }
-#else  // defined(__AVR__) || defined(DOXYGEN)
+#else // defined(__AVR__) || defined(DOXYGEN)
 #ifndef FREE_STACK_CPP
 #warning FreeStack is not defined for this system.
-#endif  // FREE_STACK_CPP
-inline int FreeStack() { return 0; }
-#endif  // defined(__AVR__) || defined(DOXYGEN)
+#endif // FREE_STACK_CPP
+inline int FreeStack()
+{
+    return 0;
+}
+#endif // defined(__AVR__) || defined(DOXYGEN)
 #if defined(HAS_UNUSED_STACK) || defined(DOXYGEN)
 /** Fill stack with 0x55 pattern */
 void FillStack();
@@ -82,9 +91,14 @@ void FillStack();
  * \return number of bytes with 0x55 pattern.
  */
 int UnusedStack();
-#else  // HAS_UNUSED_STACK
+#else // HAS_UNUSED_STACK
 #define HAS_UNUSED_STACK 0
-inline void FillStack() {}
-inline int UnusedStack() { return 0; }
-#endif  // defined(HAS_UNUSED_STACK)
-#endif  // FreeStack_h
+inline void FillStack()
+{
+}
+inline int UnusedStack()
+{
+    return 0;
+}
+#endif // defined(HAS_UNUSED_STACK)
+#endif // FreeStack_h

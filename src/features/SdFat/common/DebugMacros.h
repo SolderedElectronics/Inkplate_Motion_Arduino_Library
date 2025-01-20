@@ -33,49 +33,55 @@
 #include "Arduino.h"
 #ifndef DBG_FILE
 #error DBG_FILE not defined
-#endif  // DBG_FILE
+#endif // DBG_FILE
 
-__attribute__((unused)) static void dbgFail(uint16_t line) {
-  Serial.print(F("DBG_FAIL: "));
-  Serial.print(F(DBG_FILE));
-  Serial.write('.');
-  Serial.println(line);
+__attribute__((unused)) static void dbgFail(uint16_t line)
+{
+    Serial.print(F("DBG_FAIL: "));
+    Serial.print(F(DBG_FILE));
+    Serial.write('.');
+    Serial.println(line);
 }
-__attribute__((unused)) static void dbgHalt(uint16_t line) {
-  Serial.print(F("DBG_HALT: "));
-  Serial.print(F(DBG_FILE));
-  Serial.write('.');
-  Serial.println(line);
-  while (true) {
-  }
+__attribute__((unused)) static void dbgHalt(uint16_t line)
+{
+    Serial.print(F("DBG_HALT: "));
+    Serial.print(F(DBG_FILE));
+    Serial.write('.');
+    Serial.println(line);
+    while (true)
+    {
+    }
 }
 #define DBG_FAIL_MACRO dbgFail(__LINE__)
 #define DBG_HALT_MACRO dbgHalt(__LINE__)
-#define DBG_HALT_IF(b) \
-  if (b) {             \
-    dbgHalt(__LINE__); \
-  }
+#define DBG_HALT_IF(b)                                                                                                 \
+    if (b)                                                                                                             \
+    {                                                                                                                  \
+        dbgHalt(__LINE__);                                                                                             \
+    }
 
-#else  // USE_DBG_MACROS
+#else // USE_DBG_MACROS
 #define DBG_FAIL_MACRO
 #define DBG_HALT_MACRO
 #define DBG_HALT_IF(b)
-#endif  // USE_DBG_MACROS
+#endif // USE_DBG_MACROS
 
 #if USE_DBG_MACROS > 1
-__attribute__((unused)) static void dbgWarn(uint16_t line) {
-  Serial.print(F("DBG_WARN: "));
-  Serial.print(F(DBG_FILE));
-  Serial.write('.');
-  Serial.println(line);
+__attribute__((unused)) static void dbgWarn(uint16_t line)
+{
+    Serial.print(F("DBG_WARN: "));
+    Serial.print(F(DBG_FILE));
+    Serial.write('.');
+    Serial.println(line);
 }
 #define DBG_WARN_MACRO dbgWarn(__LINE__)
-#define DBG_WARN_IF(b) \
-  if (b) {             \
-    dbgWarn(__LINE__); \
-  }
-#else  // USE_DBG_MACROS > 1
+#define DBG_WARN_IF(b)                                                                                                 \
+    if (b)                                                                                                             \
+    {                                                                                                                  \
+        dbgWarn(__LINE__);                                                                                             \
+    }
+#else // USE_DBG_MACROS > 1
 #define DBG_WARN_MACRO
 #define DBG_WARN_IF(b)
-#endif  // USE_DBG_MACROS > 1
-#endif  // DebugMacros_h
+#endif // USE_DBG_MACROS > 1
+#endif // DebugMacros_h

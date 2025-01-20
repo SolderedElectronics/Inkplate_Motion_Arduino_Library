@@ -35,31 +35,48 @@
  * \class FsName
  * \brief Handle UTF-8 file names.
  */
-class FsName {
- public:
-  /** Beginning of LFN. */
-  const char* begin;
-  /** Next LFN character of end. */
-  const char* next;
-  /** Position one beyond last LFN character. */
-  const char* end;
+class FsName
+{
+  public:
+    /** Beginning of LFN. */
+    const char *begin;
+    /** Next LFN character of end. */
+    const char *next;
+    /** Position one beyond last LFN character. */
+    const char *end;
 #if !USE_UTF8_LONG_NAMES
-  /** \return true if at end. */
-  bool atEnd() { return next == end; }
-  /** Reset to start of LFN. */
-  void reset() { next = begin; }
-  /** \return next char of LFN. */
-  char getch() { return atEnd() ? 0 : *next++; }
-  /** \return next UTF-16 unit of LFN. */
-  uint16_t get16() { return atEnd() ? 0 : *next++; }
-#else   // !USE_UTF8_LONG_NAMES
-  uint16_t ls = 0;
-  bool atEnd() { return !ls && next == end; }
-  void reset() {
-    next = begin;
-    ls = 0;  // lowSurrogate
-  }
-  uint16_t get16();
-#endif  // !USE_UTF8_LONG_NAMES
+    /** \return true if at end. */
+    bool atEnd()
+    {
+        return next == end;
+    }
+    /** Reset to start of LFN. */
+    void reset()
+    {
+        next = begin;
+    }
+    /** \return next char of LFN. */
+    char getch()
+    {
+        return atEnd() ? 0 : *next++;
+    }
+    /** \return next UTF-16 unit of LFN. */
+    uint16_t get16()
+    {
+        return atEnd() ? 0 : *next++;
+    }
+#else  // !USE_UTF8_LONG_NAMES
+    uint16_t ls = 0;
+    bool atEnd()
+    {
+        return !ls && next == end;
+    }
+    void reset()
+    {
+        next = begin;
+        ls = 0; // lowSurrogate
+    }
+    uint16_t get16();
+#endif // !USE_UTF8_LONG_NAMES
 };
-#endif  // FsName_h
+#endif // FsName_h

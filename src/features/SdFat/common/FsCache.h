@@ -34,143 +34,176 @@
  * \class FsCache
  * \brief Sector cache.
  */
-class FsCache {
- public:
-  /** Cached sector is dirty */
-  static const uint8_t CACHE_STATUS_DIRTY = 1;
-  /** Cashed sector is FAT entry and must be mirrored in second FAT. */
-  static const uint8_t CACHE_STATUS_MIRROR_FAT = 2;
-  /** Cache sector status bits */
-  static const uint8_t CACHE_STATUS_MASK =
-      CACHE_STATUS_DIRTY | CACHE_STATUS_MIRROR_FAT;
-  /** Sync existing sector but do not read new sector. */
-  static const uint8_t CACHE_OPTION_NO_READ = 4;
-  /** Cache sector for read. */
-  static const uint8_t CACHE_FOR_READ = 0;
-  /** Cache sector for write. */
-  static const uint8_t CACHE_FOR_WRITE = CACHE_STATUS_DIRTY;
-  /** Reserve cache sector for write - do not read from sector device. */
-  static const uint8_t CACHE_RESERVE_FOR_WRITE =
-      CACHE_STATUS_DIRTY | CACHE_OPTION_NO_READ;
-  //----------------------------------------------------------------------------
-  /** Cobstructor. */
-  FsCache() { init(nullptr); }
-  /** \return Cache buffer address. */
-  uint8_t* cacheBuffer() { return m_buffer; }
-  /**
-   * Cache safe read of a sector.
-   *
-   * \param[in] sector Logical sector to be read.
-   * \param[out] dst Pointer to the location that will receive the data.
-   * \return true for success or false for failure.
-   */
-  bool cacheSafeRead(uint32_t sector, uint8_t* dst) {
-    if (isCached(sector)) {
-      memcpy(dst, m_buffer, 512);
-      return true;
+class FsCache
+{
+  public:
+    /** Cached sector is dirty */
+    static const uint8_t CACHE_STATUS_DIRTY = 1;
+    /** Cashed sector is FAT entry and must be mirrored in second FAT. */
+    static const uint8_t CACHE_STATUS_MIRROR_FAT = 2;
+    /** Cache sector status bits */
+    static const uint8_t CACHE_STATUS_MASK = CACHE_STATUS_DIRTY | CACHE_STATUS_MIRROR_FAT;
+    /** Sync existing sector but do not read new sector. */
+    static const uint8_t CACHE_OPTION_NO_READ = 4;
+    /** Cache sector for read. */
+    static const uint8_t CACHE_FOR_READ = 0;
+    /** Cache sector for write. */
+    static const uint8_t CACHE_FOR_WRITE = CACHE_STATUS_DIRTY;
+    /** Reserve cache sector for write - do not read from sector device. */
+    static const uint8_t CACHE_RESERVE_FOR_WRITE = CACHE_STATUS_DIRTY | CACHE_OPTION_NO_READ;
+    //----------------------------------------------------------------------------
+    /** Cobstructor. */
+    FsCache()
+    {
+        init(nullptr);
     }
-    return m_blockDev->readSector(sector, dst);
-  }
-  /**
-   * Cache safe read of multiple sectors.
-   *
-   * \param[in] sector Logical sector to be read.
-   * \param[in] count Number of sectors to be read.
-   * \param[out] dst Pointer to the location that will receive the data.
-   * \return true for success or false for failure.
-   */
-  bool cacheSafeRead(uint32_t sector, uint8_t* dst, size_t count) {
-    if (isCached(sector, count) && !sync()) {
-      return false;
+    /** \return Cache buffer address. */
+    uint8_t *cacheBuffer()
+    {
+        return m_buffer;
     }
-    return m_blockDev->readSectors(sector, dst, count);
-  }
-  /**
-   * Cache safe write of a sectors.
-   *
-   * \param[in] sector Logical sector to be written.
-   * \param[in] src Pointer to the location of the data to be written.
-   * \return true for success or false for failure.
-   */
-  bool cacheSafeWrite(uint32_t sector, const uint8_t* src) {
-    if (isCached(sector)) {
-      invalidate();
+    /**
+     * Cache safe read of a sector.
+     *
+     * \param[in] sector Logical sector to be read.
+     * \param[out] dst Pointer to the location that will receive the data.
+     * \return true for success or false for failure.
+     */
+    bool cacheSafeRead(uint32_t sector, uint8_t *dst)
+    {
+        if (isCached(sector))
+        {
+            memcpy(dst, m_buffer, 512);
+            return true;
+        }
+        return m_blockDev->readSector(sector, dst);
     }
-    return m_blockDev->writeSector(sector, src);
-  }
-  /**
-   * Cache safe write of multiple sectors.
-   *
-   * \param[in] sector Logical sector to be written.
-   * \param[in] src Pointer to the location of the data to be written.
-   * \param[in] count Number of sectors to be written.
-   * \return true for success or false for failure.
-   */
-  bool cacheSafeWrite(uint32_t sector, const uint8_t* src, size_t count) {
-    if (isCached(sector, count)) {
-      invalidate();
+    /**
+     * Cache safe read of multiple sectors.
+     *
+     * \param[in] sector Logical sector to be read.
+     * \param[in] count Number of sectors to be read.
+     * \param[out] dst Pointer to the location that will receive the data.
+     * \return true for success or false for failure.
+     */
+    bool cacheSafeRead(uint32_t sector, uint8_t *dst, size_t count)
+    {
+        if (isCached(sector, count) && !sync())
+        {
+            return false;
+        }
+        return m_blockDev->readSectors(sector, dst, count);
     }
-    return m_blockDev->writeSectors(sector, src, count);
-  }
-  /** \return Clear the cache and returns a pointer to the cache. */
-  uint8_t* clear() {
-    if (isDirty() && !sync()) {
-      return nullptr;
+    /**
+     * Cache safe write of a sectors.
+     *
+     * \param[in] sector Logical sector to be written.
+     * \param[in] src Pointer to the location of the data to be written.
+     * \return true for success or false for failure.
+     */
+    bool cacheSafeWrite(uint32_t sector, const uint8_t *src)
+    {
+        if (isCached(sector))
+        {
+            invalidate();
+        }
+        return m_blockDev->writeSector(sector, src);
     }
-    invalidate();
-    return m_buffer;
-  }
-  /** Set current sector dirty. */
-  void dirty() { m_status |= CACHE_STATUS_DIRTY; }
-  /** Initialize the cache.
-   * \param[in] blockDev Block device for this cache.
-   */
-  void init(FsBlockDevice* blockDev) {
-    m_blockDev = blockDev;
-    invalidate();
-  }
-  /** Invalidate current cache sector. */
-  void invalidate() {
-    m_status = 0;
-    m_sector = 0XFFFFFFFF;
-  }
-  /** Check if a sector is in the cache.
-   * \param[in] sector Sector to checked.
-   * \return true if the sector is cached.
-   */
-  bool isCached(uint32_t sector) const { return sector == m_sector; }
-  /** Check if the cache contains a sector from a range.
-   * \param[in] sector Start sector of the range.
-   * \param[in] count Number of sectors in the range.
-   * \return true if a sector in the range is cached.
-   */
-  bool isCached(uint32_t sector, size_t count) {
-    return sector <= m_sector && m_sector < (sector + count);
-  }
-  /** \return dirty status */
-  bool isDirty() { return m_status & CACHE_STATUS_DIRTY; }
-  /** Prepare cache to access sector.
-   * \param[in] sector Sector to read.
-   * \param[in] option mode for cached sector.
-   * \return Address of cached sector.
-   */
-  uint8_t* prepare(uint32_t sector, uint8_t option);
-  /** \return Logical sector number for cached sector. */
-  uint32_t sector() { return m_sector; }
-  /** Set the offset to the second FAT for mirroring.
-   * \param[in] offset Sector offset to second FAT.
-   */
-  void setMirrorOffset(uint32_t offset) { m_mirrorOffset = offset; }
-  /** Write current sector if dirty.
-   * \return true for success or false for failure.
-   */
-  bool sync();
+    /**
+     * Cache safe write of multiple sectors.
+     *
+     * \param[in] sector Logical sector to be written.
+     * \param[in] src Pointer to the location of the data to be written.
+     * \param[in] count Number of sectors to be written.
+     * \return true for success or false for failure.
+     */
+    bool cacheSafeWrite(uint32_t sector, const uint8_t *src, size_t count)
+    {
+        if (isCached(sector, count))
+        {
+            invalidate();
+        }
+        return m_blockDev->writeSectors(sector, src, count);
+    }
+    /** \return Clear the cache and returns a pointer to the cache. */
+    uint8_t *clear()
+    {
+        if (isDirty() && !sync())
+        {
+            return nullptr;
+        }
+        invalidate();
+        return m_buffer;
+    }
+    /** Set current sector dirty. */
+    void dirty()
+    {
+        m_status |= CACHE_STATUS_DIRTY;
+    }
+    /** Initialize the cache.
+     * \param[in] blockDev Block device for this cache.
+     */
+    void init(FsBlockDevice *blockDev)
+    {
+        m_blockDev = blockDev;
+        invalidate();
+    }
+    /** Invalidate current cache sector. */
+    void invalidate()
+    {
+        m_status = 0;
+        m_sector = 0XFFFFFFFF;
+    }
+    /** Check if a sector is in the cache.
+     * \param[in] sector Sector to checked.
+     * \return true if the sector is cached.
+     */
+    bool isCached(uint32_t sector) const
+    {
+        return sector == m_sector;
+    }
+    /** Check if the cache contains a sector from a range.
+     * \param[in] sector Start sector of the range.
+     * \param[in] count Number of sectors in the range.
+     * \return true if a sector in the range is cached.
+     */
+    bool isCached(uint32_t sector, size_t count)
+    {
+        return sector <= m_sector && m_sector < (sector + count);
+    }
+    /** \return dirty status */
+    bool isDirty()
+    {
+        return m_status & CACHE_STATUS_DIRTY;
+    }
+    /** Prepare cache to access sector.
+     * \param[in] sector Sector to read.
+     * \param[in] option mode for cached sector.
+     * \return Address of cached sector.
+     */
+    uint8_t *prepare(uint32_t sector, uint8_t option);
+    /** \return Logical sector number for cached sector. */
+    uint32_t sector()
+    {
+        return m_sector;
+    }
+    /** Set the offset to the second FAT for mirroring.
+     * \param[in] offset Sector offset to second FAT.
+     */
+    void setMirrorOffset(uint32_t offset)
+    {
+        m_mirrorOffset = offset;
+    }
+    /** Write current sector if dirty.
+     * \return true for success or false for failure.
+     */
+    bool sync();
 
- private:
-  uint8_t m_status;
-  FsBlockDevice* m_blockDev;
-  uint32_t m_sector;
-  uint32_t m_mirrorOffset;
-  uint8_t m_buffer[512];
+  private:
+    uint8_t m_status;
+    FsBlockDevice *m_blockDev;
+    uint32_t m_sector;
+    uint32_t m_mirrorOffset;
+    uint8_t m_buffer[512];
 };
-#endif  // FsCache_h
+#endif // FsCache_h

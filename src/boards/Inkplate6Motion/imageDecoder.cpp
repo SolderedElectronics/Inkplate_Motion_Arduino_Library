@@ -46,8 +46,8 @@ ImageDecoder::ImageDecoder()
  *          The address to where image files from web should be downloaded
  *
  */
-void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, ImageProcessing *_imgProcessPtr, uint8_t *_tempFbAddress,
-                         volatile uint8_t *_downloadFileMemory)
+void ImageDecoder::begin(Inkplate *_inkplatePtr, WiFiClass *_wifiPtr, ImageProcessing *_imgProcessPtr,
+                         uint8_t *_tempFbAddress, volatile uint8_t *_downloadFileMemory)
 {
     // Save these addresses locally.
     _framebufferHandler.framebuffer = _tempFbAddress;
@@ -122,7 +122,8 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
             }
 
             // Use proper decoder for the image type.
-            bool _retValue = drawFromSd(&_file, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize, _format);
+            bool _retValue = drawFromSd(&_file, _x, _y, _invert, _dither, _ditherKernelParameters,
+                                        _ditherKernelParametersSize, _format);
 
             // Close the file.
             _file.close();
@@ -140,7 +141,8 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
     else if (_pathType == INKPLATE_IMAGE_DECODE_PATH_WEB)
     {
         // Call drawFromWeb and return the result of that
-        return drawFromWeb(_path, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize, _format);
+        return drawFromWeb(_path, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize,
+                           _format);
     }
 
     // If you got there, there must be something wrong.
@@ -169,7 +171,7 @@ bool ImageDecoder::draw(const char *_path, int _x, int _y, bool _invert, uint8_t
  *          false - Image load failed. Check ImageDecoder::getError() for the reason.
  */
 bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, bool _invert, uint8_t _dither,
-                                  const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, 
+                                  const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize,
                                   enum InkplateImageDecodeFormat _format)
 {
     // Watch-out! Some decoders have some issues while reading directly from the SDRAM. I'm not sure why...
@@ -272,7 +274,9 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, b
     }
 
     // Process the image and draw it in the epaper framebuffer.
-    _imgProcess->processImage((uint8_t*)(_framebufferHandler.framebuffer), _x, _y, _imageW, _imageH, _dither, _invert, _ditherKernelParameters, _ditherKernelParametersSize, _inkplate->getDisplayMode() == INKPLATE_1BW?1:4);
+    _imgProcess->processImage((uint8_t *)(_framebufferHandler.framebuffer), _x, _y, _imageW, _imageH, _dither, _invert,
+                              _ditherKernelParameters, _ditherKernelParametersSize,
+                              _inkplate->getDisplayMode() == INKPLATE_1BW ? 1 : 4);
 
     // Decoded ok? Return true!
     return true;
@@ -298,7 +302,7 @@ bool ImageDecoder::drawFromBuffer(void *_buffer, size_t _size, int _x, int _y, b
  *          false -  Image load/decode failed. Check ImageDecoder::getError() for reason.
  */
 bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t _dither,
-                              const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, 
+                              const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize,
                               enum InkplateImageDecodeFormat _format)
 {
     // Reset error variable.
@@ -384,7 +388,9 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
     }
 
     // Process the image and draw it in the epaper framebuffer.
-    _imgProcess->processImage((uint8_t*)(_framebufferHandler.framebuffer), _x, _y, _imageW, _imageH, _dither, _invert, _ditherKernelParameters, _ditherKernelParametersSize, _inkplate->getDisplayMode()==INKPLATE_1BW? 1 : 4);
+    _imgProcess->processImage((uint8_t *)(_framebufferHandler.framebuffer), _x, _y, _imageW, _imageH, _dither, _invert,
+                              _ditherKernelParameters, _ditherKernelParametersSize,
+                              _inkplate->getDisplayMode() == INKPLATE_1BW ? 1 : 4);
 
     // Everything went ok? Return success!
     return true;
@@ -392,11 +398,13 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
 
 /**
  * @brief This function draws an image from web, it has format auto-detection. Max image file size is by default 4MB.
- * 
- * @note Not all image formats and HTTP servers are created equal. There is support for all these image formats, but the software can't handle every possible case. If your image doesn't work, please try exporting it from a different image editing program and try a different host.
+ *
+ * @note Not all image formats and HTTP servers are created equal. There is support for all these image formats, but the
+ * software can't handle every possible case. If your image doesn't work, please try exporting it from a different image
+ * editing program and try a different host.
  *
  * @param   const char * _path
- *          The URL to the image to be drawn 
+ *          The URL to the image to be drawn
  * @param   int _x
  *          The x coordinate of where to draw the image on the display
  * @param   int _y
@@ -406,14 +414,15 @@ bool ImageDecoder::drawFromSd(File *_file, int _x, int _y, bool _invert, uint8_t
  * @param   bool _dither
  *          To dither hte image or not (true dithers, false does not)
  * @param   enum InkplateImageDecodeFormat _format
- *          The format of the image, you can pass AUTO and it will be detected in-function. Check the enum for more details
- * 
+ *          The format of the image, you can pass AUTO and it will be detected in-function. Check the enum for more
+ * details
+ *
  * @return  bool
  *          True if everything was successful, false if something went wront
- * 
+ *
  */
 bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, uint8_t _dither,
-                               const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize, 
+                               const KernelElement *_ditherKernelParameters, size_t _ditherKernelParametersSize,
                                enum InkplateImageDecodeFormat _format)
 {
     // Let's download  the file and save it to the image download memory
@@ -435,7 +444,8 @@ bool ImageDecoder::drawFromWeb(const char *_path, int _x, int _y, bool _invert, 
     }
 
     // Now, draw the image from the buffer and return the result of that
-    return drawFromBuffer((void *)_imageDownloadMemoryPtr, fileSize, _x, _y, _invert, _dither, _ditherKernelParameters, _ditherKernelParametersSize, _format);
+    return drawFromBuffer((void *)_imageDownloadMemoryPtr, fileSize, _x, _y, _invert, _dither, _ditherKernelParameters,
+                          _ditherKernelParametersSize, _format);
 }
 
 /**

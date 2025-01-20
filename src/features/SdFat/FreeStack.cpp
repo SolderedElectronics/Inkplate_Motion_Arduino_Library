@@ -26,55 +26,63 @@
 #include "FreeStack.h"
 #if defined(HAS_UNUSED_STACK) && HAS_UNUSED_STACK
 //------------------------------------------------------------------------------
-inline char* stackBegin() {
+inline char *stackBegin()
+{
 #if defined(__AVR__)
-  return __brkval ? __brkval : &__bss_end;
+    return __brkval ? __brkval : &__bss_end;
 #elif defined(__IMXRT1062__)
-  return reinterpret_cast<char*>(&_ebss);
+    return reinterpret_cast<char *>(&_ebss);
 #elif defined(__arm__)
-  return reinterpret_cast<char*>(sbrk(0));
-#else  // defined(__AVR__)
+    return reinterpret_cast<char *>(sbrk(0));
+#else // defined(__AVR__)
 #error "undefined stackBegin"
-#endif  // defined(__AVR__)
+#endif // defined(__AVR__)
 }
 //------------------------------------------------------------------------------
-inline char* stackPointer() {
+inline char *stackPointer()
+{
 #if defined(__AVR__)
-  return reinterpret_cast<char*>(SP);
+    return reinterpret_cast<char *>(SP);
 #elif defined(__arm__)
-  register uint32_t sp asm("sp");
-  return reinterpret_cast<char*>(sp);
-#else  // defined(__AVR__)
+    register uint32_t sp asm("sp");
+    return reinterpret_cast<char *>(sp);
+#else // defined(__AVR__)
 #error "undefined stackPointer"
-#endif  // defined(__AVR__)
+#endif // defined(__AVR__)
 }
 //------------------------------------------------------------------------------
 /** Stack fill pattern. */
 const char FILL = 0x55;
-void FillStack() {
-  char* p = stackBegin();
-  char* top = stackPointer();
-  while (p < top) {
-    *p++ = FILL;
-  }
+void FillStack()
+{
+    char *p = stackBegin();
+    char *top = stackPointer();
+    while (p < top)
+    {
+        *p++ = FILL;
+    }
 }
 //------------------------------------------------------------------------------
 // May fail if malloc or new is used.
-int UnusedStack() {
-  char* h = stackBegin();
-  char* top = stackPointer();
-  int n;
+int UnusedStack()
+{
+    char *h = stackBegin();
+    char *top = stackPointer();
+    int n;
 
-  for (n = 0; (h + n) < top; n++) {
-    if (h[n] != FILL) {
-      if (n >= 16) {
-        break;
-      }
-      // Attempt to skip used heap.
-      h += n;
-      n = 0;
+    for (n = 0; (h + n) < top; n++)
+    {
+        if (h[n] != FILL)
+        {
+            if (n >= 16)
+            {
+                break;
+            }
+            // Attempt to skip used heap.
+            h += n;
+            n = 0;
+        }
     }
-  }
-  return n;
+    return n;
 }
-#endif  // defined(HAS_UNUSED_STACK) && HAS_UNUSED_STACK
+#endif // defined(HAS_UNUSED_STACK) && HAS_UNUSED_STACK

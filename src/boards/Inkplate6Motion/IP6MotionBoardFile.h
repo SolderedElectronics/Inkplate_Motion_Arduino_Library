@@ -26,7 +26,7 @@
 // Wrapper for different Inkplate boards.
 class InkplateBoardClass : public EPDDriver
 {
-    public:
+  public:
     InkplateBoardClass(){};
 };
 

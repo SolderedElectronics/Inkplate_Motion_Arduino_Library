@@ -36,7 +36,7 @@
 #warning nullptr defined
 /** Define nullptr if not C++11 */
 #define nullptr NULL
-#endif  // __cplusplus < 201103
+#endif // __cplusplus < 201103
 //------------------------------------------------------------------------------
 #if ENABLE_ARDUINO_FEATURES
 #if defined(ARDUINO)
@@ -44,20 +44,20 @@
 typedef Print print_t;
 /** Use Arduino Stream. */
 typedef Stream stream_t;
-#else  // defined(ARDUINO)
+#else // defined(ARDUINO)
 #error "Unknown system"
-#endif  // defined(ARDUINO)
+#endif // defined(ARDUINO)
 //------------------------------------------------------------------------------
 #ifndef F
 /** Define macro for strings stored in flash. */
 #define F(str) (str)
-#endif  // F
+#endif // F
 //------------------------------------------------------------------------------
-#else  // ENABLE_ARDUINO_FEATURES
+#else // ENABLE_ARDUINO_FEATURES
 #include "PrintBasic.h"
 /** If not Arduino */
 typedef PrintBasic print_t;
 /** If not Arduino */
 typedef PrintBasic stream_t;
-#endif  // ENABLE_ARDUINO_FEATURES
-#endif  // SysCall_h
+#endif // ENABLE_ARDUINO_FEATURES
+#endif // SysCall_h

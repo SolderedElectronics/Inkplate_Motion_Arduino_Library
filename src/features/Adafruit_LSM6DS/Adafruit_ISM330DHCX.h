@@ -26,13 +26,14 @@
  *    @brief  Class that stores state and functions for interacting with
  *            the ISM330DHCX I2C Digital Potentiometer
  */
-class Adafruit_ISM330DHCX : public Adafruit_LSM6DSOX {
-public:
-  Adafruit_ISM330DHCX();
-  ~Adafruit_ISM330DHCX(){};
+class Adafruit_ISM330DHCX : public Adafruit_LSM6DSOX
+{
+  public:
+    Adafruit_ISM330DHCX();
+    ~Adafruit_ISM330DHCX(){};
 
-private:
-  bool _init(int32_t sensor_id);
+  private:
+    bool _init(int32_t sensor_id);
 };
 
 #endif

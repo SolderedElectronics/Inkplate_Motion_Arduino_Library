@@ -67,6 +67,7 @@ class Helpers
     // Function is used to copy
     static void copySDRAMBuffers(MDMA_HandleTypeDef *hmdma, uint8_t *_internalBuffer, uint32_t _internalBufferSize,
                                  volatile uint8_t *_srcBuffer, volatile uint8_t *_destBuffer, uint32_t _size);
+
   private:
 };
 

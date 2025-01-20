@@ -28,82 +28,100 @@
 #include "FatLib.h"
 
 //------------------------------------------------------------------------------
-bool FatFile::ls(print_t* pr, uint8_t flags, uint8_t indent) {
-  FatFile file;
-  if (!isDir()) {
-    DBG_FAIL_MACRO;
-    goto fail;
-  }
-  rewind();
-  while (file.openNext(this, O_RDONLY)) {
-    // indent for dir level
-    if (!file.isHidden() || (flags & LS_A)) {
-      for (uint8_t i = 0; i < indent; i++) {
-        pr->write(' ');
-      }
-      if (flags & LS_DATE) {
-        file.printModifyDateTime(pr);
-        pr->write(' ');
-      }
-      if (flags & LS_SIZE) {
-        file.printFileSize(pr);
-        pr->write(' ');
-      }
-      file.printName(pr);
-      if (file.isDir()) {
-        pr->write('/');
-      }
-      pr->write('\r');
-      pr->write('\n');
-      if ((flags & LS_R) && file.isDir()) {
-        file.ls(pr, flags, indent + 2);
-      }
+bool FatFile::ls(print_t *pr, uint8_t flags, uint8_t indent)
+{
+    FatFile file;
+    if (!isDir())
+    {
+        DBG_FAIL_MACRO;
+        goto fail;
     }
-    file.close();
-  }
-  if (getError()) {
-    DBG_FAIL_MACRO;
-    goto fail;
-  }
-  return true;
+    rewind();
+    while (file.openNext(this, O_RDONLY))
+    {
+        // indent for dir level
+        if (!file.isHidden() || (flags & LS_A))
+        {
+            for (uint8_t i = 0; i < indent; i++)
+            {
+                pr->write(' ');
+            }
+            if (flags & LS_DATE)
+            {
+                file.printModifyDateTime(pr);
+                pr->write(' ');
+            }
+            if (flags & LS_SIZE)
+            {
+                file.printFileSize(pr);
+                pr->write(' ');
+            }
+            file.printName(pr);
+            if (file.isDir())
+            {
+                pr->write('/');
+            }
+            pr->write('\r');
+            pr->write('\n');
+            if ((flags & LS_R) && file.isDir())
+            {
+                file.ls(pr, flags, indent + 2);
+            }
+        }
+        file.close();
+    }
+    if (getError())
+    {
+        DBG_FAIL_MACRO;
+        goto fail;
+    }
+    return true;
 
 fail:
-  return false;
+    return false;
 }
 //------------------------------------------------------------------------------
-size_t FatFile::printAccessDate(print_t* pr) {
-  uint16_t date;
-  if (getAccessDate(&date)) {
-    return fsPrintDate(pr, date);
-  }
-  return 0;
+size_t FatFile::printAccessDate(print_t *pr)
+{
+    uint16_t date;
+    if (getAccessDate(&date))
+    {
+        return fsPrintDate(pr, date);
+    }
+    return 0;
 }
 //------------------------------------------------------------------------------
-size_t FatFile::printCreateDateTime(print_t* pr) {
-  uint16_t date;
-  uint16_t time;
-  if (getCreateDateTime(&date, &time)) {
-    return fsPrintDateTime(pr, date, time);
-  }
-  return 0;
+size_t FatFile::printCreateDateTime(print_t *pr)
+{
+    uint16_t date;
+    uint16_t time;
+    if (getCreateDateTime(&date, &time))
+    {
+        return fsPrintDateTime(pr, date, time);
+    }
+    return 0;
 }
 //------------------------------------------------------------------------------
-size_t FatFile::printModifyDateTime(print_t* pr) {
-  uint16_t date;
-  uint16_t time;
-  if (getModifyDateTime(&date, &time)) {
-    return fsPrintDateTime(pr, date, time);
-  }
-  return 0;
+size_t FatFile::printModifyDateTime(print_t *pr)
+{
+    uint16_t date;
+    uint16_t time;
+    if (getModifyDateTime(&date, &time))
+    {
+        return fsPrintDateTime(pr, date, time);
+    }
+    return 0;
 }
 //------------------------------------------------------------------------------
-size_t FatFile::printFileSize(print_t* pr) {
-  char buf[11];
-  char* ptr = buf + sizeof(buf);
-  *--ptr = 0;
-  ptr = fmtBase10(ptr, fileSize());
-  while (ptr > buf) {
-    *--ptr = ' ';
-  }
-  return pr->write(buf);
+size_t FatFile::printFileSize(print_t *pr)
+{
+    char buf[11];
+    char *ptr = buf + sizeof(buf);
+    *--ptr = 0;
+    ptr = fmtBase10(ptr, fileSize());
+    while (ptr > buf)
+    {
+        *--ptr = ' ';
+    }
+    return pr->write(buf);
 }

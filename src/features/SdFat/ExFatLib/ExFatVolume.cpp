@@ -25,22 +25,25 @@
 #define DBG_FILE "ExFatVolume.cpp"
 #include "../common/DebugMacros.h"
 #include "ExFatLib.h"
-ExFatVolume* ExFatVolume::m_cwv = nullptr;
+ExFatVolume *ExFatVolume::m_cwv = nullptr;
 //-----------------------------------------------------------------------------
-bool ExFatVolume::chdir(const char* path) {
-  ExFatFile dir;
-  if (!dir.open(vwd(), path, O_RDONLY)) {
-    DBG_FAIL_MACRO;
-    goto fail;
-  }
-  if (!dir.isDir()) {
-    DBG_FAIL_MACRO;
-    goto fail;
-  }
-  // m_vwd = dir;
-  m_vwd.copy(&dir);
-  return true;
+bool ExFatVolume::chdir(const char *path)
+{
+    ExFatFile dir;
+    if (!dir.open(vwd(), path, O_RDONLY))
+    {
+        DBG_FAIL_MACRO;
+        goto fail;
+    }
+    if (!dir.isDir())
+    {
+        DBG_FAIL_MACRO;
+        goto fail;
+    }
+    // m_vwd = dir;
+    m_vwd.copy(&dir);
+    return true;
 
 fail:
-  return false;
+    return false;
 }
