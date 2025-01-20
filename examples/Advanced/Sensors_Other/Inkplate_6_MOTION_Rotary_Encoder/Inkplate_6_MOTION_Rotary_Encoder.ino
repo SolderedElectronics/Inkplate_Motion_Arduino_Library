@@ -31,7 +31,8 @@ void setup() {
   inkplate.setFullUpdateTreshold(60);
 
   // Enable power to the rotary encoder.
-  inkplate.peripheralState(INKPLATE_ROTARY_ENCODER_PERIPH, true);
+  inkplate.peripheralState(INKPLATE_PERIPHERAL_ROTARY_ENCODER, true);
+  delay(100);
   // Initialize rotary encoder.
   inkplate.rotaryEncoder.begin();
 
@@ -64,7 +65,7 @@ void loop() {
 
 void printPosition(int _oldPosition, int _newPos) {
   // Redraw the circle.
-  inkplate.drawCircle(inkplate.width() / 2, inkplate.height() / 2, 310, BLACK);
+  inkplate.drawCircle(inkplate.width() / 2, inkplate.height() / 2, 305, BLACK);
 
   // Draw the new position.
   int _x2 = (300 * cos(DEG2RAD * _newPos)) + (inkplate.width() / 2);

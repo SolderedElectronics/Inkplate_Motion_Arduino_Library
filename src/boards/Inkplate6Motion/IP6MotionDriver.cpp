@@ -923,14 +923,14 @@ void EPDDriver::peripheralState(uint8_t _peripheral, bool _en)
     {
         if (_en)
         {
-            // If PWR MOSDET needs to be enabled, set controll pin from the IO Expander to output first.
+            // If PWR MOSFET needs to be enabled, set controll pin from the IO Expander to output first.
             internalIO.pinModeIO(INKPLATE_POSITION_ENC_EN, OUTPUT, true);
-            // Set the same pin to high, enabling power to the magnetic rotary encoder.
+            // Set the sa me pin to high, enabling power to the magnetic rotary encoder.
             internalIO.digitalWriteIO(INKPLATE_POSITION_ENC_EN, HIGH, true);
         }
         else
         {
-            // If PWR MOSDET needs to be disabled, firsdt set the pin to LOW.
+            // If PWR MOSFET needs to be disabled, firsdt set the pin to LOW.
             internalIO.digitalWriteIO(INKPLATE_POSITION_ENC_EN, LOW, true);
 
             // Set it to input (external pull-down resistor on the gate will keep it low).
