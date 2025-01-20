@@ -35,11 +35,15 @@ jobs:
         run: |
           arduino-cli core install Inkplate_Motion:stm32
 
-      # Compile all examples and fail fast on error
+      # Compile all examples and include the current repository as a library
       - name: Compile examples
         run: |
           set -e # Exit immediately if a command exits with a non-zero status
           for sketch in $(find examples -name '*.ino'); do
             echo "Compiling $sketch"
-            arduino-cli compile --fqbn Inkplate_Motion:stm32:Inkplate6Motion "$sketch" --warnings=all --verbose
+            arduino-cli compile \
+              --fqbn Inkplate_Motion:stm32:Inkplate6Motion \
+              --libraries . \ # Include the current repository as a library
+              "$sketch" \
+              --warnings=all --verbose
           done
