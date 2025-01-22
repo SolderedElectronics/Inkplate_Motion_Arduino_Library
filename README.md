@@ -71,7 +71,7 @@ Inkplate boards support two power options:
 
 2. **Battery**  
    Use a standard Li-Ion/Li-Poly 3.7V battery with a 2.00 mm pitch JST connector. The onboard charger will charge the battery at 500 mA whenever USB power is connected. You can use any size or capacity battery as long as current requirements are met. However, if you're using our enclosure, the battery should not exceed **90 mm x 40 mm (3.5 x 1.57 inches)** and **5 mm (0.19 inches)** in height.  
-   [This battery](https://soldered.com/product/li-ion-battery-1200mah-3-7v/) is a good fit for the Inkplate Motion. The board is optimized for low power consumption in deep sleep mode, making it suitable for battery-powered applications.
+   [This battery](https://soldered.com/product/li-ion-battery-1200mah-3-7v/) is a good fit for Inkplate 6 Motion. The board is optimized for low power consumption in deep sleep mode, making it suitable for battery-powered applications.
 
 ### ⚠️ WARNING
 Please check the polarity of the battery JST connector! Some off-the-shelf batteries have reversed polarity, which can damage the Inkplate board. If you use batteries from [soldered.com](https://soldered.com/categories/power-sources-batteries/batteries/lithium-batteries/) or official Inkplate batteries, you’re safe.
