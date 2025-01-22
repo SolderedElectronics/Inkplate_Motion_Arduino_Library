@@ -1,0 +1,5 @@
+This is an example file to show on Inkplate 6MOTION!
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec leo tellus, ornare quis mi et, imperdiet consectetur lacus. Maecenas et aliquet nulla. Quisque porttitor, odio vitae maximus sollicitudin, dui quam dapibus ligula, quis molestie sapien risus ac turpis. Integer interdum odio id congue scelerisque. Nullam rhoncus eu sapien sit amet tristique. Suspendisse quis pretium erat. Quisque lobortis pretium vestibulum. Aenean vitae arcu vitae nulla condimentum volutpat tristique nec dui.
+
+Curabitur pellentesque euismod leo ut eleifend. Nunc vel facilisis leo. Phasellus convallis tellus vel arcu ornare molestie. Quisque pretium nisl ut odio semper feugiat. Curabitur ornare eget justo non venenatis. Etiam convallis nibh massa, vel cursus sem venenatis ut. Aliquam eu consectetur risus. Etiam eu tortor tempor, semper ante at, porttitor mauris. Nulla interdum diam metus, nec posuere mi aliquet in. Nullam tortor nisl, volutpat quis semper aliquam, elementum non mi. Phasellus interdum sem non libero ultrices egestas. Aenean vitae dui non felis vehicula aliquam.

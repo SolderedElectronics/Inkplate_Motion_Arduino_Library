@@ -1,3 +1,15 @@
+/**
+ **************************************************
+ *
+ * @file        esp32SpiAtUdp.cpp
+ * @brief       Header file for the UDP communicaiton with the ESP32.
+ *              This file is used with esp32SpiAt library.
+ *
+ *
+ * @copyright   GNU General Public License v3.0
+ * @authors     Borna Biro for soldered.com
+ ***************************************************/
+
 // Add headerguard do prevent multiple include.
 #ifndef __ESP32_SPI_AT_UDP_H__
 #define __ESP32_SPI_AT_UDP_H__

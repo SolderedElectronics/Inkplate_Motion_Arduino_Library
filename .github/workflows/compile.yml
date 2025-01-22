@@ -1,0 +1,54 @@
+name: Compile Examples
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - board:
+              fqbn: Inkplate_Motion:stm32:Inkplate6Motion
+            additional-sketch-paths: |
+              - examples
+
+    steps:
+      # Ensure Bash for compatibility
+      - name: Ensure Bash Shell
+        run: sudo ln -sf /bin/bash /bin/sh
+
+      # Checkout code
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # -----------------------------------
+      # Cache the Arduino packages folder
+      # -----------------------------------
+      - name: Cache Arduino dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.arduino15
+          key: ${{ runner.os }}-arduino15-${{ hashFiles('**/*.ino', 'library.properties', 'library.json') }}
+          restore-keys: |
+            ${{ runner.os }}-arduino15-
+
+      # Compile all examples
+      - name: Compile examples
+        uses: arduino/compile-sketches@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          platforms: |
+            - source-url: https://github.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/raw/master/package_Dasduino_Boards_index.json
+              name: Inkplate_Motion:stm32
+
+          fqbn: ${{ matrix.board.fqbn }}
+          libraries: |
+            - source-path: ./
+            - name: ArduinoJson
+          sketch-paths: |
+            ${{ matrix.additional-sketch-paths }}
