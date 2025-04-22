@@ -122,7 +122,7 @@ bool inkplateImageDecodeHelpersJpg(JDEC *_jpgDecoder, size_t (*_inFunc)(JDEC *, 
     }
 
     // Allocate the memory for the JPG decoder.
-    const size_t _workingBufferSize = 32768; //32kB
+    const size_t _workingBufferSize = 32768; // 32kB
     void *_workingBuffer;
 
     // Allocate the memory for the buffer.
