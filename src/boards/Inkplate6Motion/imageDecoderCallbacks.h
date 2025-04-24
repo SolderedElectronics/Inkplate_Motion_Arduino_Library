@@ -429,7 +429,7 @@ bool static readBytesFromBufferPng(pngle_t *_pngle)
         // It there is still bytes to read, read them!
         if (_toread > 0)
         {
-            // Constrain chunk ot only 2k or less.
+            // Constrain chunk at only 8k or less.
             int _len = (_sessionHandle->fileBufferSize >= (_sessionHandle->bufferOffset + 8128))
                            ? 8128
                            : _sessionHandle->fileBufferSize - _sessionHandle->bufferOffset;
