@@ -449,6 +449,7 @@ uint32_t WiFiClient::downloadFile(const char *_url, volatile uint8_t *_downloade
             totalDownloaded += n;
         }
     }
+    end();
 
     return totalDownloaded;
 }

@@ -2,7 +2,7 @@
 /* TJpgDec System Configurations R0.03          */
 /*----------------------------------------------*/
 
-#define	JD_SZBUF		512
+#define	JD_SZBUF		24384 //24kB
 /* Specifies size of stream input buffer */
 
 #define JD_FORMAT		0
