@@ -583,6 +583,7 @@ int EPDDriver::epdPSU(uint8_t _state)
 
         // Enable buffer for the control ePaper lines.
         EPD_BUF_CLEAR;
+        pinMode(EPD_BUFF_PIN, OUTPUT);
 
         // Set new PMIC state.
         _epdPSUState = 1;
@@ -603,6 +604,7 @@ int EPDDriver::epdPSU(uint8_t _state)
 
         // Disable buffer for the control ePaper lines.
         EPD_BUF_SET;
+        pinMode(EPD_BUFF_PIN, INPUT);
 
         // One second should be long enough to shut down all EPD PMICs voltage rails.
         unsigned long timer = millis();
@@ -653,11 +655,19 @@ void EPDDriver::gpioInit()
     internalIO.blockPinUsage(5);
 
     // Set EPD buffer enable for ePaper control pins to output.
-    pinMode(EPD_BUFF_PIN, OUTPUT);
+    //pinMode(EPD_BUFF_PIN, OUTPUT);
 
     // Enable the external RAM (inverse logic due P-MOS) and enable it by default.
+    // Since the output is by default low, that will enable the SDRAM for a split
+    // second, set the output to be set as high first, then set the pin as output.
+    // Otherwise, SDRAM would glitch.
+    digitalWrite(PB5, LOW);
+    pinMode(PB5, OUTPUT);
+    digitalWrite(INKPLATE_SDRAM_EN, HIGH);
     pinMode(INKPLATE_SDRAM_EN, OUTPUT);
     digitalWrite(INKPLATE_SDRAM_EN, LOW);
+
+    delay(100);
 
     // Disable battery measurement pin
     pinMode(INKPLATE_BATT_MEASURE_EN, OUTPUT);

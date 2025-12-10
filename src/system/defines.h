@@ -14,7 +14,7 @@
 #define __DEFINES_H__
 
 // Uncomment for debug messages.
-// #define __INKPLATE__DEBUG__
+//#define __INKPLATE__DEBUG__
 
 // Debug meesage print.
 #ifdef __INKPLATE__DEBUG__
