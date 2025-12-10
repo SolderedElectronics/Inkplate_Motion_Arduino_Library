@@ -655,7 +655,7 @@ void EPDDriver::gpioInit()
     internalIO.blockPinUsage(5);
 
     // Set EPD buffer enable for ePaper control pins to output.
-    //pinMode(EPD_BUFF_PIN, OUTPUT);
+    // pinMode(EPD_BUFF_PIN, OUTPUT);
 
     // Enable the external RAM (inverse logic due P-MOS) and enable it by default.
     // Since the output is by default low, that will enable the SDRAM for a split
