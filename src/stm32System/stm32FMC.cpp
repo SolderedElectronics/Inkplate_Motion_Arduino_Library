@@ -153,7 +153,7 @@ static void MX_FMC_Init(void)
     /* Step 8: Set the refresh rate counter - refer to section SDRAM refresh timer register in RM0455 */
     /* Set the device refresh rate
     * COUNT = [(SDRAM self refresh time / number of row) x  SDRAM CLK] – 20
-            = [(64ms/8192) * 143.3333MHz] - 20 = 1099. */
+            = [(64ms/8192) * 150MHz] - 20 = 1151.875 ~ 1152. */
     if (HAL_SDRAM_ProgramRefreshRate(&_hsdram1, 1152) != HAL_OK)
     {
         Error_Handler();
