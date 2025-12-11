@@ -37,6 +37,12 @@ bool EpdPmic::begin()
     Wire.beginTransmission(TPS_PMIC_ADDR);
     int _ret = Wire.endTransmission();
 
+    // Disable all rails!
+    setRails(0);
+
+    // Wait a little bit until all rails are discharged.
+    delay(10);
+
     // If Wire.endTransmission returns anything else than 0 - Success, return false.
     return (_ret != 0 ? false : true);
 }

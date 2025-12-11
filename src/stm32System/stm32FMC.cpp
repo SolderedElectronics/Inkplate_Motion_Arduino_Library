@@ -68,10 +68,10 @@ static void MX_FMC_Init(void)
     /* Timing */
     _timing.AddressSetupTime = 0;
     _timing.AddressHoldTime = 0;
-    _timing.DataSetupTime = 2;
+    _timing.DataSetupTime = 4;
     _timing.BusTurnAroundDuration = 0;
-    _timing.CLKDivision = 1;
-    _timing.DataLatency = 1;
+    _timing.CLKDivision = 0;
+    _timing.DataLatency = 0;
     _timing.AccessMode = FMC_ACCESS_MODE_A;
     /* ExtTiming */
 
@@ -89,19 +89,19 @@ static void MX_FMC_Init(void)
     _hsdram1.Init.RowBitsNumber = FMC_SDRAM_ROW_BITS_NUM_13;
     _hsdram1.Init.MemoryDataWidth = FMC_SDRAM_MEM_BUS_WIDTH_16;
     _hsdram1.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
-    _hsdram1.Init.CASLatency = FMC_SDRAM_CAS_LATENCY_2;
+    _hsdram1.Init.CASLatency = FMC_SDRAM_CAS_LATENCY_3;
     _hsdram1.Init.WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
     _hsdram1.Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_2;
     _hsdram1.Init.ReadBurst = FMC_SDRAM_RBURST_ENABLE;
-    _hsdram1.Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_0;
+    _hsdram1.Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_1;
     /* SdramTiming */
     _sdramTiming.LoadToActiveDelay = 2;
-    _sdramTiming.ExitSelfRefreshDelay = 10;
-    _sdramTiming.SelfRefreshTime = 2;
-    _sdramTiming.RowCycleDelay = 8;
-    _sdramTiming.WriteRecoveryTime = 4;
-    _sdramTiming.RPDelay = 2;
-    _sdramTiming.RCDDelay = 2;
+    _sdramTiming.ExitSelfRefreshDelay = 12;
+    _sdramTiming.SelfRefreshTime = 8;
+    _sdramTiming.RowCycleDelay = 10;
+    _sdramTiming.WriteRecoveryTime = 3;
+    _sdramTiming.RPDelay = 4;
+    _sdramTiming.RCDDelay = 4;
 
     if (HAL_SDRAM_Init(&_hsdram1, &_sdramTiming) != HAL_OK)
     {
@@ -143,7 +143,7 @@ static void MX_FMC_Init(void)
     }
 
     /* Step 7: Program the external memory mode register */
-    _modeRegister = (0 << 0) | (0 << 2) | (2 << 4) | (0 << 7) | (1 << 9);
+    _modeRegister = 0b000000110011011;
     _command.CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
     _command.ModeRegisterDefinition = _modeRegister;
     _command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
@@ -153,8 +153,8 @@ static void MX_FMC_Init(void)
     /* Step 8: Set the refresh rate counter - refer to section SDRAM refresh timer register in RM0455 */
     /* Set the device refresh rate
     * COUNT = [(SDRAM self refresh time / number of row) x  SDRAM CLK] – 20
-            = [(64ms/8192) * 133.3333MHz] - 20 = 1021.6667 */
-    if (HAL_SDRAM_ProgramRefreshRate(&_hsdram1, 1022) != HAL_OK)
+            = [(64ms/8192) * 150MHz] - 20 = 1151.875 ~ 1152. */
+    if (HAL_SDRAM_ProgramRefreshRate(&_hsdram1, 1152) != HAL_OK)
     {
         Error_Handler();
     }
@@ -179,7 +179,7 @@ static void HAL_FMC_MspInit(void)
      */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
     PeriphClkInitStruct.PLL2.PLL2M = 6;
-    PeriphClkInitStruct.PLL2.PLL2N = 200;
+    PeriphClkInitStruct.PLL2.PLL2N = 225;
     PeriphClkInitStruct.PLL2.PLL2P = 2;
     PeriphClkInitStruct.PLL2.PLL2Q = 2;
     PeriphClkInitStruct.PLL2.PLL2R = 2;
