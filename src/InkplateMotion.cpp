@@ -25,7 +25,7 @@ int Inkplate::begin(uint8_t _mode)
     // In the case of already initialized library, return form the begin() funtion to
     // avoiid any memory leaks, multiple initializaton of the peripherals etc.
     if (_beginDone == 1)
-        return;
+        return 0;
 
     // Init I2C (Arduino Wire Library).
     Wire.setSCL(INKPLATE_TPS_SDA);
@@ -45,7 +45,10 @@ int Inkplate::begin(uint8_t _mode)
 
 
     // Init low level driver for EPD.
-    initDriver(this);
+    if (!initDriver(this))
+    {
+        return 0;
+    }
 
     // Start the library in selected mode. By default is 1bit mode.
     selectDisplayMode(_mode);
