@@ -108,11 +108,11 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
 
     uint8_t voltageReadCounter = 0;
     // FMC wont initialize correctly if battery voltage is under 3.25V
-    while(readBattery()<3.25f)
+    while (readBattery() < 3.25f)
     {
         voltageReadCounter++;
         INKPLATE_DEBUG_MGS("Battery voltage too low to continue, retrying...");
-        if(voltageReadCounter > 3)
+        if (voltageReadCounter > 3)
         {
             INKPLATE_DEBUG_MGS("Battery voltage too low to continue, initialization failed");
             return 0;
