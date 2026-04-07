@@ -45,7 +45,7 @@ int Inkplate::begin(uint8_t _mode)
 
 
     // Init low level driver for EPD.
-    if(!initDriver(this))
+    if (!initDriver(this))
     {
         return 0;
     }
