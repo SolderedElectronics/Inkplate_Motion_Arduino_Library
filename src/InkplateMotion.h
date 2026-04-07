@@ -45,7 +45,7 @@ class Inkplate : public Adafruit_GFX, public InkplateBoardClass
 {
   public:
     Inkplate();
-    void begin(uint8_t _mode = INKPLATE_1BW);
+    int begin(uint8_t _mode = INKPLATE_1BW);
     void drawPixel(int16_t x, int16_t y, uint16_t color);
     void setRotation(uint8_t);
     void drawBitmap4Bit(int16_t _x, int16_t _y, const unsigned char *_p, int16_t _w, int16_t _h);

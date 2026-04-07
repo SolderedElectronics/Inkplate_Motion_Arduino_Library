@@ -17,7 +17,7 @@ Inkplate::Inkplate() : Adafruit_GFX(SCREEN_WIDTH, SCREEN_HEIGHT)
 {
 }
 
-void Inkplate::begin(uint8_t _mode)
+int Inkplate::begin(uint8_t _mode)
 {
     INKPLATE_DEBUG_MGS("begin() started");
 
@@ -40,14 +40,15 @@ void Inkplate::begin(uint8_t _mode)
     // Init. serial communication at 115200 bauds.
     Serial.begin(115200);
 #endif
+    // Set 16bit ADC resolution for battery measurement.
+    analogReadResolution(16);
+
+
     // Init low level driver for EPD.
     initDriver(this);
 
     // Start the library in selected mode. By default is 1bit mode.
     selectDisplayMode(_mode);
-
-    // Set 16bit ADC resolution for battery measurement.
-    analogReadResolution(16);
 
     // Clean frame buffers.
     clearDisplay();

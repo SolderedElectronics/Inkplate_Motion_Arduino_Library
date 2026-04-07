@@ -13,6 +13,8 @@
 #define INKPLATE_WSLED_FRONT          0
 #define INKPLATE_WSLED_ROTARY_ENCODER 1
 
+#define VREF_INTERNAL_CALIBRATION_ADDRESS 0x1FF1E860UL
+
 // Define EPD Pins. Using direct port manipulation for higher speed.
 // EPD Latch pin <-> PE6
 #define LE          GPIO_PIN_6
@@ -58,6 +60,7 @@
 #define TPS_WAKE_PIN      3
 #define TPS_PWRUP_PIN     4
 #define TPS_VCOM_CTRL_PIN 5
+#define TPS_PWR_GOOD_PIN  7
 
 // GPIO pins for TPS65185/TPS65186 EPD PMIC.
 #define INKPLATE_TPS_SDA PB9
