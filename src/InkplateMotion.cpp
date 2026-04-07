@@ -60,6 +60,8 @@ int Inkplate::begin(uint8_t _mode)
     _beginDone = 1;
 
     INKPLATE_DEBUG_MGS("begin() done");
+
+    return 1;
 }
 
 // Draw function, used by Adafruit GFX.
