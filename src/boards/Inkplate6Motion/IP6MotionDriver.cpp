@@ -103,6 +103,22 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
         return 0;
     }
 
+    // Disable MOSFET for voltage divider (to save power).
+    digitalWrite(INKPLATE_BATT_MEASURE_EN, LOW);
+
+    uint8_t voltageReadCounter = 0;
+    // FMC wont initialize correctly if battery voltage is under 3.25V
+    while (readBattery() < 3.25f)
+    {
+        voltageReadCounter++;
+        INKPLATE_DEBUG_MGS("Battery voltage too low to continue, retrying...");
+        if (voltageReadCounter > 3)
+        {
+            INKPLATE_DEBUG_MGS("Battery voltage too low to continue, initialization failed");
+            return 0;
+        }
+    }
+
     // Init STM32 FMC (Flexible memory controller) for faster pushing data to panel using hardware.
     stm32FmcInit(EPD_FMC_ADDR);
 
@@ -711,19 +727,21 @@ double EPDDriver::readBattery()
     // Enable MOSFET for viltage divider.
     digitalWrite(INKPLATE_BATT_MEASURE_EN, HIGH);
 
-    // Wait a little bit.
     delay(40);
 
     // Get an voltage measurement from ADC.
-    uint16_t _adcRaw = analogRead(INKPLATE_BATT_MEASURE);
+    uint32_t _adcRaw = analogRead(INKPLATE_BATT_MEASURE);
 
-    // Disable MOSFET for voltage divider (to save power).
-    digitalWrite(INKPLATE_BATT_MEASURE_EN, LOW);
+    uint16_t _vrefintCal = *((uint16_t *)VREF_INTERNAL_CALIBRATION_ADDRESS);
+    uint16_t _vrefintRaw = analogRead(AVREF);
+    double _vdda = 3.3 * (double)_vrefintCal / (double)_vrefintRaw;
 
-    // Calculate the voltage from ADC measurement. Divide by 2^16) - 1 to get
+    // Calculate the voltage from ADC measurement. Divide by (2^16 - 1) to get
     // measurement voltage in the form of the percentage of the ADC voltage,
-    // multiply it by analog reference voltage and multiply by two (voltage divider).
-    double _voltage = (double)(_adcRaw) / 65535.0 * 3.3 * 2;
+    // multiply it by actual VDDA and multiply by two (voltage divider).
+    double _voltage = (double)(_adcRaw) / 65535.0 * _vdda * 2.0;
+
+    digitalWrite(INKPLATE_BATT_MEASURE_EN, LOW);
 
     // Return the measured voltage.
     return _voltage;
