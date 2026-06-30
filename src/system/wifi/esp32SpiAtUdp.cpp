@@ -91,11 +91,18 @@ bool WiFiUDP::beginPacket()
     if (!WiFi.messageFilter(true, "^Recv [0-9]* bytes", "\r\n$"))
         return false;
 
-    // Remove "SEND OK".
+    // Remove "SEND OK" — must be filtered so it never appears as an SPI event
+    // during Phase 3 reply wait, which would be misread as reply data.
     if (!WiFi.messageFilter(true, NULL, "\r\nSEND OK\r\n"))
         return false;
 
-    // Remove "+IPD,XY".
+    // Remove "busy p..." — ESP32 sends this after receiving payload to indicate
+    // it is processing the UDP send. Without this filter it lands in Phase 3 and
+    // is mistaken for the echo reply, causing constant garbage RX values.
+    if (!WiFi.messageFilter(true, "^busy p...", "\r\n$"))
+        return false;
+
+    // Remove "+IPD,XY:" header from incoming data notifications.
     if (!WiFi.messageFilter(true, "^+IPD,[0-9]*:", "\r\n$"))
         return false;
 
@@ -117,18 +124,54 @@ bool WiFiUDP::beginPacket()
  */
 bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
 {
-    // Send the UDP packet! If failed, return false.
-    sprintf(_dataBuffer, "AT+CIPSEND=%d\r\n", _len);
-    if (!WiFi.sendAtCommandWithResponse(_dataBuffer, 200ULL, 4ULL, "\r\nOK\r\n\r\n>",
-                                        INKPLATE_ESP32_AT_EXPECTED_RESPONSE_START, true, (char *)_packet, _len,
-                                        20000ULL, NULL, &_availableData))
+    // Phase 1: Send AT+CIPSEND=N, look for OK anywhere in accumulated response.
+    // Use local buffer — sendAtCommand calls flushModemReadReq() which overwrites
+    // _dataBuffer. Passing _dataBuffer directly corrupts the AT command on flush.
+    // Time-based loop: flood collision on dataSendRequest's handshake wait causes
+    // READABLE instead of WRITEABLE. Drain flood and retry until 2s total.
+    // Phase 1 failures are safe (ESP32 not yet in data-mode) so returning false here
+    // does not corrupt state.
+    char _cmd[24];
+    sprintf(_cmd, "AT+CIPSEND=%d\r\n", _len);
+    bool _p1sent = false;
+    unsigned long _p1start = millis();
+    while (!_p1sent && (millis() - _p1start) < 2000ULL)
+    {
+        _p1sent = WiFi.sendAtCommand(_cmd);
+        if (!_p1sent)
+            WiFi.getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20ULL, NULL);
+    }
+    if (!_p1sent)
         return false;
 
-    // Set the current positon pointer at the start of the RX buffer.
-    _currentPosition = _dataBuffer;
+    uint16_t _p1Len = 0;
+    WiFi.getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL, &_p1Len);
+    if (_p1Len == 0 || strstr(_dataBuffer, "\r\nOK\r\n") == NULL)
+        return false;
 
-    // If you got here and you got some data, everything went ok, return ture.
-    return _availableData != 0 ? true : false;
+    // Phase 2: Send payload. Time-based loop — must succeed to exit data-mode.
+    // If Phase 1 got OK, ESP32 is in data-mode waiting for _len bytes. Returning
+    // false without sending permanently corrupts the AT state machine.
+    // _packet is not _dataBuffer so flush inside sendAtCommand cannot corrupt it.
+    bool _p2sent = false;
+    unsigned long _p2start = millis();
+    while (!_p2sent && (millis() - _p2start) < 2000ULL)
+    {
+        _p2sent = WiFi.sendAtCommand((char *)_packet, _len);
+        if (!_p2sent)
+            WiFi.getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20ULL, NULL);
+    }
+    if (!_p2sent)
+        return false;
+
+    // SEND OK is filtered at ESP32 level (beginPacket sets the filter) so it never
+    // appears as an SPI event here. Wait directly for the reply.
+    _availableData = 0;
+    _currentPosition = _dataBuffer;
+    if (WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20000ULL, &_availableData))
+        _currentPosition = _dataBuffer;
+
+    return _availableData != 0;
 }
 
 // Returns how many bytes are available for read.
@@ -144,18 +187,11 @@ bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
  */
 uint16_t WiFiUDP::available(bool _blocking)
 {
-    // Only get new data if the current buffer is empty.
     if (_availableData == 0)
     {
-        // Calculate the timeout value for new data. If blocking method is enabled,
-        // use longer timeout value. Otherwise, use shorter timeout value (but in this case user
-        // must create some kind of mechanism to know when all data has been received).
         uint16_t _timeoutValue = _blocking ? 2500ULL : 20UL;
-
-        // Set variable for data chunk size to zero.
         uint16_t _len = 0;
 
-        // Try to get new data. If new data is available, update the size and current pointer for the data.
         if (WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
         {
             _availableData += _len;
@@ -163,7 +199,6 @@ uint16_t WiFiUDP::available(bool _blocking)
         }
     }
 
-    // Return the current buffer size.
     return _availableData;
 }
 
@@ -213,7 +248,7 @@ bool WiFiUDP::end()
     _availableData = 0;
     _currentPosition = NULL;
 
-    // Re-enable filters
+    // Re-enable filters.
     WiFi.messageFilter(true, "^Recv [0-9]* bytes", "\r\n$");
     WiFi.messageFilter(true, NULL, "\r\nSEND OK\r\n");
     WiFi.messageFilter(true, "^+IPD,[0-9]*:", "\r\n$");

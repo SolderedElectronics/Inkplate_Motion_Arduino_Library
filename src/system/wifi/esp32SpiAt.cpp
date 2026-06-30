@@ -182,12 +182,24 @@ bool WiFiClass::sendAtCommand(char *_atCommand, uint16_t _len)
     dataSendRequest(_dataLen, 0);
 
     // Read the slave status.
-    uint8_t _slaveStatus = 0;
-    _slaveStatus = requestSlaveStatus();
+    uint16_t _statusLen = 0;
+    uint8_t _slaveStatus = requestSlaveStatus(&_statusLen);
 
     // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE.
+    // If READABLE, complete the read transaction before returning — leaving it incomplete
+    // causes ESP32 to hold handshake HIGH with no new rising edge, so the ISR never fires
+    // again and flushModemReadReq silently skips the flush on every subsequent call,
+    // accumulating incomplete transactions until the ESP32 SPI-AT state machine crashes.
     if (_slaveStatus != INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE)
+    {
+        if (_slaveStatus == INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE && _statusLen > 0)
+        {
+            dataRead(_dataBuffer, _statusLen);
+            dataReadEnd();
+            _esp32HandshakePinFlag = false;
+        }
         return false;
+    }
 
     // Send the data.
     dataSend(_atCommand, _dataLen);
@@ -1577,7 +1589,7 @@ bool WiFiClass::dataSendRequest(uint16_t _len, uint8_t _seqNumber)
     transferSpiPacket(&_spiDataSend, sizeof(_dataInfo.bytes));
 
     // Wait for the handshake!
-    bool _ret = waitForHandshakePinInt(200ULL);
+    bool _ret = waitForHandshakePinInt(50ULL);
 
     // Return the success status. If timeout occured, data read req. has failed.
     return _ret;
