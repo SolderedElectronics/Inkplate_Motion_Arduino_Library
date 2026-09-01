@@ -485,9 +485,9 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
                         _retValue = false;
                 }
             }
-
-            // You got so far. Everything seems to went fine, so return true!
-            _retValue = true;
+            else
+                // You got so far. Everything seems to went fine, so return true!
+                _retValue = true;
         }
     }
 
