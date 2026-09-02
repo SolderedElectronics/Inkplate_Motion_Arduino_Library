@@ -381,10 +381,11 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
         // First wait for the any kind of response by using HANDSHAKE pin.
         unsigned long _timeoutCounter = millis();
         while (((unsigned long)(millis() - _timeoutCounter) <= _timeoutAtCommand) && (!getHandshakePinState()))
+            ;
 
-            // If there is no handshake pin activity, timeout occured, return false.
-            if (((unsigned long)(millis() - _timeoutCounter) > _timeoutAtCommand))
-                return false;
+        // If there is no handshake pin activity, timeout occured, return false.
+        if (!getHandshakePinState())
+            return false;
 
         // If something is received, read the response.
         if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _rxDataTimeoutAtCommand, &_respLen))
@@ -438,14 +439,11 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
                 // ERROR after that command. It's ok if there is no reponse, but it there is response and it's not ok,
                 // something is wrong!
                 if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 200ULL, &_respLen))
-                {
-                    // Check of OK. If not found, return error.
-                    if (strstr(_dataBuffer, "\r\nOK\r\n") == NULL)
-                        _retValue = false;
-                }
-
-                // Everything is ok with the response!
-                _retValue = true;
+                    // Check of OK. If not found, it's an error.
+                    _retValue = strstr(_dataBuffer, "\r\nOK\r\n") != NULL;
+                else
+                    // No additional OK/ERROR response arrived - that's fine, per comment above.
+                    _retValue = true;
             }
         }
     }
