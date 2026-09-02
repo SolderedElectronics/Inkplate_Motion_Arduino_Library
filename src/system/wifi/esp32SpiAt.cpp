@@ -185,21 +185,24 @@ bool WiFiClass::sendAtCommand(char *_atCommand, uint16_t _len)
     uint16_t _statusLen = 0;
     uint8_t _slaveStatus = requestSlaveStatus(&_statusLen);
 
-    // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE.
-    // If READABLE, complete the read transaction before returning — leaving it incomplete
-    // causes ESP32 to hold handshake HIGH with no new rising edge, so the ISR never fires
-    // again and flushModemReadReq silently skips the flush on every subsequent call,
-    // accumulating incomplete transactions until the ESP32 SPI-AT state machine crashes.
-    if (_slaveStatus != INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE)
+    // READABLE and WRITEABLE are independent bits, not a mutually exclusive enum - the ESP32
+    // can present both at once (e.g. inbound UDP data arrived right as it became ready for the
+    // next send). Drain any pending read first so the ESP32 SPI-AT state machine doesn't stay
+    // stuck expecting a read the host never issued - that leaves handshake HIGH with no further
+    // rising edge, hanging every future transaction.
+    if (_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
     {
-        if (_slaveStatus == INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE && _statusLen > 0)
+        if (_statusLen > 0)
         {
             dataRead(_dataBuffer, _statusLen);
             dataReadEnd();
-            _esp32HandshakePinFlag = false;
         }
-        return false;
+        _esp32HandshakePinFlag = false;
     }
+
+    // Must also be WRITEABLE to proceed with the send.
+    if (!(_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE))
+        return false;
 
     // Send the data.
     dataSend(_atCommand, _dataLen);
@@ -246,8 +249,10 @@ bool WiFiClass::getAtResponse(char *_response, uint32_t _bufferLen, unsigned lon
             uint16_t _responseLen = 0;
             uint8_t _slaveStatus = requestSlaveStatus(&_responseLen);
 
-            // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE
-            if (_slaveStatus == INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
+            // READABLE and WRITEABLE are independent bits and can both be set at once - test with
+            // a bitwise check, not equality, or a simultaneous WRITEABLE indication makes this
+            // silently skip draining the pending data.
+            if (_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
             {
                 // Update the timeout!
                 _timeoutCounter = millis();
@@ -321,8 +326,9 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
     // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE
     uint8_t _slaveStatus = requestSlaveStatus(&_responseLen);
 
-    // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE
-    if (_slaveStatus != INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
+    // READABLE and WRITEABLE are independent bits and can both be set at once - test with
+    // a bitwise check, not equality.
+    if (!(_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
         return false;
 
     // Check if the buffer is large enough for the data.
@@ -1622,8 +1628,9 @@ bool WiFiClass::flushModemReadReq()
             // How many bytes to read.
             uint16_t _len = 0;
 
-            // Keep it flushing until there is no more read requests.
-            while (_esp32HandshakePinFlag && requestSlaveStatus(&_len) == INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
+            // Keep it flushing until there is no more read requests. Bitwise check - READABLE and
+            // WRITEABLE are independent bits and can both be set at once.
+            while (_esp32HandshakePinFlag && (requestSlaveStatus(&_len) & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
             {
                 // Clear the handshake flag.
                 _esp32HandshakePinFlag = false;
@@ -1657,7 +1664,7 @@ bool WiFiClass::isModemReady()
         // Check for the request, since the Handshake pin is high.
         // Also get the data length.
         uint16_t _dataLen = 0;
-        if (requestSlaveStatus(&_dataLen) == INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
+        if (requestSlaveStatus(&_dataLen) & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
         {
             // Ok, now try to read the data. First fill the ESP32 read packet
             dataRead(_dataBuffer, _dataLen);
