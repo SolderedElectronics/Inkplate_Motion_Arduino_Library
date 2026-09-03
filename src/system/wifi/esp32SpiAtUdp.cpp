@@ -248,10 +248,13 @@ bool WiFiUDP::end()
     _availableData = 0;
     _currentPosition = NULL;
 
-    // Re-enable filters.
-    WiFi.messageFilter(true, "^Recv [0-9]* bytes", "\r\n$");
-    WiFi.messageFilter(true, NULL, "\r\nSEND OK\r\n");
-    WiFi.messageFilter(true, "^+IPD,[0-9]*:", "\r\n$");
+    // Remove the filters beginPacket() added. Without this, every begin()/beginPacket()/end()
+    // cycle re-adds duplicates and never frees them, eventually exhausting the ESP32's filter
+    // table and making every further AT+SYSMSGFILTERCFG add permanently fail.
+    WiFi.messageFilter(false, "^Recv [0-9]* bytes", "\r\n$");
+    WiFi.messageFilter(false, NULL, "\r\nSEND OK\r\n");
+    WiFi.messageFilter(false, "^busy p...", "\r\n$");
+    WiFi.messageFilter(false, "^+IPD,[0-9]*:", "\r\n$");
 
     // Disconnect from the server.
     if (!WiFi.sendAtCommandWithResponse("AT+CIPCLOSE\r\n", 2000ULL, 4ULL, (char *)("CLOSED"),
