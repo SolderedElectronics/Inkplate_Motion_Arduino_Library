@@ -243,7 +243,7 @@ bool WiFiClass::getAtResponse(char *_response, uint32_t _bufferLen, unsigned lon
     while ((unsigned long)(millis() - _timeoutCounter) < _timeout)
     {
         // Wait for the response by checking the handshake pin.
-        if (_esp32HandshakePinFlag)
+        if (getHandshakePinState())
         {
             // Read the slave status.
             uint16_t _responseLen = 0;
@@ -315,11 +315,11 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
     _timeoutCounter = millis();
 
     // Now loop until the timeout occurs
-    while (((unsigned long)(millis() - _timeoutCounter) < _timeout) && (!_esp32HandshakePinFlag))
+    while (((unsigned long)(millis() - _timeoutCounter) < _timeout) && (!getHandshakePinState()))
         ;
 
     // If the timeout occured, return false.
-    if (!_esp32HandshakePinFlag)
+    if (!getHandshakePinState())
         return false;
 
     // Otherwise read the data.
@@ -1316,7 +1316,7 @@ bool WiFiClass::waitForHandshakePinInt(uint32_t _timeoutValue)
     unsigned long _timeout = millis();
 
     // Wait for the rising edge in Handshake pin.
-    while (((unsigned long)(millis() - _timeout) < _timeoutValue) && (!_esp32HandshakePinFlag))
+    while (((unsigned long)(millis() - _timeout) < _timeoutValue) && (!getHandshakePinState()))
         ;
 
     // Clear the flag.
@@ -1620,7 +1620,7 @@ bool WiFiClass::flushModemReadReq()
     {
         // Now check the state of the handshake pin - if is set to high,
         // ESP32 expects data read - flush needed.
-        if (_esp32HandshakePinFlag)
+        if (getHandshakePinState())
         {
             // Set return value to true since there is data to flush.
             _retValue = true;
@@ -1630,7 +1630,7 @@ bool WiFiClass::flushModemReadReq()
 
             // Keep it flushing until there is no more read requests. Bitwise check - READABLE and
             // WRITEABLE are independent bits and can both be set at once.
-            while (_esp32HandshakePinFlag && (requestSlaveStatus(&_len) & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
+            while (getHandshakePinState() && (requestSlaveStatus(&_len) & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
             {
                 // Clear the handshake flag.
                 _esp32HandshakePinFlag = false;
