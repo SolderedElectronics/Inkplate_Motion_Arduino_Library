@@ -146,7 +146,7 @@ bool WiFiClass::power(bool _en, bool _resetSettings)
     else
     {
         // Disable the power to the ESP32.
-        digitalWrite(INKPLATE_ESP32_PWR_SWITCH_PIN, HIGH);
+        digitalWrite(INKPLATE_ESP32_PWR_SWITCH_PIN, LOW);
 
         // Wait a little bit for the ESP32 to power down.
         delay(50);
@@ -581,7 +581,7 @@ bool WiFiClass::messageFilter(bool _enable, char *_headFilter, char *_tailFilter
         return false;
 
     // Now wait for the response. It should send "\r\nOK\r\n\r\n>".
-    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL))
+    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 600ULL))
         return false;
 
     // Check for the response.
@@ -621,7 +621,7 @@ bool WiFiClass::messageFilter(bool _enable, char *_headFilter, char *_tailFilter
     }
 
     // Wait for the response. It should send "\r\nOK\r\n".
-    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL))
+    if (!getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 600ULL))
         return false;
 
     // Check for the response.
