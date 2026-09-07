@@ -424,7 +424,7 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
             char *_responseMatch = strstr(_dataBuffer, _expectedResponseAtCmd);
 
             // If substring function returns NULL, match is not found.
-            if (strstr(_dataBuffer, _expectedResponseAtCmd) == NULL)
+            if (_responseMatch == NULL)
             {
                 // If flag for termination on unexpected response is set, return from the function.
                 if (_terminateOnAtResponseError)
