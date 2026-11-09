@@ -1446,14 +1446,24 @@ void WiFiClass::transferSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spi
     HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 
     // Send everything, but the data.
+    // Force a full SPI re-init before every transaction. STM32 core >= 3.0.0 only re-inits the
+    // SPI when the settings change, and the direct HAL calls below can leave the peripheral in a
+    // state where the next Arduino transfer() hangs. begin() switches to the 4 MHz default, so
+    // beginTransaction() then always re-inits (this relies on _esp32AtSpiSettings != 4 MHz).
+    // Core 2.x re-inited on every beginTransaction(), so this keeps the old behavior there.
+    _spi->begin();
     _spi->beginTransaction(_esp32AtSpiSettings);
     _spi->transfer(_spiPacket->cmd);
     _spi->transfer(_spiPacket->addr);
     _spi->transfer(_spiPacket->dummy);
 
     // _spi->transfer(_spiPacket->data, _spiDataLen);
-    HAL_SPI_TransmitReceive(_spiHandle, (uint8_t *)_spiPacket->data, (uint8_t *)_spiPacket->data, _spiDataLen,
-                            HAL_MAX_DELAY);
+    // HAL rejects zero-length transfers with HAL_ERROR without touching the hardware, so skip them.
+    if (_spiDataLen > 0)
+    {
+        HAL_SPI_TransmitReceive(_spiHandle, (uint8_t *)_spiPacket->data, (uint8_t *)_spiPacket->data, _spiDataLen,
+                                HAL_MAX_DELAY);
+    }
     _spi->endTransaction();
 
     // Disable ESP32 SPI lines by pulling CS pin to high.
@@ -1480,11 +1490,16 @@ void WiFiClass::sendSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiData
     HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 
     // Send everything, but the data.
+    // Force a full SPI re-init, see transferSpiPacket() for the reason.
+    _spi->begin();
     _spi->beginTransaction(_esp32AtSpiSettings);
     HAL_SPI_Transmit(_spiHandle, _esp32SpiHeader, sizeof(_esp32SpiHeader) / sizeof(uint8_t), HAL_MAX_DELAY);
 
-    // Send data.
-    HAL_SPI_Transmit(_spiHandle, _spiPacket->data, _spiDataLen, HAL_MAX_DELAY);
+    // Send data. HAL rejects zero-length transfers, so skip them.
+    if (_spiDataLen > 0)
+    {
+        HAL_SPI_Transmit(_spiHandle, _spiPacket->data, _spiDataLen, HAL_MAX_DELAY);
+    }
     _spi->endTransaction();
 
     // Disable ESP32 SPI lines by pulling CS pin to high.
