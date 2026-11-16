@@ -181,28 +181,35 @@ bool WiFiClass::sendAtCommand(char *_atCommand, uint16_t _len)
     // First make a request for data send.
     dataSendRequest(_dataLen, 0);
 
-    // Read the slave status.
+    // Once a send request is made it must be completed. Giving up when the ESP32 is not WRITEABLE yet (e.g. it
+    // first reports inbound UDP data as READABLE) leaves it granting the abandoned request later and waiting for
+    // data that never comes, which deadlocks every following transaction. So drain pending reads and wait
+    // (bounded) for WRITEABLE. READABLE and WRITEABLE are independent bits and can be set at once.
     uint16_t _statusLen = 0;
-    uint8_t _slaveStatus = requestSlaveStatus(&_statusLen);
-
-    // READABLE and WRITEABLE are independent bits, not a mutually exclusive enum - the ESP32
-    // can present both at once (e.g. inbound UDP data arrived right as it became ready for the
-    // next send). Drain any pending read first so the ESP32 SPI-AT state machine doesn't stay
-    // stuck expecting a read the host never issued - that leaves handshake HIGH with no further
-    // rising edge, hanging every future transaction.
-    if (_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
+    uint8_t _slaveStatus = 0;
+    unsigned long _start = millis();
+    while (true)
     {
-        if (_statusLen > 0)
-        {
-            dataRead(_dataBuffer, _statusLen);
-            dataReadEnd();
-        }
-        _esp32HandshakePinFlag = false;
-    }
+        _slaveStatus = requestSlaveStatus(&_statusLen);
 
-    // Must also be WRITEABLE to proceed with the send.
-    if (!(_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE))
-        return false;
+        if (_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE)
+        {
+            if (_statusLen > 0)
+            {
+                dataRead(_dataBuffer, _statusLen);
+                dataReadEnd();
+            }
+            _esp32HandshakePinFlag = false;
+        }
+
+        if (_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_WRITEABLE)
+            break;
+
+        if ((unsigned long)(millis() - _start) >= 200ULL)
+            return false;
+
+        delayMicroseconds(200);
+    }
 
     // Send the data.
     dataSend(_atCommand, _dataLen);
