@@ -447,15 +447,24 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
                         return false;
                 }
 
-                // Heh, it this is so simple. Sometimes, modem can respond with the command but also with the OK or
-                // ERROR after that command. It's ok if there is no reponse, but it there is response and it's not ok,
-                // something is wrong!
-                if (getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 200ULL, &_respLen))
-                    // Check of OK. If not found, it's an error.
-                    _retValue = strstr(_dataBuffer, "\r\nOK\r\n") != NULL;
-                else
-                    // No additional OK/ERROR response arrived - that's fine, per comment above.
-                    _retValue = true;
+                // The rest of the response (more lines, trailing OK/ERROR) can arrive in separate SPI packets,
+                // depending on ESP32 timing. Append them after the first part instead of overwriting it, since
+                // callers parse the response from the start of _dataBuffer. Missing OK is fine, ERROR is not.
+                _retValue = true;
+                uint16_t _extraLen = 0;
+                while ((strstr(_dataBuffer, "\r\nOK\r\n") == NULL) &&
+                       (_respLen < (INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - 1)) &&
+                       getSimpleAtResponse(_dataBuffer + _respLen, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - _respLen,
+                                           200ULL, &_extraLen))
+                {
+                    _respLen += _extraLen;
+                    _dataBuffer[_respLen] = '\0';
+                    if (strstr(_dataBuffer, "\r\nERROR\r\n") != NULL)
+                    {
+                        _retValue = false;
+                        break;
+                    }
+                }
             }
         }
     }
