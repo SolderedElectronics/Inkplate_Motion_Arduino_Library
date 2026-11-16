@@ -21,6 +21,18 @@ WiFiUDP::WiFiUDP()
 {
     // Get the pointer address of the data buffer of the WiFi library.
     _dataBuffer = WiFi.getDataBuffer();
+
+    // Heap, not a member array: examples create WiFiUDP on the stack.
+    _rxBuffer = (char *)malloc(INKPLATE_ESP32_AT_CMD_BUFFER_SIZE);
+}
+
+/**
+ * @brief   Destroy the WiFiUDP object and free the RX buffer.
+ *
+ */
+WiFiUDP::~WiFiUDP()
+{
+    free(_rxBuffer);
 }
 
 /**
@@ -167,9 +179,9 @@ bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
     // SEND OK is filtered at ESP32 level (beginPacket sets the filter) so it never
     // appears as an SPI event here. Wait directly for the reply.
     _availableData = 0;
-    _currentPosition = _dataBuffer;
-    if (WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20000ULL, &_availableData))
-        _currentPosition = _dataBuffer;
+    _currentPosition = _rxBuffer;
+    if (_rxBuffer != NULL)
+        WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20000ULL, &_availableData);
 
     return _availableData != 0;
 }
@@ -187,15 +199,15 @@ bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
  */
 uint16_t WiFiUDP::available(bool _blocking)
 {
-    if (_availableData == 0)
+    if ((_availableData == 0) && (_rxBuffer != NULL))
     {
         uint16_t _timeoutValue = _blocking ? 2500ULL : 20UL;
         uint16_t _len = 0;
 
-        if (WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
+        if (WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
         {
             _availableData += _len;
-            _currentPosition = _dataBuffer;
+            _currentPosition = _rxBuffer;
         }
     }
 

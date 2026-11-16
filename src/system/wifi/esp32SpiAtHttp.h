@@ -25,6 +25,12 @@ class WiFiClient
 {
   public:
     WiFiClient();
+    ~WiFiClient();
+
+    // Owns a heap RX buffer, so copying would double-free it.
+    WiFiClient(const WiFiClient &) = delete;
+    WiFiClient &operator=(const WiFiClient &) = delete;
+
     bool begin(const char *_url);
     // bool connect(const char *_url);
     bool GET();
@@ -44,6 +50,10 @@ class WiFiClient
     uint16_t _bufferLen = 0;
     char *_currentPos = NULL;
     char *_dataBuffer = NULL;
+
+    // Private RX buffer. Received data must not live in WiFi's shared AT buffer, otherwise any
+    // WiFi.* AT call between available() and read() overwrites it.
+    char *_rxBuffer = NULL;
     uint32_t _fileSize = 0;
     char *_urlStr = NULL;
 };

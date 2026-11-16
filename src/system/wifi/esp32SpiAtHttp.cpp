@@ -22,6 +22,18 @@ WiFiClient::WiFiClient()
 {
     // Get the RX Buffer Data Buffer pointer from the WiFi library.
     _dataBuffer = WiFi.getDataBuffer();
+
+    // Heap, not a member array: examples create WiFiClient on the stack.
+    _rxBuffer = (char *)malloc(INKPLATE_ESP32_AT_CMD_BUFFER_SIZE);
+}
+
+/**
+ * @brief   Destroy the WiFiClient object and free the RX buffer.
+ *
+ */
+WiFiClient::~WiFiClient()
+{
+    free(_rxBuffer);
 }
 
 /**
@@ -86,12 +98,12 @@ bool WiFiClient::GET()
 
     // Wait for the first data chunk. If timeout occured, return false.
     uint16_t _len = 0;
-    if (!WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 5000ULL, &_len))
+    if ((_rxBuffer == NULL) || !WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 5000ULL, &_len))
         return false;
 
     // Increment position and set current new position of the pointer for data read.
     _bufferLen += _len;
-    _currentPos = _dataBuffer;
+    _currentPos = _rxBuffer;
 
     // Return ok for success.
     return true;
@@ -120,9 +132,14 @@ bool WiFiClient::POST(const char *_body, uint16_t _bodyLen)
     if (strstr(_dataBuffer, "SEND FAIL") != NULL)
         return false;
 
+    // Move the response out of the shared AT buffer so later WiFi.* calls cannot overwrite it.
+    if (_rxBuffer == NULL)
+        return false;
+    memcpy(_rxBuffer, _dataBuffer, _len);
+
     // Increment position and set current new position of the pointer for POST response data read.
     _bufferLen += _len;
-    _currentPos = _dataBuffer;
+    _currentPos = _rxBuffer;
 
     // Return ok for success.
     return true;
@@ -143,7 +160,7 @@ bool WiFiClient::POST(const char *_body, uint16_t _bodyLen)
 int WiFiClient::available(bool _blocking)
 {
     // Only get new data if the current buffer is empty.
-    if (_bufferLen == 0)
+    if ((_bufferLen == 0) && (_rxBuffer != NULL))
     {
         // Calculate the timeout value for new data. If blocking method is enabled,
         // use longer timeout value. Otherwise, use shorter timeout value (but in this case user
@@ -154,10 +171,10 @@ int WiFiClient::available(bool _blocking)
         uint16_t _len = 0;
 
         // Try to get new data. If new data is available, update the size and current pointer for the data.
-        if (WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
+        if (WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
         {
             _bufferLen += _len;
-            _currentPos = _dataBuffer;
+            _currentPos = _rxBuffer;
         }
     }
 

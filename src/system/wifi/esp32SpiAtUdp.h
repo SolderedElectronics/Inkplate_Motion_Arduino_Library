@@ -26,6 +26,11 @@ class WiFiUDP
   public:
     // Class constructor.
     WiFiUDP();
+    ~WiFiUDP();
+
+    // Owns a heap RX buffer, so copying would double-free it.
+    WiFiUDP(const WiFiUDP &) = delete;
+    WiFiUDP &operator=(const WiFiUDP &) = delete;
 
     // Initializer for the UDP.
     bool begin(uint16_t _localPort);
@@ -40,6 +45,8 @@ class WiFiUDP
     bool write(uint8_t *_packet, uint16_t _len);
 
     // Returns how many bytes are available for read.
+    // Note: a packet that arrives while another WiFi.* AT command is running is flushed by the
+    // ESP32 driver and lost. Data already returned by available() is safe until read().
     uint16_t available(bool _blocking = false);
 
     // read bytes from the RX buffer.
@@ -57,6 +64,10 @@ class WiFiUDP
     char *_currentPosition = 0;
     uint16_t _connectionTimeoutValue = 20000ULL;
     char *_dataBuffer = NULL;
+
+    // Private RX buffer. Received data must not live in WiFi's shared AT buffer, otherwise any
+    // WiFi.* AT call (e.g. currentRSSI()) between available() and read() overwrites it.
+    char *_rxBuffer = NULL;
 };
 
 #endif
