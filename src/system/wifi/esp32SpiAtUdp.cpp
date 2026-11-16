@@ -122,6 +122,16 @@ bool WiFiUDP::beginPacket()
     return true;
 }
 
+// Binary-safe substring search (received data may contain 0x00).
+static bool memContains(const char *_buf, uint16_t _len, const char *_needle)
+{
+    size_t _n = strlen(_needle);
+    for (uint16_t i = 0; i + _n <= _len; i++)
+        if (memcmp(_buf + i, _needle, _n) == 0)
+            return true;
+    return false;
+}
+
 /**
  * @brief   Send data to the desired web server to it's destination port.
  *
@@ -156,9 +166,23 @@ bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
     if (!_p1sent)
         return false;
 
+    // Wait for the "OK" + ">" prompt packet by packet and stop as soon as it is seen, instead of waiting for a
+    // 100 ms quiet gap on every write. Search binary-safe: inbound UDP data arriving meanwhile can contain 0x00,
+    // which made strstr() miss the OK and fail the write.
     uint16_t _p1Len = 0;
-    WiFi.getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL, &_p1Len);
-    if (_p1Len == 0 || strstr(_dataBuffer, "\r\nOK\r\n") == NULL)
+    bool _prompt = false;
+    unsigned long _p1wait = millis();
+    while (!_prompt && (millis() - _p1wait) < 1000ULL)
+    {
+        uint16_t _len = 0;
+        if (!WiFi.getSimpleAtResponse(_dataBuffer + _p1Len, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - _p1Len, 100ULL, &_len))
+            continue;
+        _p1Len += _len;
+        if (memContains(_dataBuffer, _p1Len, "ERROR"))
+            return false;
+        _prompt = memContains(_dataBuffer, _p1Len, "OK\r\n") && memContains(_dataBuffer, _p1Len, ">");
+    }
+    if (!_prompt)
         return false;
 
     // Phase 2: Send payload. Time-based loop — must succeed to exit data-mode.
