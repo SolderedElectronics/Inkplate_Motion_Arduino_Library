@@ -333,7 +333,8 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
 
     // Check if the buffer is large enough for the data.
     // If not, drop everything.
-    if (_responseLen < _bufferLen)
+    bool _tooLarge = (_responseLen >= _bufferLen);
+    if (!_tooLarge)
     {
         // Read the data.
         dataRead(_response, _responseLen);
@@ -344,6 +345,11 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
 
     // Send read done.
     dataReadEnd();
+
+    // Data was dropped, report nothing received so the caller never uses stale buffer contents
+    // (and the null-terminator below never lands past the end of the buffer).
+    if (_tooLarge)
+        _responseLen = 0;
 
     // Add null-terminating char if needed.
     if (_rxLen == NULL)
