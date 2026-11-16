@@ -110,6 +110,7 @@ class WiFiClass
                 IPAddress _dns1 = INADDR_NONE, IPAddress _dns2 = INADDR_NONE);
     bool waitForHandshakePin(uint32_t _timeoutValue, bool _validState = HIGH);
     bool getHandshakePinState();
+    void recoverHandshakeEdge();
 
   private:
     // ESP32 SPI Communication Protocol methods.

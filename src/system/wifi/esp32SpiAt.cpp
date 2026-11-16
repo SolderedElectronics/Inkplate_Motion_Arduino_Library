@@ -335,6 +335,9 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
     while (((unsigned long)(millis() - _timeoutCounter) < _timeout) && (!getHandshakePinState()))
         ;
 
+    // Recover a lost edge: the flag can be cleared while the line is already high, and then no new edge comes.
+    recoverHandshakeEdge();
+
     // If the timeout occured, return false.
     if (!getHandshakePinState())
         return false;
@@ -1391,6 +1394,17 @@ bool WiFiClass::getHandshakePinState()
 }
 
 /**
+ * @brief   Set the handshake flag if the edge was missed but the ESP32 still holds the line high.
+ *          Only called after a wait timed out, so a line that is briefly still high right after a
+ *          transaction cannot cause a false trigger in the fast path. The line idles LOW (measured).
+ */
+void WiFiClass::recoverHandshakeEdge()
+{
+    if (!_esp32HandshakePinFlag && (digitalRead(INKPLATE_ESP32_HANDSHAKE_PIN) == HIGH))
+        _esp32HandshakePinFlag = true;
+}
+
+/**
  * @brief   Wait for the ESP32 handshake pin to trigger master request using interrutps.
  *
  * @param   uint32_t _timeoutValue
@@ -1411,15 +1425,15 @@ bool WiFiClass::waitForHandshakePinInt(uint32_t _timeoutValue)
     while (((unsigned long)(millis() - _timeout) < _timeoutValue) && (!getHandshakePinState()))
         ;
 
+    // Line already high when the flag was cleared above means no edge will come - accept the level.
+    recoverHandshakeEdge();
+    bool _triggered = getHandshakePinState();
+
     // Clear the flag.
     _esp32HandshakePinFlag = false;
 
-    // Check the state of the timeout. If timeout occured, return false.
-    if ((millis() - _timeout) >= _timeoutValue)
-        return false;
-
-    // Otherwise return true.
-    return true;
+    // Return whether the handshake triggered (edge or recovered level).
+    return _triggered;
 }
 
 /**
