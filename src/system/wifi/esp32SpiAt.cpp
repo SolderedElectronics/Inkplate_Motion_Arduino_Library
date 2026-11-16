@@ -1583,7 +1583,7 @@ bool WiFiClass::dataSend(char *_dataBuffer, uint32_t _len)
 
     // Calculate the number of chunks to send, since the max is 4092 bytes.
     uint16_t _chunks = _len / INKPLATE_ESP32_SPI_MAX_MESAGE_DATA_BUFFER;
-    uint16_t _lastChunk = _chunks ? _len % INKPLATE_ESP32_SPI_MAX_MESAGE_DATA_BUFFER : _len;
+    uint16_t _lastChunk = _len % INKPLATE_ESP32_SPI_MAX_MESAGE_DATA_BUFFER;
 
     // Address offset for the data packet.
     uint32_t _dataPacketAddrOffset = 0;
@@ -1595,8 +1595,8 @@ bool WiFiClass::dataSend(char *_dataBuffer, uint32_t _len)
     // Go trough the chunks.
     while (_chunks--)
     {
-        // Calculate the chunk size.
-        uint16_t _chunkSize = _chunks != 0 ? INKPLATE_ESP32_SPI_MAX_MESAGE_DATA_BUFFER : _lastChunk;
+        // Full chunks here, the remainder is sent after the loop.
+        uint16_t _chunkSize = INKPLATE_ESP32_SPI_MAX_MESAGE_DATA_BUFFER;
 
         // Transfer the data!
         sendSpiPacket(&_spiDataSend, _chunkSize);
@@ -1605,13 +1605,14 @@ bool WiFiClass::dataSend(char *_dataBuffer, uint32_t _len)
         _dataPacketAddrOffset += _chunkSize;
 
         // Update the SPI ESP32 packer header.
-        _spiDataSend.data = (uint8_t *)(_dataBuffer + _chunkSize);
+        _spiDataSend.data = (uint8_t *)(_dataBuffer + _dataPacketAddrOffset);
 
         // Data end cmd? Don't know...Needs to be checked!
     }
 
     // Write the last one chunk (or the only one if the _len < 4092).
-    sendSpiPacket(&_spiDataSend, _lastChunk);
+    if (_lastChunk)
+        sendSpiPacket(&_spiDataSend, _lastChunk);
 
     // Return true for success.
     return true;
