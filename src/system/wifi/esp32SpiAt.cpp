@@ -171,12 +171,22 @@ bool WiFiClass::power(bool _en, bool _resetSettings)
  */
 bool WiFiClass::sendAtCommand(char *_atCommand, uint16_t _len)
 {
+    // Get the data size. Use lenght parameter if array is not a nul-terminated string.
+    uint16_t _dataLen = _len != 0 ? _len : strlen(_atCommand);
+
+    // Callers often build the command in _dataBuffer, but the flush/drain below read into _dataBuffer and would
+    // overwrite it before it is sent. Move short commands out of the way first.
+    char _cmdCopy[256];
+    if ((_atCommand >= _dataBuffer) && (_atCommand < (_dataBuffer + INKPLATE_ESP32_AT_CMD_BUFFER_SIZE)) &&
+        (_dataLen < sizeof(_cmdCopy)))
+    {
+        memcpy(_cmdCopy, _atCommand, _dataLen);
+        _atCommand = _cmdCopy;
+    }
+
     // Flush ESP32 from data read request if needed and if this is enabled, since
     // this can block EPS32 from receving new AT commands.
     flushModemReadReq();
-
-    // Get the data size. Use lenght parameter if array is not a nul-terminated string.
-    uint16_t _dataLen = _len != 0 ? _len : strlen(_atCommand);
 
     // First make a request for data send.
     dataSendRequest(_dataLen, 0);
