@@ -205,7 +205,7 @@ bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
     _availableData = 0;
     _currentPosition = _rxBuffer;
     if (_rxBuffer != NULL)
-        WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20000ULL, &_availableData);
+        WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _replyTimeoutValue, &_availableData);
 
     return _availableData != 0;
 }
@@ -314,4 +314,19 @@ bool WiFiUDP::end()
 void WiFiUDP::setConnectionTimeout(uint16_t _connectionTimeout)
 {
     _connectionTimeoutValue = _connectionTimeout;
+}
+
+/**
+ * @brief   Sets how long write() waits for the reply packet, in milliseconds (default 20000).
+ *
+ * @param   uint32_t _replyTimeout
+ *          Reply timeout in milliseconds.
+ *
+ * @note    UDP can lose packets. With a lost reply, write() blocks until this timeout or until any other
+ *          inbound packet arrives, which is then returned as the reply. Keep it close to the expected
+ *          round-trip time and check the payload of what read() returns.
+ */
+void WiFiUDP::setReplyTimeout(uint32_t _replyTimeout)
+{
+    _replyTimeoutValue = _replyTimeout;
 }

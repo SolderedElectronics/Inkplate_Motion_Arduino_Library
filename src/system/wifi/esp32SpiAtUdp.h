@@ -58,11 +58,15 @@ class WiFiUDP
     // Sets connection timeout in milliseconds.
     void setConnectionTimeout(uint16_t _connectionTimeout);
 
+    // Sets how long write() waits for the reply packet in milliseconds.
+    void setReplyTimeout(uint32_t _replyTimeout);
+
   private:
     uint16_t _localUdpPort = 0;
     uint16_t _availableData = 0;
     char *_currentPosition = 0;
     uint16_t _connectionTimeoutValue = 20000ULL;
+    uint32_t _replyTimeoutValue = 20000ULL;
     char *_dataBuffer = NULL;
 
     // Private RX buffer. Received data must not live in WiFi's shared AT buffer, otherwise any
