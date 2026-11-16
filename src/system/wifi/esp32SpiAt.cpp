@@ -474,8 +474,8 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
                 uint16_t _extraLen = 0;
                 while ((strstr(_dataBuffer, "\r\nOK\r\n") == NULL) &&
                        (_respLen < (INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - 1)) &&
-                       getSimpleAtResponse(_dataBuffer + _respLen, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - _respLen,
-                                           200ULL, &_extraLen))
+                       getSimpleAtResponse(_dataBuffer + _respLen, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - _respLen, 200ULL,
+                                           &_extraLen))
                 {
                     _respLen += _extraLen;
                     _dataBuffer[_respLen] = '\0';
