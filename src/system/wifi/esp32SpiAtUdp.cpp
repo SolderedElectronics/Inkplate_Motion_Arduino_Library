@@ -103,11 +103,6 @@ bool WiFiUDP::beginPacket()
     if (!WiFi.messageFilter(true, "^Recv [0-9]* bytes", "\r\n$"))
         return false;
 
-    // Remove "SEND OK" — must be filtered so it never appears as an SPI event
-    // during Phase 3 reply wait, which would be misread as reply data.
-    if (!WiFi.messageFilter(true, NULL, "\r\nSEND OK\r\n"))
-        return false;
-
     // Remove "busy p..." — ESP32 sends this after receiving payload to indicate
     // it is processing the UDP send. Without this filter it lands in Phase 3 and
     // is mistaken for the echo reply, causing constant garbage RX values.
@@ -122,14 +117,19 @@ bool WiFiUDP::beginPacket()
     return true;
 }
 
-// Binary-safe substring search (received data may contain 0x00).
-static bool memContains(const char *_buf, uint16_t _len, const char *_needle)
+// Binary-safe substring search (received data may contain 0x00). Returns the first match or NULL.
+static char *memFind(char *_buf, uint16_t _len, const char *_needle)
 {
     size_t _n = strlen(_needle);
     for (uint16_t i = 0; i + _n <= _len; i++)
         if (memcmp(_buf + i, _needle, _n) == 0)
-            return true;
-    return false;
+            return _buf + i;
+    return NULL;
+}
+
+static bool memContains(char *_buf, uint16_t _len, const char *_needle)
+{
+    return memFind(_buf, _len, _needle) != NULL;
 }
 
 /**
@@ -200,14 +200,56 @@ bool WiFiUDP::write(uint8_t *_packet, uint16_t _len)
     if (!_p2sent)
         return false;
 
-    // SEND OK is filtered at ESP32 level (beginPacket sets the filter) so it never
-    // appears as an SPI event here. Wait directly for the reply.
-    _availableData = 0;
-    _currentPosition = _rxBuffer;
-    if (_rxBuffer != NULL)
-        WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 20000ULL, &_availableData);
+    // Phase 3: wait for the ESP32's send confirmation. write() reports whether the packet was sent; replies are
+    // read with available()/read(). Inbound data arriving before SEND OK (e.g. a fast reply) is kept for read().
+    unsigned long _p3start = millis();
+    while ((millis() - _p3start) < 1000ULL)
+    {
+        uint16_t _rxLen = 0;
+        if (!WiFi.getSimpleAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, 100ULL, &_rxLen))
+            continue;
+        if (memContains(_dataBuffer, _rxLen, "SEND OK\r\n"))
+        {
+            // The confirmation can share an SPI packet with inbound data - keep everything except the token.
+            char *_tok = memFind(_dataBuffer, _rxLen, "\r\nSEND OK\r\n");
+            if (_tok != NULL)
+            {
+                uint16_t _tokLen = strlen("\r\nSEND OK\r\n");
+                uint16_t _before = _tok - _dataBuffer;
+                keepRxData(_dataBuffer, _before);
+                keepRxData(_tok + _tokLen, _rxLen - _before - _tokLen);
+            }
+            return true;
+        }
+        if (memContains(_dataBuffer, _rxLen, "SEND FAIL") || memContains(_dataBuffer, _rxLen, "\r\nERROR\r\n"))
+            return false;
+        keepRxData(_dataBuffer, _rxLen);
+    }
+    return false;
+}
 
-    return _availableData != 0;
+/**
+ * @brief   Append received data to the RX buffer so available()/read() return it.
+ *
+ * @param   char *_data
+ *          Received data.
+ * @param   uint16_t _len
+ *          Number of received bytes.
+ */
+void WiFiUDP::keepRxData(char *_data, uint16_t _len)
+{
+    if ((_rxBuffer == NULL) || (_len == 0))
+        return;
+
+    // Move unread data to the start, then append if it fits (otherwise the new data is dropped).
+    if ((_availableData != 0) && (_currentPosition != _rxBuffer))
+        memmove(_rxBuffer, _currentPosition, _availableData);
+    _currentPosition = _rxBuffer;
+    if ((uint32_t)_availableData + _len <= INKPLATE_ESP32_AT_CMD_BUFFER_SIZE)
+    {
+        memcpy(_rxBuffer + _availableData, _data, _len);
+        _availableData += _len;
+    }
 }
 
 // Returns how many bytes are available for read.
@@ -230,8 +272,12 @@ uint16_t WiFiUDP::available(bool _blocking)
 
         if (WiFi.getSimpleAtResponse(_rxBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _timeoutValue, &_len))
         {
-            _availableData += _len;
-            _currentPosition = _rxBuffer;
+            // A late send confirmation (write() timed out before it came) is not received data.
+            if (!((_len <= 13) && memContains(_rxBuffer, _len, "SEND OK\r\n")))
+            {
+                _availableData += _len;
+                _currentPosition = _rxBuffer;
+            }
         }
     }
 
@@ -288,7 +334,6 @@ bool WiFiUDP::end()
     // cycle re-adds duplicates and never frees them, eventually exhausting the ESP32's filter
     // table and making every further AT+SYSMSGFILTERCFG add permanently fail.
     WiFi.messageFilter(false, "^Recv [0-9]* bytes", "\r\n$");
-    WiFi.messageFilter(false, NULL, "\r\nSEND OK\r\n");
     WiFi.messageFilter(false, "^busy p...", "\r\n$");
     WiFi.messageFilter(false, "^+IPD,[0-9]*:", "\r\n$");
 

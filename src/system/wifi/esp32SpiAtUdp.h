@@ -59,6 +59,8 @@ class WiFiUDP
     void setConnectionTimeout(uint16_t _connectionTimeout);
 
   private:
+    void keepRxData(char *_data, uint16_t _len);
+
     uint16_t _localUdpPort = 0;
     uint16_t _availableData = 0;
     char *_currentPosition = 0;

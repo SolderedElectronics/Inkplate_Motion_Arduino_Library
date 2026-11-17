@@ -148,8 +148,8 @@ time_t getUDPClock()
             // Send the packet! NTP packet is 48 bytes long
             if (udp.write(ntpPacket, 48))
             {
-                // Wait for the response
-                if (udp.available())
+                // Wait for the response (blocking, up to 2.5 seconds)
+                if (udp.available(true))
                 {
                     // Read the response
                     udp.read(ntpPacket, 48);
