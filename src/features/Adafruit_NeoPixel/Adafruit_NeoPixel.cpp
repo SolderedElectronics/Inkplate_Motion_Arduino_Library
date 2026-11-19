@@ -80,7 +80,7 @@
               pixel.
   @return  Adafruit_NeoPixel object. Call the begin() function before use.
 */
-Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, int16_t p, neoPixelType t)
+Inkplate_NeoPixel::Inkplate_NeoPixel(uint16_t n, int16_t p, neoPixelType t)
     : begun(false), brightness(0), pixels(NULL), endTime(0)
 {
     updateType(t);
@@ -109,7 +109,7 @@ Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, int16_t p, neoPixelType t)
            'new' keyword with the first constructor syntax (length, pin,
            type).
 */
-Adafruit_NeoPixel::Adafruit_NeoPixel()
+Inkplate_NeoPixel::Inkplate_NeoPixel()
     :
 #if defined(NEO_KHZ400)
       is800KHz(true),
@@ -122,7 +122,7 @@ Adafruit_NeoPixel::Adafruit_NeoPixel()
 /*!
   @brief   Deallocate Adafruit_NeoPixel object, set data pin back to INPUT.
 */
-Adafruit_NeoPixel::~Adafruit_NeoPixel()
+Inkplate_NeoPixel::~Inkplate_NeoPixel()
 {
     free(pixels);
     if (pin >= 0)
@@ -132,7 +132,7 @@ Adafruit_NeoPixel::~Adafruit_NeoPixel()
 /*!
   @brief   Configure NeoPixel pin for output.
 */
-void Adafruit_NeoPixel::begin(void)
+void Inkplate_NeoPixel::begin(void)
 {
     if (pin >= 0)
     {
@@ -152,7 +152,7 @@ void Adafruit_NeoPixel::begin(void)
            'new' keyword with the first constructor syntax (length, pin,
            type).
 */
-void Adafruit_NeoPixel::updateLength(uint16_t n)
+void Inkplate_NeoPixel::updateLength(uint16_t n)
 {
     free(pixels); // Free existing data (if any)
 
@@ -186,7 +186,7 @@ void Adafruit_NeoPixel::updateLength(uint16_t n)
            'new' keyword with the first constructor syntax
            (length, pin, type).
 */
-void Adafruit_NeoPixel::updateType(neoPixelType t)
+void Inkplate_NeoPixel::updateType(neoPixelType t)
 {
     bool oldThreeBytesPerPixel = (wOffset == rOffset); // false if RGBW
 
@@ -210,7 +210,7 @@ void Adafruit_NeoPixel::updateType(neoPixelType t)
 
 // RP2040 specific driver
 #if defined(ARDUINO_ARCH_RP2040)
-void Adafruit_NeoPixel::rp2040Init(uint8_t pin, bool is800KHz)
+void Inkplate_NeoPixel::rp2040Init(uint8_t pin, bool is800KHz)
 {
     uint offset = pio_add_program(pio, &ws2812_program);
 
@@ -226,7 +226,7 @@ void Adafruit_NeoPixel::rp2040Init(uint8_t pin, bool is800KHz)
     }
 }
 // Not a user API
-void Adafruit_NeoPixel::rp2040Show(uint8_t pin, uint8_t *pixels, uint32_t numBytes, bool is800KHz)
+void Inkplate_NeoPixel::rp2040Show(uint8_t pin, uint8_t *pixels, uint32_t numBytes, bool is800KHz)
 {
     if (this->init)
     {
@@ -267,7 +267,7 @@ extern "C" void k210Show(uint8_t pin, uint8_t *pixels, uint32_t numBytes, boolea
            specialized alternative or companion libraries exist that use
            very device-specific peripherals to work around it.
 */
-void Adafruit_NeoPixel::show(void)
+void Inkplate_NeoPixel::show(void)
 {
 
     if (!pixels)
@@ -3282,7 +3282,7 @@ void Adafruit_NeoPixel::show(void)
            if any, is set to INPUT and the new pin is set to OUTPUT.
   @param   p  Arduino pin number (-1 = no pin).
 */
-void Adafruit_NeoPixel::setPin(int16_t p)
+void Inkplate_NeoPixel::setPin(int16_t p)
 {
     if (begun && (pin >= 0))
         pinMode(pin, INPUT); // Disable existing out pin
@@ -3310,7 +3310,7 @@ void Adafruit_NeoPixel::setPin(int16_t p)
   @param   g  Green brightness, 0 = minimum (off), 255 = maximum.
   @param   b  Blue brightness, 0 = minimum (off), 255 = maximum.
 */
-void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b)
+void Inkplate_NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b)
 {
 
     if (n < numLEDs)
@@ -3347,7 +3347,7 @@ void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t 
   @param   w  White brightness, 0 = minimum (off), 255 = maximum, ignored
               if using RGB pixels.
 */
-void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+void Inkplate_NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
 {
 
     if (n < numLEDs)
@@ -3382,7 +3382,7 @@ void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t 
               pixels) or ignored (for RGB pixels), next is red, then green,
               and least significant byte is blue.
 */
-void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint32_t c)
+void Inkplate_NeoPixel::setPixelColor(uint16_t n, uint32_t c)
 {
     if (n < numLEDs)
     {
@@ -3420,7 +3420,7 @@ void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint32_t c)
   @param   count  Number of pixels to fill, as a positive value. Passing
                   0 or leaving unspecified will fill to end of strip.
 */
-void Adafruit_NeoPixel::fill(uint32_t c, uint16_t first, uint16_t count)
+void Inkplate_NeoPixel::fill(uint32_t c, uint16_t first, uint16_t count)
 {
     uint16_t i, end;
 
@@ -3472,7 +3472,7 @@ void Adafruit_NeoPixel::fill(uint32_t c, uint16_t first, uint16_t count)
            one-size-fits-all operation of gamma32(). Diffusing the LEDs also
            really seems to help when using low-saturation colors.
 */
-uint32_t Adafruit_NeoPixel::ColorHSV(uint16_t hue, uint8_t sat, uint8_t val)
+uint32_t Inkplate_NeoPixel::ColorHSV(uint16_t hue, uint8_t sat, uint8_t val)
 {
 
     uint8_t r, g, b;
@@ -3575,7 +3575,7 @@ uint32_t Adafruit_NeoPixel::ColorHSV(uint16_t hue, uint8_t sat, uint8_t val)
            was previously written with one of the setPixelColor() functions.
            This gets more pronounced at lower brightness levels.
 */
-uint32_t Adafruit_NeoPixel::getPixelColor(uint16_t n) const
+uint32_t Inkplate_NeoPixel::getPixelColor(uint16_t n) const
 {
     if (n >= numLEDs)
         return 0; // Out of bounds, return no color.
@@ -3633,7 +3633,7 @@ uint32_t Adafruit_NeoPixel::getPixelColor(uint16_t n) const
            write-only resource, maintaining their own state to render each
            frame of an animation, not relying on read-modify-write.
 */
-void Adafruit_NeoPixel::setBrightness(uint8_t b)
+void Inkplate_NeoPixel::setBrightness(uint8_t b)
 {
     // Stored brightness value is different than what's passed.
     // This simplifies the actual scaling math later, allowing a fast
@@ -3676,7 +3676,7 @@ void Adafruit_NeoPixel::setBrightness(uint8_t b)
   @brief   Retrieve the last-set brightness value for the strip.
   @return  Brightness value: 0 = minimum (off), 255 = maximum.
 */
-uint8_t Adafruit_NeoPixel::getBrightness(void) const
+uint8_t Inkplate_NeoPixel::getBrightness(void) const
 {
     return brightness - 1;
 }
@@ -3684,14 +3684,14 @@ uint8_t Adafruit_NeoPixel::getBrightness(void) const
 /*!
   @brief   Fill the whole NeoPixel strip with 0 / black / off.
 */
-void Adafruit_NeoPixel::clear(void)
+void Inkplate_NeoPixel::clear(void)
 {
     memset(pixels, 0, numBytes);
 }
 
 // A 32-bit variant of gamma8() that applies the same function
 // to all components of a packed RGB or WRGB value.
-uint32_t Adafruit_NeoPixel::gamma32(uint32_t x)
+uint32_t Inkplate_NeoPixel::gamma32(uint32_t x)
 {
     uint8_t *y = (uint8_t *)&x;
     // All four bytes of a 32-bit value are filtered even if RGB (not WRGB),
@@ -3725,7 +3725,7 @@ uint32_t Adafruit_NeoPixel::gamma32(uint32_t x)
   @param   gammify     If true (default), apply gamma correction to colors
                        for better appearance.
 */
-void Adafruit_NeoPixel::rainbow(uint16_t first_hue, int8_t reps, uint8_t saturation, uint8_t brightness, bool gammify)
+void Inkplate_NeoPixel::rainbow(uint16_t first_hue, int8_t reps, uint8_t saturation, uint8_t brightness, bool gammify)
 {
     for (uint16_t i = 0; i < numLEDs; i++)
     {
@@ -3752,9 +3752,9 @@ void Adafruit_NeoPixel::rainbow(uint16_t first_hue, int8_t reps, uint8_t saturat
            the default state if no KHZ bits set).
   @note    This function is declared static in the class so it can be called
            without a NeoPixel object (since it's not likely been declared
-           in the code yet). Use Adafruit_NeoPixel::str2order().
+           in the code yet). Use Inkplate_NeoPixel::str2order().
 */
-neoPixelType Adafruit_NeoPixel::str2order(const char *v)
+neoPixelType Inkplate_NeoPixel::str2order(const char *v)
 {
     int8_t r = 0, g = 0, b = 0, w = -1;
     if (v)

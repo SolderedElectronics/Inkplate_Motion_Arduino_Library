@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef ADAFRUIT_NEOPIXEL_H
-#define ADAFRUIT_NEOPIXEL_H
+#ifndef INKPLATE_NEOPIXEL_H
+#define INKPLATE_NEOPIXEL_H
 
 // Feature enable guard.
 #ifdef LIBRARY_FEATURE_WS_LED_ENABLED
@@ -163,7 +163,7 @@ for x in range(256):
     print("{:3},".format(int((math.sin(x/128.0*math.pi)+1.0)*127.5+0.5))),
     if x&15 == 15: print
 */
-static const uint8_t PROGMEM _NeoPixelSineTable[256] = {
+static const uint8_t PROGMEM _InkplateNeoPixelSineTable[256] = {
     128, 131, 134, 137, 140, 143, 146, 149, 152, 155, 158, 162, 165, 167, 170, 173, 176, 179, 182, 185, 188, 190,
     193, 196, 198, 201, 203, 206, 208, 211, 213, 215, 218, 220, 222, 224, 226, 228, 230, 232, 234, 235, 237, 238,
     240, 241, 243, 244, 245, 246, 248, 249, 250, 250, 251, 252, 253, 253, 254, 254, 254, 255, 255, 255, 255, 255,
@@ -185,7 +185,7 @@ for x in range(256):
     print("{:3},".format(int(math.pow((x)/255.0,gamma)*255.0+0.5))),
     if x&15 == 15: print
 */
-static const uint8_t PROGMEM _NeoPixelGammaTable[256] = {
+static const uint8_t PROGMEM _InkplateNeoPixelGammaTable[256] = {
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   2,   2,
     3,   3,   3,   3,   3,   3,   4,   4,   4,   4,   5,   5,   5,   5,   5,   6,   6,   6,   6,   7,   7,   7,
@@ -203,14 +203,14 @@ static const uint8_t PROGMEM _NeoPixelGammaTable[256] = {
     @brief  Class that stores state and functions for interacting with
             Adafruit NeoPixels and compatible devices.
 */
-class Adafruit_NeoPixel
+class Inkplate_NeoPixel
 {
 
   public:
     // Constructor: number of LEDs, pin number, LED type
-    Adafruit_NeoPixel(uint16_t n, int16_t pin = 6, neoPixelType type = NEO_GRB + NEO_KHZ800);
-    Adafruit_NeoPixel(void);
-    ~Adafruit_NeoPixel();
+    Inkplate_NeoPixel(uint16_t n, int16_t pin = 6, neoPixelType type = NEO_GRB + NEO_KHZ800);
+    Inkplate_NeoPixel(void);
+    ~Inkplate_NeoPixel();
 
     void begin(void);
     void show(void);
@@ -310,7 +310,7 @@ class Adafruit_NeoPixel
     */
     static uint8_t sine8(uint8_t x)
     {
-        return pgm_read_byte(&_NeoPixelSineTable[x]); // 0-255 in, 0-255 out
+        return pgm_read_byte(&_InkplateNeoPixelSineTable[x]); // 0-255 in, 0-255 out
     }
     /*!
       @brief   An 8-bit gamma-correction function for basic pixel brightness
@@ -325,7 +325,7 @@ class Adafruit_NeoPixel
     */
     static uint8_t gamma8(uint8_t x)
     {
-        return pgm_read_byte(&_NeoPixelGammaTable[x]); // 0-255 in, 0-255 out
+        return pgm_read_byte(&_InkplateNeoPixelGammaTable[x]); // 0-255 in, 0-255 out
     }
     /*!
       @brief   Convert separate red, green and blue values into a single
@@ -414,6 +414,6 @@ class Adafruit_NeoPixel
 #endif
 };
 
-#endif // ADAFRUIT_NEOPIXEL_H
+#endif // INKPLATE_NEOPIXEL_H
 
 #endif

@@ -164,7 +164,7 @@ class EPDDriver : public Helpers
     AS5600 rotaryEncoder;
 
     // Object for NeoPixel LED.
-    Adafruit_NeoPixel led = Adafruit_NeoPixel(2, INKPLATE_WSLED_DIN, NEO_GRB + NEO_KHZ800);
+    Inkplate_NeoPixel led = Inkplate_NeoPixel(2, INKPLATE_WSLED_DIN, NEO_GRB + NEO_KHZ800);
 
     // Object for SHTC3 temperature and humidity sensor.
     SHTC3 shtc3;
