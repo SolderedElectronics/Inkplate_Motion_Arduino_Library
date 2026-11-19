@@ -514,14 +514,15 @@ bool InkplateTest::lsm6ds3Test()
     // Power on
     inkplateObj->peripheralState(INKPLATE_PERIPHERAL_LSM6DSO32, true);
     delay(100); // Wait a bit to power on
-    //  Get a new normalized sensor event
-    sensors_event_t accel;
-    sensors_event_t gyro;
-    sensors_event_t temp;
-    inkplateObj->lsm6dso32.getEvent(&accel, &gyro, &temp);
-    float accelX = accel.acceleration.x;
-    float accelY = accel.acceleration.y;
-    float accelZ = accel.acceleration.z;
+    // Read acceleration in mg and convert it to m/s^2
+    int32_t accel[3] = {0, 0, 0};
+    if (inkplateObj->lsm6dso32.getAcceleratorAxes(accel) != LSM6DSO_OK)
+    {
+        result = false;
+    }
+    float accelX = accel[0] * 0.00980665f;
+    float accelY = accel[1] * 0.00980665f;
+    float accelZ = accel[2] * 0.00980665f;
     // Let's check accelerometer vector magnitude magnitude to see if the device is functioning
     float accelMagnitude = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ);
     if (accelMagnitude < accelVectorLowOK || accelMagnitude > accelVectorHighOK)

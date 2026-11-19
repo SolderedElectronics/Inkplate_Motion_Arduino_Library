@@ -72,7 +72,9 @@ int EPDDriver::initDriver(Inkplate *_inkplatePtr)
 
     // Initialize every Inkplate 6 Motion peripheral.
     shtc3.begin();
-    lsm6dso32.begin_I2C();
+    lsm6dso32.begin(LSM6DSO_VARIANT_LSM6DSO32);
+    lsm6dso32.enableAccelerator();
+    lsm6dso32.enableGyro();
     apds9960.init();
 
     // Copy Inkplate object pointer locally.

@@ -16,7 +16,6 @@
 #ifdef BOARD_INKPLATE6_MOTION
 // Inkplate6Motion has AS5600 magnetic rotary encoder, WS2812 LED, APDS9960 Sensor,
 // LSM6DSO32 Accelerometer & Gryoscope as well as microSD card.
-#include "Adafruit_LSM6DS/Adafruit_LSM6DSO32.h"
 #include "Adafruit_NeoPixel/Adafruit_NeoPixel.cpp"
 #include "RotaryEnc/AS5600.cpp"
 #include "SparkFun_APDS9960/SparkFun_APDS9960.cpp"

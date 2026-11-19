@@ -173,7 +173,7 @@ class EPDDriver : public Helpers
     SparkFun_APDS9960 apds9960;
 
     // Object for LSM6DSO32 accelerometer & gyroscope.
-    Adafruit_LSM6DSO32 lsm6dso32;
+    LSM6DSOSensor lsm6dso32 = LSM6DSOSensor(&Wire, LSM6DSO_I2C_ADD_L);
 
     // Object for the Inkplate on-board micro SD card.
     SdFat sdFat;

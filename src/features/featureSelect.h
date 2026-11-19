@@ -55,7 +55,7 @@
 #include "SparkFun_APDS9960/SparkFun_APDS9960.h"
 
 // LIBRARY_FEATURE_LSM6DSO_ENABLED feature.
-#include "Adafruit_LSM6DS/Adafruit_LSM6DSO32.h"
+#include "LSM6DSO/LSM6DSOSensor.h"
 
 // LIBRARY_FEATUTE_MICROSD_ENABLED feature.
 #include "SdFat/SdFat.h"

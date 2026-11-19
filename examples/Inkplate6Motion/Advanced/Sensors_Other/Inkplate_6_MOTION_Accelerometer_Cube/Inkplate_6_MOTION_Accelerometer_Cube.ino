@@ -55,8 +55,9 @@ void setup()
     inkplate.peripheralState(INKPLATE_PERIPHERAL_LSM6DSO32, true);
     delay(1000); // Wait a bit
 
-    // Try to init the acccelerometer
-    if (!inkplate.lsm6dso32.begin_I2C())
+    // Try to init the acccelerometer (Inkplate 6 MOTION has the LSM6DSO32 variant)
+    if (inkplate.lsm6dso32.begin(LSM6DSO_VARIANT_LSM6DSO32) != LSM6DSO_OK ||
+        inkplate.lsm6dso32.enableAccelerator() != LSM6DSO_OK || inkplate.lsm6dso32.enableGyro() != LSM6DSO_OK)
     {
         // Print message to user and show it on Inkplate
         inkplate.println("Couldn't init LSM6DSO32!");
@@ -71,84 +72,29 @@ void setup()
     delay(1000); // Wait a bit so the user can see the message
 
     // Let's configure it, and print config data to Inkplate
-    // This is useful to see all the available options
-    inkplate.lsm6dso32.setAccelRange(LSM6DSO32_ACCEL_RANGE_16_G);
-    inkplate.print("Accelerometer range set to: ");
-    switch (inkplate.lsm6dso32.getAccelRange())
-    {
-    case LSM6DSO32_ACCEL_RANGE_4_G:
-        inkplate.println("+-4G");
-        break;
-    case LSM6DSO32_ACCEL_RANGE_8_G:
-        inkplate.println("+-8G");
-        break;
-    case LSM6DSO32_ACCEL_RANGE_16_G:
-        inkplate.println("+-16G");
-        break;
-    case LSM6DSO32_ACCEL_RANGE_32_G:
-        inkplate.println("+-32G");
-        break;
-    }
+    // Accelerometer range: 4, 8, 16 or 32 g
+    inkplate.lsm6dso32.setAcceleratorFullScale(16);
+    int32_t accelRange;
+    inkplate.lsm6dso32.getAcceleratorFullScale(&accelRange);
+    inkplate.print("Accelerometer range set to: +-");
+    inkplate.print(accelRange);
+    inkplate.println("G");
 
-    inkplate.lsm6dso32.setGyroRange(LSM6DS_GYRO_RANGE_500_DPS);
+    // Gyro range: 125, 250, 500, 1000 or 2000 degrees/s
+    inkplate.lsm6dso32.setGyroFullScale(500);
+    int32_t gyroRange;
+    inkplate.lsm6dso32.getGyroFullScale(&gyroRange);
     inkplate.print("Gyro range set to: ");
-    switch (inkplate.lsm6dso32.getGyroRange())
-    {
-    case LSM6DS_GYRO_RANGE_125_DPS:
-        inkplate.println("125 degrees/s");
-        break;
-    case LSM6DS_GYRO_RANGE_250_DPS:
-        inkplate.println("250 degrees/s");
-        break;
-    case LSM6DS_GYRO_RANGE_500_DPS:
-        inkplate.println("500 degrees/s");
-        break;
-    case LSM6DS_GYRO_RANGE_1000_DPS:
-        inkplate.println("1000 degrees/s");
-        break;
-    case LSM6DS_GYRO_RANGE_2000_DPS:
-        inkplate.println("2000 degrees/s");
-        break;
-    }
+    inkplate.print(gyroRange);
+    inkplate.println(" degrees/s");
 
-    inkplate.lsm6dso32.setAccelDataRate(LSM6DS_RATE_104_HZ);
+    // Accelerometer data rate: 12.5 Hz up to 6.66 kHz
+    inkplate.lsm6dso32.setAcceleratorOdr(104.0f);
+    float accelOdr;
+    inkplate.lsm6dso32.getAcceleratorOdr(&accelOdr);
     inkplate.print("Accelerometer data rate set to: ");
-    switch (inkplate.lsm6dso32.getAccelDataRate())
-    {
-    case LSM6DS_RATE_SHUTDOWN:
-        inkplate.println("0 Hz");
-        break;
-    case LSM6DS_RATE_12_5_HZ:
-        inkplate.println("12.5 Hz");
-        break;
-    case LSM6DS_RATE_26_HZ:
-        inkplate.println("26 Hz");
-        break;
-    case LSM6DS_RATE_52_HZ:
-        inkplate.println("52 Hz");
-        break;
-    case LSM6DS_RATE_104_HZ:
-        inkplate.println("104 Hz");
-        break;
-    case LSM6DS_RATE_208_HZ:
-        inkplate.println("208 Hz");
-        break;
-    case LSM6DS_RATE_416_HZ:
-        inkplate.println("416 Hz");
-        break;
-    case LSM6DS_RATE_833_HZ:
-        inkplate.println("833 Hz");
-        break;
-    case LSM6DS_RATE_1_66K_HZ:
-        inkplate.println("1.66 KHz");
-        break;
-    case LSM6DS_RATE_3_33K_HZ:
-        inkplate.println("3.33 KHz");
-        break;
-    case LSM6DS_RATE_6_66K_HZ:
-        inkplate.println("6.66 KHz");
-        break;
-    }
+    inkplate.print(accelOdr, 1);
+    inkplate.println(" Hz");
 
     // Show the config and wait so the user can see it
     inkplate.display();
@@ -168,20 +114,21 @@ void loop()
     inkplate.clearDisplay();
 
     // Make sensor reading
-    sensors_event_t accel;
-    sensors_event_t gyro;
-    sensors_event_t temp;
-    inkplate.lsm6dso32.getEvent(&accel, &gyro, &temp);
+    // Accelerometer is read in mg, gyroscope in mdps
+    int32_t accel[3];
+    int32_t gyro[3];
+    inkplate.lsm6dso32.getAcceleratorAxes(accel);
+    inkplate.lsm6dso32.getGyroAxes(gyro);
 
-    // Read values from the accelerometer (for display purposes)
-    float accelX = accel.acceleration.x;
-    float accelY = accel.acceleration.y;
-    float accelZ = accel.acceleration.z;
+    // Convert accelerometer readings to m/s^2 (for display purposes)
+    float accelX = accel[0] * 0.00980665f;
+    float accelY = accel[1] * 0.00980665f;
+    float accelZ = accel[2] * 0.00980665f;
 
-    // Read values from the gyroscope
-    float gyroX = gyro.gyro.x;
-    float gyroY = gyro.gyro.y;
-    float gyroZ = gyro.gyro.z;
+    // Convert gyroscope readings to rad/s
+    float gyroX = gyro[0] * 0.001f * DEG_TO_RAD;
+    float gyroY = gyro[1] * 0.001f * DEG_TO_RAD;
+    float gyroZ = gyro[2] * 0.001f * DEG_TO_RAD;
 
     // Print accelerometer readings on the display
     inkplate.setCursor(10, 630);
