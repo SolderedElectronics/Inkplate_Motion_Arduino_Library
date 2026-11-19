@@ -206,7 +206,7 @@ bool WiFiClass::sendAtCommand(char *_atCommand, uint16_t _len)
         {
             if (_statusLen > 0)
             {
-                dataRead(_dataBuffer, _statusLen);
+                readRx(_dataBuffer, _statusLen);
                 dataReadEnd();
             }
             _esp32HandshakePinFlag = false;
@@ -278,11 +278,8 @@ bool WiFiClass::getAtResponse(char *_response, uint32_t _bufferLen, unsigned lon
                 // get the response. Otherwise, drop everything.
                 if ((_responseLen + _resposeArrayOffset) < _bufferLen)
                 {
-                    // Read the data.
-                    dataRead((_response + _resposeArrayOffset), _responseLen);
-
-                    // Move the index in response array.
-                    _resposeArrayOffset += _responseLen;
+                    // Read the data (socket data is split off, only AT text stays) and move the index.
+                    _resposeArrayOffset += readRx((_response + _resposeArrayOffset), _responseLen);
                 }
 
                 // Send read done.
@@ -331,45 +328,49 @@ bool WiFiClass::getSimpleAtResponse(char *_response, uint32_t _bufferLen, unsign
     // Capture the time!
     _timeoutCounter = millis();
 
-    // Now loop until the timeout occurs
-    while (((unsigned long)(millis() - _timeoutCounter) < _timeout) && (!getHandshakePinState()))
-        ;
-
-    // Recover a lost edge: the flag can be cleared while the line is already high, and then no new edge comes.
-    recoverHandshakeEdge();
-
-    // If the timeout occured, return false.
-    if (!getHandshakePinState())
-        return false;
-
-    // Otherwise read the data.
-    // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE
-    uint8_t _slaveStatus = requestSlaveStatus(&_responseLen);
-
-    // READABLE and WRITEABLE are independent bits and can both be set at once - test with
-    // a bitwise check, not equality.
-    if (!(_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
-        return false;
-
-    // Check if the buffer is large enough for the data.
-    // If not, drop everything.
-    bool _tooLarge = (_responseLen >= _bufferLen);
-    if (!_tooLarge)
+    // A read can contain only socket data (split off by the +IPD parser), so keep waiting for AT text.
+    do
     {
-        // Read the data.
-        dataRead(_response, _responseLen);
-    }
+        // Now loop until the timeout occurs
+        while (((unsigned long)(millis() - _timeoutCounter) < _timeout) && (!getHandshakePinState()))
+            ;
 
-    // Clear handshake pin.
-    _esp32HandshakePinFlag = false;
+        // Recover a lost edge: the flag can be cleared while the line is already high, and then no new edge comes.
+        recoverHandshakeEdge();
 
-    // Send read done.
-    dataReadEnd();
+        // If the timeout occured, return false.
+        if (!getHandshakePinState())
+            return false;
 
-    // Data was dropped, report nothing received so the caller never uses stale buffer contents
-    // (and the null-terminator below never lands past the end of the buffer).
-    if (_tooLarge)
-        _responseLen = 0;
+        // Otherwise read the data.
+        // Check the slave status, if must be INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE
+        uint8_t _slaveStatus = requestSlaveStatus(&_responseLen);
+
+        // READABLE and WRITEABLE are independent bits and can both be set at once - test with
+        // a bitwise check, not equality.
+        if (!(_slaveStatus & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
+            return false;
+
+        // Check if the buffer is large enough for the data.
+        // If not, drop everything.
+        bool _tooLarge = (_responseLen >= _bufferLen);
+        if (!_tooLarge)
+        {
+            // Read the data.
+            _responseLen = readRx(_response, _responseLen);
+        }
+
+        // Clear handshake pin.
+        _esp32HandshakePinFlag = false;
+
+        // Send read done.
+        dataReadEnd();
+
+        // Data was dropped, report nothing received so the caller never uses stale buffer contents
+        // (and the null-terminator below never lands past the end of the buffer).
+        if (_tooLarge)
+            _responseLen = 0;
+    } while ((_responseLen == 0) && ((unsigned long)(millis() - _timeoutCounter) < _timeout));
 
     // Add null-terminating char if needed.
     if (_rxLen == NULL)
@@ -410,18 +411,28 @@ bool WiFiClass::sendAtCommandWithResponse(char *_atCommand, unsigned long _timeo
     // libary).
     if (_timeoutAtCommand != 0)
     {
-        // First wait for the any kind of response by using HANDSHAKE pin.
+        // Wait for the response by using HANDSHAKE pin. Socket data arriving first is split off by the +IPD
+        // parser and leaves no text, so keep waiting until AT text arrives or the timeout runs out.
         unsigned long _timeoutCounter = millis();
-        while (((unsigned long)(millis() - _timeoutCounter) <= _timeoutAtCommand) && (!getHandshakePinState()))
-            ;
+        _respLen = 0;
+        while (_respLen == 0)
+        {
+            while (((unsigned long)(millis() - _timeoutCounter) <= _timeoutAtCommand) && (!getHandshakePinState()))
+                ;
 
-        // If there is no handshake pin activity, timeout occured, return false.
-        if (!getHandshakePinState())
-            return false;
+            // If there is no handshake pin activity, timeout occured, return false.
+            recoverHandshakeEdge();
+            if (!getHandshakePinState())
+                return false;
 
-        // If something is received, read the response.
-        if (!getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _rxDataTimeoutAtCommand, &_respLen))
-            return false;
+            // If something is received, read the response. Bare line breaks (left around a removed "+IPD"
+            // notification) are not a reply.
+            getAtResponse(_dataBuffer, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE, _rxDataTimeoutAtCommand, &_respLen);
+            if (strspn(_dataBuffer, "\r\n") == _respLen)
+                _respLen = 0;
+            if ((_respLen == 0) && ((unsigned long)(millis() - _timeoutCounter) > _timeoutAtCommand))
+                return false;
+        }
 
         // Try to parse if expected response exists.
         if (_expectedResponseAtCmd != NULL)
@@ -1407,6 +1418,264 @@ void WiFiClass::recoverHandshakeEdge()
 }
 
 /**
+ * @brief   Check whether the ESP32 announced received socket data ("+IPD,<len>" in passive receive mode).
+ *
+ * @return  bool
+ *          true - Data is waiting to be fetched with recvData().
+ */
+bool WiFiClass::rxPending()
+{
+    return _rxPending;
+}
+
+/**
+ * @brief   Clear the received-data flag (before fetching the data with recvData()).
+ *
+ */
+void WiFiClass::clearRxPending()
+{
+    _rxPending = false;
+}
+
+// Binary-safe substring search. Returns the first match or NULL.
+static char *memFind(char *_buf, uint16_t _len, const char *_needle)
+{
+    size_t _n = strlen(_needle);
+    for (uint16_t i = 0; i + _n <= _len; i++)
+        if (memcmp(_buf + i, _needle, _n) == 0)
+            return _buf + i;
+    return NULL;
+}
+
+/**
+ * @brief   Fetch received socket data buffered in the ESP32 (passive receive mode, AT+CIPRECVDATA).
+ *
+ * @param   char *_dst
+ *          Where to copy the data.
+ * @param   uint16_t _max
+ *          Size of _dst. Ask for everything that may be buffered: the ESP32 drops the rest of a datagram that
+ *          is read only partly.
+ * @return  int16_t
+ *          Number of bytes copied, 0 if nothing was buffered, -1 on failure.
+ */
+int16_t WiFiClass::recvData(char *_dst, uint16_t _max)
+{
+    // The ESP32 only notifies when its buffer goes from empty to non-empty, so a failed fetch must keep the flag
+    // raised, or the data would never be fetched again.
+    _rxPending = false;
+    char _cmd[32];
+    sprintf(_cmd, "AT+CIPRECVDATA=%u\r\n", _max);
+    if (!sendAtCommand(_cmd))
+    {
+        _rxPending = true;
+        return -1;
+    }
+
+    // The reply carries raw data that can contain anything (even "+IPD," or "OK"), so read it without the
+    // notification parser and cut the data by its length prefix: "+CIPRECVDATA:<len>,<data>\r\nOK\r\n".
+    _rawRx = true;
+    int16_t _ret = -1;
+    uint16_t _n = 0;
+    char *_dataEnd = NULL;
+    unsigned long _start = millis();
+    while ((unsigned long)(millis() - _start) < 1000ULL)
+    {
+        uint16_t _rx = 0;
+        if (!getSimpleAtResponse(_dataBuffer + _n, INKPLATE_ESP32_AT_CMD_BUFFER_SIZE - _n, 100ULL, &_rx))
+            continue;
+        _n += _rx;
+
+        if (_dataEnd == NULL)
+        {
+            char *_hdr = memFind(_dataBuffer, _n, "+CIPRECVDATA:");
+            if (_hdr == NULL)
+            {
+                if (memFind(_dataBuffer, _n, "ERROR\r\n") != NULL)
+                {
+                    _ret = 0;
+                    break;
+                }
+                continue;
+            }
+            char *_p = _hdr + strlen("+CIPRECVDATA:");
+            uint16_t _len = 0;
+            while ((_p < _dataBuffer + _n) && (*_p >= '0') && (*_p <= '9'))
+                _len = (_len * 10) + (*_p++ - '0');
+            if ((_p >= _dataBuffer + _n) || (*_p != ',') || ((_p + 1 + _len) > (_dataBuffer + _n)))
+                continue; // Header or data not complete yet.
+
+            _ret = (_len <= _max) ? _len : _max;
+            memcpy(_dst, _p + 1, _ret);
+            _dataEnd = _p + 1 + _len;
+
+            // A notification can come before the reply; keep the flag right.
+            demuxRx(_dataBuffer, _hdr - _dataBuffer);
+        }
+
+        // Wait for the closing OK too, so it does not end up in the reply of the next AT command.
+        if (memFind(_dataEnd, (_dataBuffer + _n) - _dataEnd, "OK\r\n") != NULL)
+            break;
+    }
+    _rawRx = false;
+
+    // Text after the data can hold a new notification. Without data (ERROR, timeout) everything read is text.
+    if (_dataEnd != NULL)
+        demuxRx(_dataEnd, (_dataBuffer + _n) - _dataEnd);
+    else
+        demuxRx(_dataBuffer, _n);
+
+    if (_ret < 0)
+        _rxPending = true;
+
+    return _ret;
+}
+
+/**
+ * @brief   Ask the ESP32 how many received bytes it has buffered (passive receive mode, AT+CIPRECVLEN?).
+ *
+ * @return  int32_t
+ *          Number of buffered bytes, -1 on failure.
+ */
+int32_t WiFiClass::recvLen()
+{
+    if (!sendAtCommandWithResponse((char *)"AT+CIPRECVLEN?\r\n", 200ULL, 4ULL, (char *)"+CIPRECVLEN:",
+                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY, true))
+        return -1;
+    int _len = -1;
+    char *_p = strstr(_dataBuffer, "+CIPRECVLEN:");
+    if ((_p == NULL) || (sscanf(_p, "+CIPRECVLEN:%d", &_len) != 1))
+        return -1;
+    return _len;
+}
+
+/**
+ * @brief   Read one pending transfer from the ESP32, so a "+IPD" notification sets rxPending(). AT text read here
+ *          is unsolicited (e.g. a late reply) and is dropped.
+ *
+ * @param   unsigned long _timeout
+ *          How long to wait for the ESP32 to have data, in milliseconds.
+ * @return  bool
+ *          true - Something was read.
+ */
+bool WiFiClass::pollRx(unsigned long _timeout)
+{
+    unsigned long _start = millis();
+    while (((unsigned long)(millis() - _start) < _timeout) && (!getHandshakePinState()))
+        ;
+    recoverHandshakeEdge();
+    if (!getHandshakePinState())
+        return false;
+
+    uint16_t _len = 0;
+    if (!(requestSlaveStatus(&_len) & INKPLATE_ESP32_SPI_SLAVE_STATUS_READABLE))
+        return false;
+    if (_len < INKPLATE_ESP32_AT_CMD_BUFFER_SIZE)
+        readRx(_dataBuffer, _len);
+    _esp32HandshakePinFlag = false;
+    dataReadEnd();
+    return true;
+}
+
+/**
+ * @brief   Read data from the ESP32 and remove "+IPD" notifications (see demuxRx()).
+ *
+ * @param   char *_buf
+ *          Buffer for the data, at least _len bytes.
+ * @param   uint16_t _len
+ *          Number of bytes the ESP32 has ready.
+ * @return  uint16_t
+ *          Number of AT text bytes left at the start of _buf.
+ */
+uint16_t WiFiClass::readRx(char *_buf, uint16_t _len)
+{
+    dataRead(_buf, _len);
+    return _rawRx ? _len : demuxRx(_buf, _len);
+}
+
+/**
+ * @brief   Remove "+IPD,<len>\r\n" notifications from ESP32 output and set rxPending(). In passive receive mode
+ *          the ESP32 sends these when received socket data is buffered; the data itself only comes as the reply to
+ *          AT+CIPRECVDATA (see recvData()). Notifications may be split across reads, so the state is kept.
+ *
+ * @param   char *_buf
+ *          Data read from the ESP32.
+ * @param   uint16_t _len
+ *          Number of bytes in _buf.
+ * @return  uint16_t
+ *          Number of AT text bytes left at the start of _buf (compacted in place).
+ */
+uint16_t WiFiClass::demuxRx(char *_buf, uint16_t _len)
+{
+    static const char _tag[] = "+IPD,";
+    uint16_t _out = 0;
+    uint16_t i = 0;
+
+    // Bytes of a possible "+IPD," prefix are held back while matching. At the end of a read they are passed on as
+    // text (so a "+CWJAP" split after the "+" stays intact) while matching continues in the next read; if that
+    // completes a notification, up to 4 stray prefix chars stay in the previous text, which no AT parser cares about.
+    uint8_t _emitted = _ipdMatch;
+
+    while (i < _len)
+    {
+        char _c = _buf[i++];
+
+        // Inside a notification: digits, then "\r\n".
+        if (_ipdState == 1)
+        {
+            if ((_c >= '0') && (_c <= '9'))
+                continue;
+            _ipdState = (_c == '\r') ? 2 : 0;
+            if (_ipdState == 2)
+                continue;
+        }
+        else if (_ipdState == 2)
+        {
+            _ipdState = 0;
+            if (_c == '\n')
+                continue;
+        }
+
+        // AT text. Hold back a possible "+IPD," until it is clear whether it starts a notification.
+        if (_c == _tag[_ipdMatch])
+        {
+            if (_ipdMatch == 0)
+                _emitted = 0;
+            if (++_ipdMatch == (sizeof(_tag) - 1))
+            {
+                // The ESP32 sends "\r\n+IPD,<len>\r\n": also drop the leading line break if it is in this read.
+                if ((_emitted == 0) && (_out >= 2) && (_buf[_out - 2] == '\r') && (_buf[_out - 1] == '\n'))
+                    _out -= 2;
+                _ipdState = 1;
+                _ipdMatch = 0;
+                _emitted = 0;
+                _rxPending = true;
+            }
+            continue;
+        }
+        if (_ipdMatch != 0)
+        {
+            // Not a notification: give the held prefix back as text. Safe in place, those bytes precede _c.
+            for (uint8_t k = _emitted; k < _ipdMatch; k++)
+                _buf[_out++] = _tag[k];
+            _ipdMatch = 0;
+            _emitted = 0;
+            if (_c == _tag[0])
+            {
+                _ipdMatch = 1;
+                continue;
+            }
+        }
+        _buf[_out++] = _c;
+    }
+
+    // Pass a pending prefix on as text now (see above). Safe in place, those are the last bytes of _buf.
+    for (uint8_t k = _emitted; k < _ipdMatch; k++)
+        _buf[_out++] = _tag[k];
+
+    return _out;
+}
+
+/**
  * @brief   Wait for the ESP32 handshake pin to trigger master request using interrutps.
  *
  * @param   uint32_t _timeoutValue
@@ -1759,8 +2028,8 @@ bool WiFiClass::flushModemReadReq()
                 // Clear the handshake flag.
                 _esp32HandshakePinFlag = false;
 
-                // We "totally read" all data from the ESP32.
-                dataRead(_dataBuffer, _len);
+                // We "totally read" all data from the ESP32 (socket data still reaches the RX sink).
+                readRx(_dataBuffer, _len);
                 dataReadEnd();
 
                 // Wait a little bit for new data.

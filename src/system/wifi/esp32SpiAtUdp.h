@@ -44,12 +44,10 @@ class WiFiUDP
     // Send data to the desired web server to it's destination port.
     bool write(uint8_t *_packet, uint16_t _len);
 
-    // Returns how many bytes are available for read.
-    // Note: a packet that arrives while another WiFi.* AT command is running is flushed by the
-    // ESP32 driver and lost. Data already returned by available() is safe until read().
+    // Returns how many received bytes are available for read (fetches them from the ESP32 if needed).
     uint16_t available(bool _blocking = false);
 
-    // read bytes from the RX buffer.
+    // Read received bytes. Datagrams that arrived since the last fetch are returned back to back.
     int read(uint8_t *_data, uint16_t _len);
 
     // End UDP connection. Also remove all filters for data transfer.
@@ -59,17 +57,17 @@ class WiFiUDP
     void setConnectionTimeout(uint16_t _connectionTimeout);
 
   private:
-    void keepRxData(char *_data, uint16_t _len);
 
     uint16_t _localUdpPort = 0;
-    uint16_t _availableData = 0;
-    char *_currentPosition = 0;
     uint16_t _connectionTimeoutValue = 20000ULL;
     char *_dataBuffer = NULL;
 
     // Private RX buffer. Received data must not live in WiFi's shared AT buffer, otherwise any
     // WiFi.* AT call (e.g. currentRSSI()) between available() and read() overwrites it.
     char *_rxBuffer = NULL;
+    uint16_t _rxLen = 0;
+    uint16_t _rdOff = 0;
+    unsigned long _lastRxCheck = 0;
 };
 
 #endif

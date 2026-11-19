@@ -111,6 +111,11 @@ class WiFiClass
     bool waitForHandshakePin(uint32_t _timeoutValue, bool _validState = HIGH);
     bool getHandshakePinState();
     void recoverHandshakeEdge();
+    bool pollRx(unsigned long _timeout);
+    bool rxPending();
+    void clearRxPending();
+    int16_t recvData(char *_dst, uint16_t _max);
+    int32_t recvLen();
 
   private:
     // ESP32 SPI Communication Protocol methods.
@@ -120,6 +125,8 @@ class WiFiClass
     bool dataSendEnd();
     bool dataRead(char *_dataBuffer, uint16_t _len);
     bool dataReadEnd();
+    uint16_t readRx(char *_buf, uint16_t _len);
+    uint16_t demuxRx(char *_buf, uint16_t _len);
     bool dataSendRequest(uint16_t _len, uint8_t _seqNumber);
     void transferSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiPacketLen);
     void sendSpiPacket(spiAtCommandTypedef *_spiPacket, uint16_t _spiDataLen);
@@ -152,6 +159,12 @@ class WiFiClass
 
     // Flag for enabling/disabling flushing ESP32 from all read requests before AT Command send.
     bool _flushEspBeforeCmdSend = true;
+
+    // "+IPD,<len>" notification parser state (passive receive mode; notifications can be split across reads).
+    uint8_t _ipdState = 0;
+    uint8_t _ipdMatch = 0;
+    bool _rxPending = false;
+    bool _rawRx = false;
 };
 
 // For easier user usage of the WiFi functionallity.
