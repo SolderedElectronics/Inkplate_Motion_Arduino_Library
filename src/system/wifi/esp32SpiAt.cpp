@@ -934,7 +934,8 @@ bool WiFiClass::connected()
         {
             // Parse the data.
             int _result;
-            if (sscanf(_dataBuffer, "+CWSTATE:%d", &_result) != 1)
+            char *_p = strstr(_dataBuffer, "+CWSTATE:");
+            if ((_p == NULL) || (sscanf(_p, "+CWSTATE:%d", &_result) != 1))
                 return false;
 
             // If the result is 2, that means it's connected to the WiFi and ESP32 got the IP address.
@@ -1107,7 +1108,8 @@ int WiFiClass::currentRSSI()
     // of splitting on commas.
     int _channel = 0;
     int _rssi = INT16_MIN;
-    if (sscanf(_dataBuffer, "+CWJAP:\"%*[^\"]\",\"%*[^\"]\",%d,%d", &_channel, &_rssi) != 2)
+    char *_p = strstr(_dataBuffer, "+CWJAP:");
+    if ((_p == NULL) || (sscanf(_p, "+CWJAP:\"%*[^\"]\",\"%*[^\"]\",%d,%d", &_channel, &_rssi) != 2))
         return INT16_MIN;
 
     return _rssi;

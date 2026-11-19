@@ -337,9 +337,10 @@ int WiFiClient::getFileSize(char *_url, uint32_t _timeout)
         return false;
 
     // Parse the reponse. Return 0 if something failed.
-    if (strstr(_dataBuffer, "+HTTPGETSIZE:"))
+    char *_p = strstr(_dataBuffer, "+HTTPGETSIZE:");
+    if (_p != NULL)
     {
-        if (sscanf(_dataBuffer, "+HTTPGETSIZE:%d", &_size) != 1)
+        if (sscanf(_p, "+HTTPGETSIZE:%d", &_size) != 1)
             return 0;
     }
 
