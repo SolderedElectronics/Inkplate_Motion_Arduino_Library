@@ -50,62 +50,62 @@
 
 /* Defines -------------------------------------------------------------------*/
 
-#define LSM6DSO_ACC_SENSITIVITY_FS_2G   0.061f
-#define LSM6DSO_ACC_SENSITIVITY_FS_4G   0.122f
-#define LSM6DSO_ACC_SENSITIVITY_FS_8G   0.244f
-#define LSM6DSO_ACC_SENSITIVITY_FS_16G  0.488f
-#define LSM6DSO_ACC_SENSITIVITY_FS_32G  0.976f
+#define LSM6DSO_ACC_SENSITIVITY_FS_2G  0.061f
+#define LSM6DSO_ACC_SENSITIVITY_FS_4G  0.122f
+#define LSM6DSO_ACC_SENSITIVITY_FS_8G  0.244f
+#define LSM6DSO_ACC_SENSITIVITY_FS_16G 0.488f
+#define LSM6DSO_ACC_SENSITIVITY_FS_32G 0.976f
 
-#define LSM6DSO_GYRO_SENSITIVITY_FS_125DPS    4.375f
-#define LSM6DSO_GYRO_SENSITIVITY_FS_250DPS    8.750f
-#define LSM6DSO_GYRO_SENSITIVITY_FS_500DPS   17.500f
-#define LSM6DSO_GYRO_SENSITIVITY_FS_1000DPS  35.000f
-#define LSM6DSO_GYRO_SENSITIVITY_FS_2000DPS  70.000f
+#define LSM6DSO_GYRO_SENSITIVITY_FS_125DPS  4.375f
+#define LSM6DSO_GYRO_SENSITIVITY_FS_250DPS  8.750f
+#define LSM6DSO_GYRO_SENSITIVITY_FS_500DPS  17.500f
+#define LSM6DSO_GYRO_SENSITIVITY_FS_1000DPS 35.000f
+#define LSM6DSO_GYRO_SENSITIVITY_FS_2000DPS 70.000f
 
 
 /* Typedefs ------------------------------------------------------------------*/
 
 typedef enum
 {
-  LSM6DSO_OK = 0,
-  LSM6DSO_ERROR =-1
+    LSM6DSO_OK = 0,
+    LSM6DSO_ERROR = -1
 } LSM6DSOStatusTypeDef;
 
 typedef enum
 {
-  LSM6DSO_INT1_PIN,
-  LSM6DSO_INT2_PIN,
+    LSM6DSO_INT1_PIN,
+    LSM6DSO_INT2_PIN,
 } LSM6DSO_SensorIntPin_t;
 
 typedef enum
 {
-  LSM6DSO_ACC_HIGH_PERFORMANCE_MODE,
-  LSM6DSO_ACC_LOW_POWER_NORMAL_MODE,
-  LSM6DSO_ACC_ULTRA_LOW_POWER_MODE
+    LSM6DSO_ACC_HIGH_PERFORMANCE_MODE,
+    LSM6DSO_ACC_LOW_POWER_NORMAL_MODE,
+    LSM6DSO_ACC_ULTRA_LOW_POWER_MODE
 } LSM6DSO_ACC_Operating_Mode_t;
 
 typedef enum
 {
-  LSM6DSO_GYRO_HIGH_PERFORMANCE_MODE,
-  LSM6DSO_GYRO_LOW_POWER_NORMAL_MODE
+    LSM6DSO_GYRO_HIGH_PERFORMANCE_MODE,
+    LSM6DSO_GYRO_LOW_POWER_NORMAL_MODE
 } LSM6DSO_GYRO_Operating_Mode_t;
 
 typedef enum
 {
-  LSM6DSO_VARIANT_LSM6DSO,
-  LSM6DSO_VARIANT_LSM6DSO32
+    LSM6DSO_VARIANT_LSM6DSO,
+    LSM6DSO_VARIANT_LSM6DSO32
 } LSM6DSO_Variant_t;
 
 typedef struct
 {
-  unsigned int FreeFallStatus : 1;
-  unsigned int TapStatus : 1;
-  unsigned int DoubleTapStatus : 1;
-  unsigned int WakeUpStatus : 1;
-  unsigned int StepStatus : 1;
-  unsigned int TiltStatus : 1;
-  unsigned int D6DOrientationStatus : 1;
-  unsigned int SleepStatus : 1;
+    unsigned int FreeFallStatus : 1;
+    unsigned int TapStatus : 1;
+    unsigned int DoubleTapStatus : 1;
+    unsigned int WakeUpStatus : 1;
+    unsigned int StepStatus : 1;
+    unsigned int TiltStatus : 1;
+    unsigned int D6DOrientationStatus : 1;
+    unsigned int SleepStatus : 1;
 } LSM6DSO_Event_Status_t;
 
 
@@ -118,13 +118,16 @@ typedef struct
 class LSM6DSOSensor
 {
   public:
-    LSM6DSOSensor(TwoWire *i2c, uint8_t address=LSM6DSO_I2C_ADD_H);
+    LSM6DSOSensor(TwoWire *i2c, uint8_t address = LSM6DSO_I2C_ADD_H);
     LSM6DSOStatusTypeDef begin();
     LSM6DSOStatusTypeDef begin(LSM6DSO_Variant_t variant);
     LSM6DSOStatusTypeDef end();
     LSM6DSOStatusTypeDef readId(uint8_t *id);
     LSM6DSOStatusTypeDef detectVariant(LSM6DSO_Variant_t *variant);
-    LSM6DSO_Variant_t getVariant() { return device_variant; }
+    LSM6DSO_Variant_t getVariant()
+    {
+        return device_variant;
+    }
     LSM6DSOStatusTypeDef enableAccelerator();
     LSM6DSOStatusTypeDef disableAccelerator();
     LSM6DSOStatusTypeDef getAcceleratorSensitivity(float *sensitivity);
@@ -217,25 +220,27 @@ class LSM6DSOSensor
      * @param  NumByteToRead: number of bytes to be read.
      * @retval 0 if ok, an error code otherwise.
      */
-    uint8_t ioRead(uint8_t* pBuffer, uint8_t RegisterAddr, uint16_t NumByteToRead)
+    uint8_t ioRead(uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToRead)
     {
-      if (dev_i2c) {
-        dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
-        dev_i2c->write(RegisterAddr);
-        dev_i2c->endTransmission(false);
+        if (dev_i2c)
+        {
+            dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
+            dev_i2c->write(RegisterAddr);
+            dev_i2c->endTransmission(false);
 
-        dev_i2c->requestFrom(((uint8_t)(((address) >> 1) & 0x7F)), (uint8_t) NumByteToRead);
+            dev_i2c->requestFrom(((uint8_t)(((address) >> 1) & 0x7F)), (uint8_t)NumByteToRead);
 
-        int i=0;
-        while (dev_i2c->available()) {
-          pBuffer[i] = dev_i2c->read();
-          i++;
+            int i = 0;
+            while (dev_i2c->available())
+            {
+                pBuffer[i] = dev_i2c->read();
+                i++;
+            }
+
+            return 0;
         }
 
-        return 0;
-      }
-
-      return 1;
+        return 1;
     }
 
     /**
@@ -245,26 +250,27 @@ class LSM6DSOSensor
      * @param  NumByteToWrite: number of bytes to write.
      * @retval 0 if ok, an error code otherwise.
      */
-    uint8_t ioWrite(uint8_t* pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
+    uint8_t ioWrite(uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
     {
-      if (dev_i2c) {
-        dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
+        if (dev_i2c)
+        {
+            dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
 
-        dev_i2c->write(RegisterAddr);
-        for (uint16_t i = 0 ; i < NumByteToWrite ; i++) {
-          dev_i2c->write(pBuffer[i]);
+            dev_i2c->write(RegisterAddr);
+            for (uint16_t i = 0; i < NumByteToWrite; i++)
+            {
+                dev_i2c->write(pBuffer[i]);
+            }
+
+            dev_i2c->endTransmission(true);
+
+            return 0;
         }
 
-        dev_i2c->endTransmission(true);
-
-        return 0;
-      }
-
-      return 1;
+        return 1;
     }
 
   private:
-
     LSM6DSOStatusTypeDef setAcceleratorOdrWhenEnabled(float odr);
     LSM6DSOStatusTypeDef setAcceleratorOdrWhenDisabled(float odr);
     LSM6DSOStatusTypeDef setGyroOdrWhenEnabled(float odr);
@@ -285,16 +291,16 @@ class LSM6DSOSensor
     uint8_t gyro_is_enabled;
 
     lsm6dso_ctx_t reg_ctx;
-
 };
 
 #ifdef __cplusplus
- extern "C" {
+extern "C"
+{
 #endif
-int32_t LSM6DSO_io_write( void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uint16_t nBytesToWrite );
-int32_t LSM6DSO_io_read( void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead );
+    int32_t LSM6DSO_io_write(void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uint16_t nBytesToWrite);
+    int32_t LSM6DSO_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead);
 #ifdef __cplusplus
-  }
+}
 #endif
 
 #endif
