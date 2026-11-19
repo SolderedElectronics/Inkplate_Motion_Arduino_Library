@@ -158,8 +158,9 @@ void loop()
     previousTime = currentTime;
 
     // Integrate gyroscope data to get angles
-    angleX += gyroX * dt;
-    angleY += gyroY * dt;
+    // Sensor X/Y axes are rotated 90 degrees relative to the screen, so they are swapped here
+    angleX += gyroY * dt;
+    angleY += gyroX * dt;
     angleZ += gyroZ * dt;
 
     // Smoothing (average with previous angles)
