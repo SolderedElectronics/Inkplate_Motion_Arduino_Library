@@ -57,7 +57,6 @@ class WiFiUDP
     void setConnectionTimeout(uint16_t _connectionTimeout);
 
   private:
-
     uint16_t _localUdpPort = 0;
     uint16_t _connectionTimeoutValue = 20000ULL;
     char *_dataBuffer = NULL;

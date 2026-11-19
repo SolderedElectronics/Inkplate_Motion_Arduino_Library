@@ -1538,8 +1538,8 @@ int16_t WiFiClass::recvData(char *_dst, uint16_t _max)
  */
 int32_t WiFiClass::recvLen()
 {
-    if (!sendAtCommandWithResponse((char *)"AT+CIPRECVLEN?\r\n", 200ULL, 4ULL, (char *)"+CIPRECVLEN:",
-                                   INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY, true))
+    if (!sendAtCommandWithResponse((char *)"AT+CIPRECVLEN?\r\n", 200ULL, 4ULL,
+                                   (char *)"+CIPRECVLEN:", INKPLATE_ESP32_AT_EXPECTED_RESPONSE_ANY, true))
         return -1;
     int _len = -1;
     char *_p = strstr(_dataBuffer, "+CIPRECVLEN:");
