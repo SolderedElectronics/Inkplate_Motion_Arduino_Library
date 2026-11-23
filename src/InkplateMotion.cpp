@@ -15,6 +15,9 @@
 //--------------------------USER FUNCTIONS--------------------------------------------
 Inkplate::Inkplate() : Adafruit_GFX(SCREEN_WIDTH, SCREEN_HEIGHT)
 {
+    // Unlock the backup domain before the board package's initVariant() runs. In board packages 1.0.2 and
+    // 2.0.0 it enables the backup regulator first, so the write is ignored and every cold boot waits 1000 ms.
+    HAL_PWR_EnableBkUpAccess();
 }
 
 int Inkplate::begin(uint8_t _mode)
