@@ -526,9 +526,10 @@ void STM32H7RTC::setAlarmOutput(bool _outEn, uint32_t _alarm)
         __HAL_RCC_GPIOC_CLK_ENABLE();
         HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
         _stm32MotionHrtc.Init.OutPut = _alarm;
-        // You can change impulse polarity here. By default, on alarm event output will be pulled to high.
-        _stm32MotionHrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-        _stm32MotionHrtc.Init.OutPutType = RTC_OUTPUT_TYPE_PUSHPULL;
+        // Open-drain, active low: on an alarm event the output pulls PC13 to GND. PC13 is also the WAKE UP
+        // button (to GND, 100k pull-up to 3V3, JP2 closed), so it must never be driven high.
+        _stm32MotionHrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_LOW;
+        _stm32MotionHrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
     }
     else
     {
@@ -537,10 +538,14 @@ void STM32H7RTC::setAlarmOutput(bool _outEn, uint32_t _alarm)
         _stm32MotionHrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
         _stm32MotionHrtc.Init.OutPutType = RTC_OUTPUT_TYPE_PUSHPULL;
     }
-    if (HAL_RTC_Init(&_stm32MotionHrtc) != HAL_OK)
-    {
-        Error_Handler();
-    }
+    // HAL_RTC_Init() changes nothing once the calendar is set (and setTime()/setDate() set it),
+    // so write the output select, polarity, type and remap bits directly.
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&_stm32MotionHrtc);
+    _stm32MotionHrtc.Instance->CR = (_stm32MotionHrtc.Instance->CR & ~(RTC_CR_OSEL | RTC_CR_POL)) |
+                                    _stm32MotionHrtc.Init.OutPut | _stm32MotionHrtc.Init.OutPutPolarity;
+    _stm32MotionHrtc.Instance->OR = (_stm32MotionHrtc.Instance->OR & ~(RTC_OR_ALARMOUTTYPE | RTC_OR_OUT_RMP)) |
+                                    _stm32MotionHrtc.Init.OutPutType | _stm32MotionHrtc.Init.OutPutRemap;
+    __HAL_RTC_WRITEPROTECTION_ENABLE(&_stm32MotionHrtc);
 }
 
 /**
