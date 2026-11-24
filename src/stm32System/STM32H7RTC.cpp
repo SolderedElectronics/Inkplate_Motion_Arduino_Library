@@ -537,10 +537,14 @@ void STM32H7RTC::setAlarmOutput(bool _outEn, uint32_t _alarm)
         _stm32MotionHrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
         _stm32MotionHrtc.Init.OutPutType = RTC_OUTPUT_TYPE_PUSHPULL;
     }
-    if (HAL_RTC_Init(&_stm32MotionHrtc) != HAL_OK)
-    {
-        Error_Handler();
-    }
+    // HAL_RTC_Init() changes nothing once the calendar is set (and setTime()/setDate() set it),
+    // so write the output select, polarity, type and remap bits directly.
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&_stm32MotionHrtc);
+    _stm32MotionHrtc.Instance->CR = (_stm32MotionHrtc.Instance->CR & ~(RTC_CR_OSEL | RTC_CR_POL)) |
+                                    _stm32MotionHrtc.Init.OutPut | _stm32MotionHrtc.Init.OutPutPolarity;
+    _stm32MotionHrtc.Instance->OR = (_stm32MotionHrtc.Instance->OR & ~(RTC_OR_ALARMOUTTYPE | RTC_OR_OUT_RMP)) |
+                                    _stm32MotionHrtc.Init.OutPutType | _stm32MotionHrtc.Init.OutPutRemap;
+    __HAL_RTC_WRITEPROTECTION_ENABLE(&_stm32MotionHrtc);
 }
 
 /**
