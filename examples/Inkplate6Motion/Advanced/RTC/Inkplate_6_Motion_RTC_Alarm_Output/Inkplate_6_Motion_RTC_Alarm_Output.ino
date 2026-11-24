@@ -3,7 +3,9 @@
  *
  * @file        Inkplate_6_Motion_RTC_Alarm_Output.ino
  * @brief       This example will send a pulse on the PC13 pin upon a RTC alarm event
- *              Connect a 330Ohm resistor and an LED on PC13, upon the alarm, the LED will blink
+ *              PC13 goes low on the alarm (open-drain). Connect a 1kOhm resistor and an LED between 3V3 and
+ *              PC13 (LED cathode towards PC13), upon the alarm, the LED will blink.
+ *              PC13 is also the WAKE UP button pin, so pressing WAKE UP lights the LED too.
  *
  * For info on how to quickly get started with Inkplate 6MOTION visit docs.inkplate.com
  *
